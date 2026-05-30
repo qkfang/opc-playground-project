@@ -22,16 +22,29 @@ const updates = [
 
 function renderTimeline(){
   const root = $("timeline");
+  const state = $("timelineState");
   if(!root) return;
-  root.innerHTML = updates.map(u => `
-    <article class="update">
-      <div class="update__date">${escapeHtml(u.date)}</div>
-      <div>
-        <div class="update__title">${escapeHtml(u.title)}</div>
-        <p class="update__body">${escapeHtml(u.body)}</p>
-      </div>
-    </article>
-  `).join("");
+  try {
+    if(!Array.isArray(updates)) throw new Error("Invalid updates");
+    if(updates.length === 0){
+      root.innerHTML = "";
+      if(state) state.textContent = "No updates yet. Check back soon for milestones.";
+      return;
+    }
+    root.innerHTML = updates.map(u => `
+      <article class="update">
+        <div class="update__date">${escapeHtml(u.date)}</div>
+        <div>
+          <div class="update__title">${escapeHtml(u.title)}</div>
+          <p class="update__body">${escapeHtml(u.body)}</p>
+        </div>
+      </article>
+    `).join("");
+    if(state) state.hidden = true;
+  } catch {
+    root.innerHTML = "";
+    if(state) state.textContent = "We couldn’t load updates right now. Please refresh to try again.";
+  }
 }
 
 function escapeHtml(s){
@@ -57,10 +70,37 @@ function boot(){
   setText("statBuild", "v0.1.0");
 
   renderTimeline();
+  initNavState();
 
   const btn = $("runDemo");
   if(btn){
     btn.addEventListener("click", runTelemetryDemo);
+  }
+
+  function initNavState(){
+    const links = Array.from(document.querySelectorAll('.nav a[href^="#"]'));
+    const sections = links
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+    if(links.length === 0 || sections.length === 0) return;
+
+    const setActive = () => {
+      const y = window.scrollY + 140;
+      let activeId = sections[0].id;
+      for (const section of sections) {
+        if(section.offsetTop <= y) activeId = section.id;
+      }
+      for (const link of links) {
+        const isActive = link.getAttribute("href") === `#${activeId}`;
+        link.classList.toggle("is-active", isActive);
+        if(isActive) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+      }
+    };
+
+    setActive();
+    window.addEventListener("scroll", setActive, { passive: true });
+    window.addEventListener("resize", setActive);
   }
 }
 
