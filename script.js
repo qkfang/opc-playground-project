@@ -1,6 +1,8 @@
 /* Minimal interactivity + sample update timeline */
 
 const $ = (id) => document.getElementById(id);
+// Fallback for cases where header height cannot be read.
+const SCROLL_OFFSET_PX = 140;
 
 const updates = [
   {
@@ -20,18 +22,32 @@ const updates = [
   }
 ];
 
-function renderTimeline(){
+function renderTimeline(items = updates){
   const root = $("timeline");
+  const state = $("timelineState");
   if(!root) return;
-  root.innerHTML = updates.map(u => `
-    <article class="update">
-      <div class="update__date">${escapeHtml(u.date)}</div>
-      <div>
-        <div class="update__title">${escapeHtml(u.title)}</div>
-        <p class="update__body">${escapeHtml(u.body)}</p>
-      </div>
-    </article>
-  `).join("");
+  try {
+    if(!Array.isArray(items)) throw new Error(`Expected updates array, received ${typeof items}`);
+    if(items.length === 0){
+      root.innerHTML = "";
+      if(state) state.textContent = "No updates yet. Check back soon for milestones.";
+      return;
+    }
+    root.innerHTML = items.map(u => `
+      <article class="update">
+        <div class="update__date">${escapeHtml(u.date)}</div>
+        <div>
+          <div class="update__title">${escapeHtml(u.title)}</div>
+          <p class="update__body">${escapeHtml(u.body)}</p>
+        </div>
+      </article>
+    `).join("");
+    if(state) state.hidden = true;
+  } catch (err) {
+    root.innerHTML = "";
+    if(state) state.textContent = "We couldn’t load updates right now. Please refresh to try again.";
+    console.error(err);
+  }
 }
 
 function escapeHtml(s){
@@ -57,11 +73,41 @@ function boot(){
   setText("statBuild", "v0.1.0");
 
   renderTimeline();
+  initNavState();
 
   const btn = $("runDemo");
   if(btn){
     btn.addEventListener("click", runTelemetryDemo);
   }
+}
+
+function initNavState(){
+  const nav = document.querySelector(".nav");
+  if(!nav) return;
+  const links = Array.from(nav.querySelectorAll('a[href^="#"]'));
+  const sections = links
+    .map((link) => document.querySelector(link.getAttribute("href")))
+    .filter(Boolean);
+  if(links.length === 0 || sections.length === 0) return;
+
+  const header = document.querySelector(".header");
+  const setActive = () => {
+    const scrollOffsetPx = (header?.offsetHeight ?? SCROLL_OFFSET_PX) + 16;
+    const y = window.scrollY + scrollOffsetPx;
+    let activeId = sections[0].id;
+    for (const section of sections) {
+      if(section.offsetTop <= y) activeId = section.id;
+    }
+    for (const link of links) {
+      const isActive = link.getAttribute("href") === `#${activeId}`;
+      link.classList.toggle("is-active", isActive);
+      if(isActive) link.setAttribute("aria-current", "location");
+      else link.removeAttribute("aria-current");
+    }
+  }
+
+  setActive();
+  window.addEventListener("scroll", setActive, { passive: true });
 }
 
 let demoTimer = null;
