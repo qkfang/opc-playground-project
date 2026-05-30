@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OPC Project 1 — Robotics</title>
+  <meta name="description" content="A robotics project website: mission, robots, demos, team, and updates." />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <div class="brand">
+        <div class="brand__mark" aria-hidden="true">⚙</div>
+        <div class="brand__text">
+          <div class="brand__name">OPC Project 1</div>
+          <div class="brand__tag">Robotics Lab Site</div>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="#about">About</a>
+        <a href="#robots">Robots</a>
+        <a href="#demos">Demos</a>
+        <a href="#team">Team</a>
+        <a href="#updates">Updates</a>
+        <a class="btn btn--small" href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <p class="kicker">Build • Test • Iterate</p>
+          <h1>Robots that perceive, plan, and move.</h1>
+          <p class="lead">
+            A clean, fast robotics project website you can host on GitHub Pages.
+            Showcase your platform, experiments, and progress.
+          </p>
+          <div class="hero__cta">
+            <a class="btn" href="#demos">Watch demos</a>
+            <a class="btn btn--ghost" href="#robots">Explore robots</a>
+          </div>
+          <div class="stats" role="list" aria-label="Project stats">
+            <div class="stat" role="listitem">
+              <div class="stat__num" id="statRuns">—</div>
+              <div class="stat__label">Autonomy runs</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="stat__num" id="statUptime">—</div>
+              <div class="stat__label">Bench uptime</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="stat__num" id="statBuild">—</div>
+              <div class="stat__label">Build version</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__panel" aria-label="System overview">
+          <div class="panel">
+            <div class="panel__title">System stack</div>
+            <ul class="stack">
+              <li><span class="pill">Perception</span> cameras, LiDAR, IMU</li>
+              <li><span class="pill">State</span> SLAM / localization</li>
+              <li><span class="pill">Planning</span> navigation + manipulation</li>
+              <li><span class="pill">Control</span> MPC / PID, safety limits</li>
+              <li><span class="pill">Compute</span> edge GPU + microcontrollers</li>
+            </ul>
+            <div class="panel__footer">
+              <button class="btn btn--small" id="runDemo">Run interactive demo</button>
+              <a class="link" href="#updates">See latest update →</a>
+            </div>
+          </div>
+
+          <div class="telemetry" aria-live="polite" aria-label="Live telemetry (simulated)">
+            <div class="telemetry__row"><span>Mode</span><strong id="tMode">Standby</strong></div>
+            <div class="telemetry__row"><span>Battery</span><strong id="tBatt">—</strong></div>
+            <div class="telemetry__row"><span>Pose</span><strong id="tPose">—</strong></div>
+            <div class="telemetry__row"><span>Goal</span><strong id="tGoal">—</strong></div>
+            <div class="telemetry__row"><span>Status</span><strong id="tStatus">—</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="about">
+      <div class="container">
+        <h2>About the project</h2>
+        <p>
+          Use this template to present a robotics class project, a lab prototype, or an open-source platform.
+          It’s intentionally minimal: one page, strong typography, and room for videos, links, and a technical write‑up.
+        </p>
+
+        <div class="cards">
+          <article class="card">
+            <h3>Mission</h3>
+            <p>Make real-world autonomy reliable: tight safety loops, repeatable tests, clear metrics.</p>
+          </article>
+          <article class="card">
+            <h3>Focus areas</h3>
+            <p>Perception, mapping, navigation, and robust low-level control across uneven terrain.</p>
+          </article>
+          <article class="card">
+            <h3>Open workflow</h3>
+            <p>Design docs, build logs, and experiment results in one place.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="robots">
+      <div class="container">
+        <div class="section__head">
+          <h2>Robots</h2>
+          <p class="muted">Swap these for your real platforms. Each card supports specs + links.</p>
+        </div>
+
+        <div class="grid grid--3">
+          <article class="robot">
+            <h3>Rover-1</h3>
+            <p class="muted">Differential drive testbed for navigation and mapping.</p>
+            <ul class="specs">
+              <li><strong>Sensors:</strong> stereo camera, IMU</li>
+              <li><strong>Compute:</strong> edge GPU</li>
+              <li><strong>Use:</strong> indoor SLAM</li>
+            </ul>
+            <div class="robot__links">
+              <a class="link" href="#">Docs</a>
+              <a class="link" href="#">CAD</a>
+              <a class="link" href="#">Code</a>
+            </div>
+          </article>
+
+          <article class="robot">
+            <h3>Arm-2</h3>
+            <p class="muted">6‑DoF arm for pick-and-place and perception-driven grasping.</p>
+            <ul class="specs">
+              <li><strong>Payload:</strong> 1–2 kg</li>
+              <li><strong>End-effector:</strong> parallel gripper</li>
+              <li><strong>Use:</strong> tabletop manipulation</li>
+            </ul>
+            <div class="robot__links">
+              <a class="link" href="#">URDF</a>
+              <a class="link" href="#">Datasheet</a>
+              <a class="link" href="#">ROS nodes</a>
+            </div>
+          </article>
+
+          <article class="robot">
+            <h3>Drone-3</h3>
+            <p class="muted">Vision-aided flight stack for waypoint navigation.</p>
+            <ul class="specs">
+              <li><strong>Frame:</strong> 250 mm</li>
+              <li><strong>Autopilot:</strong> PX4</li>
+              <li><strong>Use:</strong> outdoor tests</li>
+            </ul>
+            <div class="robot__links">
+              <a class="link" href="#">Flight logs</a>
+              <a class="link" href="#">Tuning</a>
+              <a class="link" href="#">Videos</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="demos">
+      <div class="container">
+        <div class="section__head">
+          <h2>Demos</h2>
+          <p class="muted">Embed YouTube/MP4s or link to experiment pages.</p>
+        </div>
+
+        <div class="grid grid--2">
+          <article class="demo">
+            <h3>Autonomy run: hallway nav</h3>
+            <p class="muted">Mapping + localization + obstacle avoidance.</p>
+            <div class="demo__media">
+              <div class="videoPlaceholder" role="img" aria-label="Video placeholder">Drop a video here</div>
+            </div>
+          </article>
+
+          <article class="demo">
+            <h3>Manipulation: bin picking</h3>
+            <p class="muted">Perception-guided grasp selection and execution.</p>
+            <div class="demo__media">
+              <div class="videoPlaceholder" role="img" aria-label="Video placeholder">Drop a video here</div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="team">
+      <div class="container">
+        <div class="section__head">
+          <h2>Team</h2>
+          <p class="muted">Add names, roles, and links.</p>
+        </div>
+
+        <div class="grid grid--3">
+          <article class="person">
+            <div class="avatar" aria-hidden="true">QF</div>
+            <h3>Q. Fang</h3>
+            <p class="muted">Lead • Systems</p>
+            <div class="person__links">
+              <a class="link" href="#">GitHub</a>
+              <a class="link" href="#">LinkedIn</a>
+            </div>
+          </article>
+          <article class="person">
+            <div class="avatar" aria-hidden="true">AA</div>
+            <h3>A. Author</h3>
+            <p class="muted">Perception</p>
+            <div class="person__links">
+              <a class="link" href="#">GitHub</a>
+              <a class="link" href="#">Website</a>
+            </div>
+          </article>
+          <article class="person">
+            <div class="avatar" aria-hidden="true">BB</div>
+            <h3>B. Builder</h3>
+            <p class="muted">Controls</p>
+            <div class="person__links">
+              <a class="link" href="#">GitHub</a>
+              <a class="link" href="#">Scholar</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="updates">
+      <div class="container">
+        <div class="section__head">
+          <h2>Updates</h2>
+          <p class="muted">A lightweight changelog for milestones and test results.</p>
+        </div>
+
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+
+    <section class="section" id="contact">
+      <div class="container">
+        <div class="section__head">
+          <h2>Contact</h2>
+          <p class="muted">Replace these with your real links.</p>
+        </div>
+
+        <div class="contact">
+          <a class="btn" href="mailto:you@example.com">Email</a>
+          <a class="btn btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">Repository</a>
+        </div>
+
+        <p class="footnote">
+          Tip: enable GitHub Pages → Settings → Pages → Deploy from branch → <code>main</code> / <code>/(root)</code>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> OPC Project 1</span>
+      <a class="link" href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>
