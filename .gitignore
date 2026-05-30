@@ -1,0 +1,10 @@
+# Node
+node_modules/
+
+# Tooling / scratch
+.openclaw/
+.tmp-*.md
+
+# OS
+.DS_Store
+Thumbs.db
