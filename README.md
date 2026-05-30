@@ -1,18 +1,39 @@
 # opc-project-1 — Robotics Website
 
-A simple, fast, one-page robotics project website (HTML/CSS/JS) designed to deploy cleanly on **GitHub Pages**.
+A simple, fast, one-page robotics project website built with **vanilla HTML/CSS/JS**, designed to deploy cleanly on **GitHub Pages**.
 
-## What’s inside
+## Overview
 
-- `index.html` — landing page + sections (About, Robots, Demos, Team, Updates, Contact)
-- `styles.css` — modern, responsive styling
-- `script.js` — small interactive telemetry demo + updates timeline
+This repo contains a polished single-page site you can use for a robotics team, lab, or project:
+
+- Sectioned landing page (About / Robots / Demos / Team / Updates / Contact)
+- Responsive layout and modern styling
+- Small interactive “telemetry” demo in the browser
+
+## Screenshots
+
+![Desktop preview](assets/screenshot-desktop.png)
+
+<details>
+<summary>Mobile preview</summary>
+
+![Mobile preview](assets/screenshot-mobile.png)
+</details>
+
+## Features
+
+- **Fast + lightweight:** no framework, minimal JavaScript
+- **Responsive:** looks good on desktop and mobile
+- **Easy to edit:** update content directly in `index.html`
+- **GitHub Pages friendly:** deploy from `main` with a couple clicks
 
 ## Run locally
 
-Just open `index.html` in a browser.
+### Option A: Open the file
 
-Optional (recommended): run a tiny local server so assets load consistently.
+Open `index.html` in your browser.
+
+### Option B (recommended): Run a tiny local server
 
 ```bash
 python -m http.server 8000
@@ -20,7 +41,7 @@ python -m http.server 8000
 
 Then visit: <http://localhost:8000>
 
-## Deploy on GitHub Pages
+## Deploy (GitHub Pages)
 
 1. Go to **Settings → Pages**
 2. Under **Build and deployment** choose:
@@ -29,6 +50,20 @@ Then visit: <http://localhost:8000>
    - **Folder:** `/(root)`
 3. Save — Pages will publish the site.
 
-## Customize
+## Customization checklist
 
-Search for placeholders in `index.html` (names, links, email, robot specs, demo videos) and replace with your real content.
+Common edits in `index.html`:
+
+- [ ] Project/team name + tagline
+- [ ] About section copy
+- [ ] Robots list (names, specs, status)
+- [ ] Demo links (videos, papers, repositories)
+- [ ] Team roster (names, roles, links)
+- [ ] Updates/timeline items
+- [ ] Contact info (email, socials)
+
+Optional tweaks:
+
+- [ ] Update colors/typography in `styles.css`
+- [ ] Adjust the telemetry demo behavior in `script.js`
+- [ ] Replace the favicon (`assets/favicon.svg`) and/or add your own images in `assets/`
