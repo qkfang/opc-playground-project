@@ -52,7 +52,13 @@ to_epoch() {
     return 0
   fi
 
-  date -j -u -f "%b %e %T %Y %Z" "${cert_date}" +%s
+  if date -j -u -f "%b %e %T %Y %Z" "${cert_date}" +%s >/dev/null 2>&1; then
+    date -j -u -f "%b %e %T %Y %Z" "${cert_date}" +%s
+    return 0
+  fi
+
+  echo "Could not parse certificate date: ${cert_date}" >&2
+  exit 1
 }
 
 NOW_EPOCH="$(date -u +%s)"

@@ -59,7 +59,7 @@ Then visit: <http://localhost:8000>
 Manual verification:
 
 ```bash
-npm run check:tls -- your-domain.example
+npm run check:tls -- example.com
 ```
 
 This verifies:
