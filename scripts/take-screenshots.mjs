@@ -6,20 +6,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const root = resolve(__dirname, '..');
-const htmlPath = resolve(root, 'index.html');
 const outDir = resolve(root, 'assets');
 
-const viewports = [
-  { name: 'desktop', width: 1440, height: 900 },
-  { name: 'mobile', width: 430, height: 932 },
+const pages = [
+  { file: 'index.html', name: 'desktop', width: 1440, height: 900 },
+  { file: 'index.html', name: 'mobile',  width: 430,  height: 932 },
 ];
-
-const url = new URL(`file:///${htmlPath.replace(/\\/g, '/')}`);
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
 
-for (const vp of viewports) {
+for (const vp of pages) {
+  const htmlPath = resolve(root, vp.file);
+  const url = new URL(`file:///${htmlPath.replace(/\\/g, '/')}`);
+
   await page.setViewportSize({ width: vp.width, height: vp.height });
   await page.goto(url.toString(), { waitUntil: 'networkidle' });
   await page.waitForTimeout(250);

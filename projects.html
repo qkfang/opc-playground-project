@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Projects — OPC Project 1</title>
+  <meta name="description" content="Robotics projects by OPC Project 1: autonomous navigation, manipulation, aerial systems, and more." />
+  <link rel="canonical" href="https://qkfang.github.io/opc-project-1/projects.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="OPC Project 1" />
+  <meta property="og:title" content="Projects — OPC Project 1" />
+  <meta property="og:description" content="Robotics projects by OPC Project 1: autonomous navigation, manipulation, aerial systems, and more." />
+  <meta property="og:url" content="https://qkfang.github.io/opc-project-1/projects.html" />
+
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a class="brand" href="./index.html">
+        <div class="brand__mark" aria-hidden="true">⚙</div>
+        <div class="brand__text">
+          <div class="brand__name">OPC Project 1</div>
+          <div class="brand__tag">Robotics Lab</div>
+        </div>
+      </a>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="./index.html">Home</a>
+        <a href="./projects.html" aria-current="page">Projects</a>
+        <a href="./updates.html">Updates</a>
+        <a class="btn btn--small" href="./contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="kicker">Research &amp; Engineering</p>
+        <h1>Projects</h1>
+        <p class="lead">
+          Active and completed robotics projects — from ground rovers and manipulation arms
+          to aerial systems. Each card links to documentation, source code, and demos.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="projects-list">
+      <div class="container">
+
+        <!-- To add a project: copy one <article class="project-card"> block and fill in the fields. -->
+
+        <div class="project-grid">
+
+          <article class="project-card">
+            <div class="project-card__header">
+              <h2 class="project-card__title">Autonomous Indoor Navigation</h2>
+              <span class="status status--active">Active</span>
+            </div>
+            <p class="project-card__desc">
+              End-to-end navigation stack for a differential-drive rover operating indoors.
+              Integrates real-time SLAM, obstacle avoidance, and waypoint-following with a
+              sub-10 cm localization error on a repeatable hallway circuit.
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">ROS 2</span>
+              <span class="tag">SLAM</span>
+              <span class="tag">LiDAR</span>
+              <span class="tag">Nav2</span>
+              <span class="tag">C++</span>
+            </div>
+            <div class="project-card__links">
+              <a class="btn btn--small btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">Code</a>
+              <a class="link" href="./updates.html">Build log →</a>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <div class="project-card__header">
+              <h2 class="project-card__title">Vision-Guided Manipulation</h2>
+              <span class="status status--active">Active</span>
+            </div>
+            <p class="project-card__desc">
+              6-DoF robotic arm with a depth-camera perception pipeline for bin-picking and
+              tabletop assembly tasks. Uses a learned grasp-pose estimator and MoveIt 2 for
+              motion planning, achieving &gt;90 % grasp success on unseen objects.
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">ROS 2</span>
+              <span class="tag">MoveIt 2</span>
+              <span class="tag">Python</span>
+              <span class="tag">OpenCV</span>
+              <span class="tag">PyTorch</span>
+            </div>
+            <div class="project-card__links">
+              <a class="btn btn--small btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">Code</a>
+              <a class="link" href="./updates.html">Build log →</a>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <div class="project-card__header">
+              <h2 class="project-card__title">Micro-Drone Waypoint Flight</h2>
+              <span class="status status--in-progress">In Progress</span>
+            </div>
+            <p class="project-card__desc">
+              250 mm quadrotor platform running PX4 with a companion-computer vision stack
+              for GPS-denied indoor flight. Current focus: optical-flow altitude hold and
+              autonomous waypoint sequencing in cluttered environments.
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">PX4</span>
+              <span class="tag">MAVLink</span>
+              <span class="tag">Python</span>
+              <span class="tag">Optical Flow</span>
+              <span class="tag">ROS 2</span>
+            </div>
+            <div class="project-card__links">
+              <a class="btn btn--small btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">Code</a>
+              <a class="link" href="./updates.html">Build log →</a>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <div class="project-card__header">
+              <h2 class="project-card__title">Hardware Motor Controller</h2>
+              <span class="status status--complete">Complete</span>
+            </div>
+            <p class="project-card__desc">
+              Custom STM32-based brushless motor controller with CAN bus interface.
+              Supports FOC torque/speed control, real-time diagnostics, and a Python
+              configuration tool. Designed to be drop-in compatible with ROS 2 hardware_interface.
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">STM32</span>
+              <span class="tag">CAN bus</span>
+              <span class="tag">FOC</span>
+              <span class="tag">C</span>
+              <span class="tag">Python</span>
+            </div>
+            <div class="project-card__links">
+              <a class="btn btn--small btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">Code</a>
+              <a class="link" href="./updates.html">Build log →</a>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <div class="project-card__header">
+              <h2 class="project-card__title">Simulation Environment</h2>
+              <span class="status status--active">Active</span>
+            </div>
+            <p class="project-card__desc">
+              Gazebo Sim world and robot models matching our physical platforms, enabling
+              hardware-in-the-loop testing and rapid algorithm iteration. Includes scripted
+              scenario runners and automated CI regression checks.
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">Gazebo</span>
+              <span class="tag">ROS 2</span>
+              <span class="tag">SDF</span>
+              <span class="tag">Python</span>
+              <span class="tag">GitHub Actions</span>
+            </div>
+            <div class="project-card__links">
+              <a class="btn btn--small btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">Code</a>
+              <a class="link" href="./updates.html">Build log →</a>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <div class="project-card__header">
+              <h2 class="project-card__title">Terrain-Adaptive Locomotion</h2>
+              <span class="status status--in-progress">In Progress</span>
+            </div>
+            <p class="project-card__desc">
+              Research project exploring reinforcement-learning–based gait control for a
+              legged platform. Training in Isaac Lab sim with sim-to-real transfer targeting
+              stable locomotion over gravel, grass, and low-obstacle terrain.
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">Isaac Lab</span>
+              <span class="tag">RL</span>
+              <span class="tag">Python</span>
+              <span class="tag">PyTorch</span>
+              <span class="tag">Sim-to-Real</span>
+            </div>
+            <div class="project-card__links">
+              <a class="btn btn--small btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">Code</a>
+              <a class="link" href="./updates.html">Build log →</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> OPC Project 1</span>
+      <nav class="footer__nav" aria-label="Footer">
+        <a class="link" href="./index.html">Home</a>
+        <a class="link" href="./projects.html">Projects</a>
+        <a class="link" href="./updates.html">Updates</a>
+        <a class="link" href="./contact.html">Contact</a>
+      </nav>
+      <a class="link" href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>

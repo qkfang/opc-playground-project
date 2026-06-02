@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Updates — OPC Project 1</title>
+  <meta name="description" content="Latest milestones, test results, and build log for OPC Project 1 robotics." />
+  <link rel="canonical" href="https://qkfang.github.io/opc-project-1/updates.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="OPC Project 1" />
+  <meta property="og:title" content="Updates — OPC Project 1" />
+  <meta property="og:description" content="Latest milestones, test results, and build log for OPC Project 1 robotics." />
+  <meta property="og:url" content="https://qkfang.github.io/opc-project-1/updates.html" />
+
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a class="brand" href="./index.html">
+        <div class="brand__mark" aria-hidden="true">⚙</div>
+        <div class="brand__text">
+          <div class="brand__name">OPC Project 1</div>
+          <div class="brand__tag">Robotics Lab</div>
+        </div>
+      </a>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="./index.html">Home</a>
+        <a href="./projects.html">Projects</a>
+        <a href="./updates.html" aria-current="page">Updates</a>
+        <a class="btn btn--small" href="./contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="kicker">Build Log &amp; Milestones</p>
+        <h1>Updates</h1>
+        <p class="lead">
+          Reverse-chronological log of milestones, test results, and notable changes across
+          all OPC Project 1 initiatives. New entries are added as work progresses.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="updates-list">
+      <div class="container">
+
+        <!-- To add an update: copy one <article class="update"> block, set the date, title, and body. -->
+        <!-- Keep entries in reverse-chronological order (newest first). -->
+
+        <div class="timeline" id="timeline">
+
+          <article class="update">
+            <div class="update__date">2026-06-01</div>
+            <div>
+              <div class="update__title">Multi-page site launched</div>
+              <p class="update__body">
+                Redesigned the project website with dedicated pages for Home, Projects, Updates,
+                and Contact. Added project cards with tags and status badges, a contact form,
+                and a quick-links section on the home page. Deployed on GitHub Pages.
+              </p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-05-30</div>
+            <div>
+              <div class="update__title">Site scaffolded</div>
+              <p class="update__body">
+                Initial landing page, sections, and a live telemetry demo added.
+                Vanilla HTML/CSS/JS stack chosen for fast GitHub Pages deployment with no build step.
+              </p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-05-28</div>
+            <div>
+              <div class="update__title">Navigation baseline</div>
+              <p class="update__body">
+                Configured mapping + localization pipeline on the indoor rover;
+                started collecting repeatable hallway datasets. Localization error
+                down to ±8 cm on the 30 m test circuit.
+              </p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-05-20</div>
+            <div>
+              <div class="update__title">Hardware bring-up</div>
+              <p class="update__body">
+                Motor drivers tuned; safety E-stop and current limits verified on the bench.
+                All three platforms (rover, arm, drone) successfully power-cycled with
+                diagnostics reporting nominal.
+              </p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-05-10</div>
+            <div>
+              <div class="update__title">Simulation environment merged</div>
+              <p class="update__body">
+                Gazebo world and robot models checked in. CI pipeline runs headless
+                navigation smoke tests on every pull request. First sim-to-real transfer
+                test scheduled for next sprint.
+              </p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-04-28</div>
+            <div>
+              <div class="update__title">Manipulation arm first grasp</div>
+              <p class="update__body">
+                Vision-guided manipulation arm achieved its first successful autonomous pick
+                from a cluttered bin. Grasp success rate of 76 % on the initial object set;
+                tuning the depth-camera pose estimator to improve coverage.
+              </p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-04-15</div>
+            <div>
+              <div class="update__title">Motor controller v1.0 released</div>
+              <p class="update__body">
+                Custom STM32 brushless motor controller flashed, tested, and documented.
+                CAN bus interface validated at 1 Mbit/s. Firmware and schematics published
+                under MIT license in the repository.
+              </p>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> OPC Project 1</span>
+      <nav class="footer__nav" aria-label="Footer">
+        <a class="link" href="./index.html">Home</a>
+        <a class="link" href="./projects.html">Projects</a>
+        <a class="link" href="./updates.html">Updates</a>
+        <a class="link" href="./contact.html">Contact</a>
+      </nav>
+      <a class="link" href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>

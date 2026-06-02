@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — OPC Project 1</title>
+  <meta name="description" content="Get in touch with the OPC Project 1 robotics team." />
+  <link rel="canonical" href="https://qkfang.github.io/opc-project-1/contact.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="OPC Project 1" />
+  <meta property="og:title" content="Contact — OPC Project 1" />
+  <meta property="og:description" content="Get in touch with the OPC Project 1 robotics team." />
+  <meta property="og:url" content="https://qkfang.github.io/opc-project-1/contact.html" />
+
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a class="brand" href="./index.html">
+        <div class="brand__mark" aria-hidden="true">⚙</div>
+        <div class="brand__text">
+          <div class="brand__name">OPC Project 1</div>
+          <div class="brand__tag">Robotics Lab</div>
+        </div>
+      </a>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="./index.html">Home</a>
+        <a href="./projects.html">Projects</a>
+        <a href="./updates.html">Updates</a>
+        <a class="btn btn--small" href="./contact.html" aria-current="page">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="kicker">Get in touch</p>
+        <h1>Contact</h1>
+        <p class="lead">
+          Questions about a project, collaboration proposals, or just want to say hi?
+          Reach us through any of the channels below.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="contact-links">
+      <div class="container contact-layout">
+
+        <div>
+          <h2>Direct links</h2>
+          <p class="muted" style="margin-top:6px;margin-bottom:18px;">
+            Replace these placeholders with your real email and social handles.
+          </p>
+
+          <div class="contact-channels">
+            <a class="contact-channel" href="mailto:you@example.com">
+              <span class="contact-channel__icon" aria-hidden="true">✉</span>
+              <div>
+                <div class="contact-channel__label">Email</div>
+                <div class="contact-channel__value muted">you@example.com</div>
+              </div>
+            </a>
+
+            <a class="contact-channel" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">
+              <span class="contact-channel__icon" aria-hidden="true">⚙</span>
+              <div>
+                <div class="contact-channel__label">GitHub</div>
+                <div class="contact-channel__value muted">qkfang/opc-project-1</div>
+              </div>
+            </a>
+
+            <a class="contact-channel" href="https://twitter.com/" target="_blank" rel="noreferrer">
+              <span class="contact-channel__icon" aria-hidden="true">𝕏</span>
+              <div>
+                <div class="contact-channel__label">X / Twitter</div>
+                <div class="contact-channel__value muted">@yourhandle</div>
+              </div>
+            </a>
+
+            <a class="contact-channel" href="https://www.linkedin.com/" target="_blank" rel="noreferrer">
+              <span class="contact-channel__icon" aria-hidden="true">in</span>
+              <div>
+                <div class="contact-channel__label">LinkedIn</div>
+                <div class="contact-channel__value muted">linkedin.com/in/yourprofile</div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h2>Send a message</h2>
+          <p class="muted" style="margin-top:6px;margin-bottom:18px;">
+            Fill in the form and we'll get back to you.
+            <!-- Note: this form uses mailto: — no server required. -->
+            <!-- For a real backend, replace the action URL with your endpoint or a service like Formspree. -->
+          </p>
+
+          <form
+            class="contact-form"
+            id="contactForm"
+            action="mailto:you@example.com"
+            method="post"
+            enctype="text/plain"
+            novalidate
+          >
+            <div class="form-group">
+              <label class="form-label" for="contactName">Name <span aria-hidden="true">*</span></label>
+              <input
+                class="form-input"
+                type="text"
+                id="contactName"
+                name="name"
+                placeholder="Your name"
+                required
+                autocomplete="name"
+              />
+              <span class="form-error" id="nameError" role="alert" hidden>Please enter your name.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contactEmail">Email <span aria-hidden="true">*</span></label>
+              <input
+                class="form-input"
+                type="email"
+                id="contactEmail"
+                name="email"
+                placeholder="you@example.com"
+                required
+                autocomplete="email"
+              />
+              <span class="form-error" id="emailError" role="alert" hidden>Please enter a valid email address.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contactSubject">Subject</label>
+              <input
+                class="form-input"
+                type="text"
+                id="contactSubject"
+                name="subject"
+                placeholder="What's this about?"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contactMessage">Message <span aria-hidden="true">*</span></label>
+              <textarea
+                class="form-input form-textarea"
+                id="contactMessage"
+                name="message"
+                placeholder="Your message…"
+                rows="5"
+                required
+              ></textarea>
+              <span class="form-error" id="messageError" role="alert" hidden>Please enter a message.</span>
+            </div>
+
+            <button class="btn" type="submit">Send message</button>
+
+            <p class="form-note muted">
+              This form opens your email client with the details pre-filled.
+              Alternatively, email us directly at
+              <a class="link" href="mailto:you@example.com">you@example.com</a>.
+            </p>
+          </form>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> OPC Project 1</span>
+      <nav class="footer__nav" aria-label="Footer">
+        <a class="link" href="./index.html">Home</a>
+        <a class="link" href="./projects.html">Projects</a>
+        <a class="link" href="./updates.html">Updates</a>
+        <a class="link" href="./contact.html">Contact</a>
+      </nav>
+      <a class="link" href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>

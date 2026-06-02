@@ -1,54 +1,8 @@
-/* Minimal interactivity + sample update timeline */
+/* Minimal interactivity for multi-page robotics site */
 
 const $ = (id) => document.getElementById(id);
 // Fallback for cases where header height cannot be read.
 const SCROLL_OFFSET_PX = 140;
-
-const updates = [
-  {
-    date: "2026-05-30",
-    title: "Site scaffolded",
-    body: "Landing page, sections, and a simple telemetry demo added. Replace placeholders with your real content."
-  },
-  {
-    date: "2026-05-28",
-    title: "Navigation baseline",
-    body: "Configured mapping + localization pipeline; started collecting repeatable hallway datasets."
-  },
-  {
-    date: "2026-05-20",
-    title: "Hardware bring-up",
-    body: "Motor drivers tuned; safety E-stop and current limits verified on the bench."
-  }
-];
-
-function renderTimeline(items = updates){
-  const root = $("timeline");
-  const state = $("timelineState");
-  if(!root) return;
-  try {
-    if(!Array.isArray(items)) throw new Error(`Expected updates array, received ${typeof items}`);
-    if(items.length === 0){
-      root.innerHTML = "";
-      if(state) state.textContent = "No updates yet. Check back soon for milestones.";
-      return;
-    }
-    root.innerHTML = items.map(u => `
-      <article class="update">
-        <div class="update__date">${escapeHtml(u.date)}</div>
-        <div>
-          <div class="update__title">${escapeHtml(u.title)}</div>
-          <p class="update__body">${escapeHtml(u.body)}</p>
-        </div>
-      </article>
-    `).join("");
-    if(state) state.hidden = true;
-  } catch (err) {
-    root.innerHTML = "";
-    if(state) state.textContent = "We couldn’t load updates right now. Please refresh to try again.";
-    console.error(err);
-  }
-}
 
 function escapeHtml(s){
   return String(s)
@@ -67,47 +21,22 @@ function setText(id, value){
 function boot(){
   setText("year", String(new Date().getFullYear()));
 
-  // Stats (static-ish)
+  // Stats (static-ish — update these to reflect real numbers)
   setText("statRuns", "128");
   setText("statUptime", "97.3%");
   setText("statBuild", "v0.1.0");
 
-  renderTimeline();
-  initNavState();
+  initTelemetryDemo();
+  initContactForm();
+}
 
+/* --- Telemetry demo (Home page only) --- */
+
+function initTelemetryDemo(){
   const btn = $("runDemo");
   if(btn){
     btn.addEventListener("click", runTelemetryDemo);
   }
-}
-
-function initNavState(){
-  const nav = document.querySelector(".nav");
-  if(!nav) return;
-  const links = Array.from(nav.querySelectorAll('a[href^="#"]'));
-  const sections = links
-    .map((link) => document.querySelector(link.getAttribute("href")))
-    .filter(Boolean);
-  if(links.length === 0 || sections.length === 0) return;
-
-  const header = document.querySelector(".header");
-  const setActive = () => {
-    const scrollOffsetPx = (header?.offsetHeight ?? SCROLL_OFFSET_PX) + 16;
-    const y = window.scrollY + scrollOffsetPx;
-    let activeId = sections[0].id;
-    for (const section of sections) {
-      if(section.offsetTop <= y) activeId = section.id;
-    }
-    for (const link of links) {
-      const isActive = link.getAttribute("href") === `#${activeId}`;
-      link.classList.toggle("is-active", isActive);
-      if(isActive) link.setAttribute("aria-current", "location");
-      else link.removeAttribute("aria-current");
-    }
-  }
-
-  setActive();
-  window.addEventListener("scroll", setActive, { passive: true });
 }
 
 let demoTimer = null;
@@ -140,6 +69,59 @@ function runTelemetryDemo(){
       setText("tStatus", "Standby" );
     }
   }, 200);
+}
+
+/* --- Contact form client-side validation (Contact page only) --- */
+
+function initContactForm(){
+  const form = $("contactForm");
+  if(!form) return;
+
+  form.addEventListener("submit", (e) => {
+    let valid = true;
+
+    const name = $("contactName");
+    const nameErr = $("nameError");
+    if(name && nameErr){
+      if(!name.value.trim()){
+        nameErr.hidden = false;
+        name.setAttribute("aria-invalid", "true");
+        valid = false;
+      } else {
+        nameErr.hidden = true;
+        name.removeAttribute("aria-invalid");
+      }
+    }
+
+    const email = $("contactEmail");
+    const emailErr = $("emailError");
+    if(email && emailErr){
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+      if(!emailOk){
+        emailErr.hidden = false;
+        email.setAttribute("aria-invalid", "true");
+        valid = false;
+      } else {
+        emailErr.hidden = true;
+        email.removeAttribute("aria-invalid");
+      }
+    }
+
+    const msg = $("contactMessage");
+    const msgErr = $("messageError");
+    if(msg && msgErr){
+      if(!msg.value.trim()){
+        msgErr.hidden = false;
+        msg.setAttribute("aria-invalid", "true");
+        valid = false;
+      } else {
+        msgErr.hidden = true;
+        msg.removeAttribute("aria-invalid");
+      }
+    }
+
+    if(!valid) e.preventDefault();
+  });
 }
 
 document.addEventListener("DOMContentLoaded", boot);
