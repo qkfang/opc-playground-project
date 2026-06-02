@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Updates — OPC Project 1</title>
+  <meta name="description" content="Changelog and milestones for OPC Project 1 robotics lab." />
+  <link rel="canonical" href="https://qkfang.github.io/opc-project-1/updates.html" />
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a class="brand" href="./index.html">
+        <div class="brand__mark" aria-hidden="true">⚙</div>
+        <div class="brand__text">
+          <div class="brand__name">OPC Project 1</div>
+          <div class="brand__tag">Robotics Lab</div>
+        </div>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="./index.html">Home</a>
+        <a href="./projects.html">Projects</a>
+        <a href="./updates.html" class="is-active" aria-current="page">Updates</a>
+        <a class="btn btn--small" href="./contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <h1 class="page-h1">Updates</h1>
+            <p class="muted">A reverse-chronological log of milestones and test results.</p>
+          </div>
+        </div>
+        <p class="timeline__state muted" id="timelineState" role="status">Loading updates…</p>
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> OPC Project 1</span>
+      <a class="link" href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script src="./site-data.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
