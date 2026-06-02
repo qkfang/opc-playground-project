@@ -1,14 +1,17 @@
 # opc-project-1 — Robotics Website
 
-A simple, fast, one-page robotics project website built with **vanilla HTML/CSS/JS**, designed to deploy cleanly on **GitHub Pages**.
+A multi-page robotics project website built with **vanilla HTML/CSS/JS**, designed to deploy cleanly on **GitHub Pages**.
 
 ## Overview
 
-This repo contains a polished single-page site you can use for a robotics team, lab, or project:
+The site has four pages:
 
-- Sectioned landing page (About / Robots / Demos / Team / Updates / Contact)
-- Responsive layout and modern styling
-- Small interactive “telemetry” demo in the browser
+| Page | File | Purpose |
+|------|------|---------|
+| **Home** | `index.html` | Hero section, about cards, quick-links |
+| **Projects** | `projects.html` | Project cards with tags, status badges, and links |
+| **Updates** | `updates.html` | Reverse-chronological build log with dates |
+| **Contact** | `contact.html` | Direct links + a no-backend contact form |
 
 ## Screenshots
 
@@ -23,9 +26,9 @@ This repo contains a polished single-page site you can use for a robotics team, 
 ## Features
 
 - **Fast + lightweight:** no framework, minimal JavaScript
-- **Responsive:** looks good on desktop and mobile
-- **Easy to edit:** update content directly in `index.html`
-- **GitHub Pages friendly:** deploy from `main` with a couple clicks
+- **Responsive:** tested on desktop, tablet, and mobile viewports
+- **Easy to edit:** update content directly in the HTML files
+- **GitHub Pages friendly:** deploy from `main` with a couple of clicks
 
 ## Run locally
 
@@ -48,22 +51,70 @@ Then visit: <http://localhost:8000>
    - **Source:** Deploy from a branch
    - **Branch:** `main`
    - **Folder:** `/(root)`
-3. Save — Pages will publish the site.
+3. Save — Pages will publish the site at `https://<your-username>.github.io/opc-project-1/`
 
-## Customization checklist
+## How to edit content
 
-Common edits in `index.html`:
+### Home page (`index.html`)
 
-- [ ] Project/team name + tagline
-- [ ] About section copy
-- [ ] Robots list (names, specs, status)
-- [ ] Demo links (videos, papers, repositories)
-- [ ] Team roster (names, roles, links)
-- [ ] Updates/timeline items
-- [ ] Contact info (email, socials)
+- **Tagline / hero copy** — edit the `<h1>` and `<p class="lead">` inside `<section class="hero">`
+- **About cards** — update the three `<article class="card">` elements inside `#about`
+- **Quick-links** — the four `<a class="quick-link">` anchors in the `.quick-links` div
+- **Stats** — change the numbers in `script.js` (the `setText("statRuns", …)` calls in `boot()`)
+- **Telemetry demo** — adjust simulation logic in `runTelemetryDemo()` in `script.js`
 
-Optional tweaks:
+### Projects page (`projects.html`)
 
+Each project is an `<article class="project-card">` block inside `.project-grid`. To add a project:
+
+1. Copy an existing `<article class="project-card">…</article>` block.
+2. Update:
+   - `<h2 class="project-card__title">` — project name
+   - `<span class="status status--active">` — status badge (`status--active`, `status--in-progress`, or `status--complete`)
+   - `<p class="project-card__desc">` — short description
+   - `<span class="tag">` elements — technology tags
+   - `<a>` links inside `.project-card__links` — repo, demo, paper
+
+### Updates page (`updates.html`)
+
+Each entry is an `<article class="update">` block inside `.timeline`. To add an update:
+
+1. Copy an existing `<article class="update">…</article>` block.
+2. Insert it **at the top** of the `.timeline` div (newest first).
+3. Set:
+   - `<div class="update__date">` — date in `YYYY-MM-DD` format
+   - `<div class="update__title">` — short title
+   - `<p class="update__body">` — description paragraph
+
+### Contact page (`contact.html`)
+
+- **Email / social links** — update the `<a class="contact-channel">` anchors and their `href` values
+- **Form action** — change `action="mailto:you@example.com"` on the `<form>` to your real email
+- **Backend form** — replace the `mailto:` action with a service like [Formspree](https://formspree.io/) or [Netlify Forms](https://www.netlify.com/products/forms/) if you want submissions delivered without opening the email client
+
+### Colors and typography (`styles.css`)
+
+All design tokens are CSS custom properties at the top of `styles.css`:
+
+```css
+:root {
+  --bg: #070A12;        /* page background */
+  --accent: #3B82F6;    /* primary accent (blue) */
+  --accent2: #60A5FA;   /* lighter accent */
+  /* … */
+}
+```
+
+### Favicon (`assets/favicon.svg`)
+
+Replace `assets/favicon.svg` with your own SVG logo.
+
+## Optional tweaks
+
+- [ ] Replace placeholder email and social links in `contact.html`
+- [ ] Update project entries in `projects.html`
+- [ ] Add more update entries in `updates.html`
+- [ ] Update the team / stats on the home page
+- [ ] Swap `assets/favicon.svg` for your real icon
 - [ ] Update colors/typography in `styles.css`
-- [ ] Adjust the telemetry demo behavior in `script.js`
-- [ ] Replace the favicon (`assets/favicon.svg`) and/or add your own images in `assets/`
+
