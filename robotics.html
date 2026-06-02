@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Robotics — OPC Project 1</title>
+  <meta name="description" content="Explore our robotics platform: what we do, project highlights, latest updates, and how to get in touch." />
+  <link rel="canonical" href="https://qkfang.github.io/opc-project-1/robotics.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="OPC Project 1" />
+  <meta property="og:title" content="Robotics — OPC Project 1" />
+  <meta property="og:description" content="Explore our robotics platform: what we do, project highlights, latest updates, and how to get in touch." />
+  <meta property="og:url" content="https://qkfang.github.io/opc-project-1/robotics.html" />
+  <meta property="og:image" content="https://qkfang.github.io/opc-project-1/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Robotics — OPC Project 1" />
+  <meta name="twitter:description" content="Explore our robotics platform: what we do, project highlights, latest updates, and how to get in touch." />
+  <meta name="twitter:image" content="https://qkfang.github.io/opc-project-1/assets/og-image.png" />
+
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a class="brand" href="./index.html" aria-label="OPC Project 1 — home">
+        <div class="brand__mark" aria-hidden="true">⚙</div>
+        <div class="brand__text">
+          <div class="brand__name">OPC Project 1</div>
+          <div class="brand__tag">Robotics Lab Site</div>
+        </div>
+      </a>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="./index.html">Home</a>
+        <a href="#what-we-do">What We Do</a>
+        <a href="#projects">Projects</a>
+        <a href="#news">Updates</a>
+        <a class="btn btn--small" href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <p class="kicker">Perceive • Plan • Act</p>
+          <h1>Robotics that works in the real world.</h1>
+          <p class="lead">
+            We build autonomous systems that sense their environment, reason about it,
+            and take reliable action — from indoor navigation to precision manipulation.
+          </p>
+          <div class="hero__cta">
+            <a class="btn" href="#projects">See our projects</a>
+            <a class="btn btn--ghost" href="#what-we-do">What we do</a>
+          </div>
+        </div>
+
+        <div class="hero__panel" aria-label="Robotics capabilities overview">
+          <div class="panel">
+            <div class="panel__title">Core capabilities</div>
+            <ul class="stack">
+              <li><span class="pill">Perception</span> stereo vision, LiDAR, depth sensing</li>
+              <li><span class="pill">SLAM</span> real-time mapping &amp; localization</li>
+              <li><span class="pill">Planning</span> path planning &amp; motion generation</li>
+              <li><span class="pill">Manipulation</span> grasping, pick-and-place</li>
+              <li><span class="pill">Fleet</span> multi-robot coordination</li>
+            </ul>
+            <div class="panel__footer">
+              <a class="btn btn--small" href="#projects">Explore projects</a>
+              <a class="link" href="#news">Latest news →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What We Do -->
+    <section class="section" id="what-we-do">
+      <div class="container">
+        <div class="section__head">
+          <h2>What we do</h2>
+          <p class="muted">End-to-end autonomous systems research and development.</p>
+        </div>
+
+        <div class="cards">
+          <article class="card">
+            <h3>Autonomous Navigation</h3>
+            <p>We develop perception-driven navigation stacks that let robots explore, map, and reliably traverse complex indoor and outdoor environments.</p>
+          </article>
+          <article class="card">
+            <h3>Manipulation &amp; Grasping</h3>
+            <p>Our robotic arms use vision-based grasp planning to handle diverse objects — from structured bin-picking to unstructured tabletop tasks.</p>
+          </article>
+          <article class="card">
+            <h3>Safety &amp; Verification</h3>
+            <p>Every system ships with hardware E-stops, software safety envelopes, and repeatable test suites so we can validate behavior before any real-world run.</p>
+          </article>
+        </div>
+
+        <div class="cards" style="margin-top: 12px;">
+          <article class="card">
+            <h3>Sensor Fusion</h3>
+            <p>We fuse cameras, LiDAR, IMU, and wheel odometry through probabilistic filters to produce robust state estimates even under sensor degradation.</p>
+          </article>
+          <article class="card">
+            <h3>Simulation &amp; Testing</h3>
+            <p>Closed-loop simulation lets us run thousands of scenario variants overnight, catching edge cases before they reach hardware.</p>
+          </article>
+          <article class="card">
+            <h3>Open-Source Tooling</h3>
+            <p>Design documents, build logs, ROS nodes, and experiment results are published openly so the community can build on our work.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project Highlights -->
+    <section class="section" id="projects">
+      <div class="container">
+        <div class="section__head">
+          <h2>Project highlights</h2>
+          <p class="muted">Our current active platforms and experiments.</p>
+        </div>
+
+        <div class="grid grid--3">
+          <article class="robot">
+            <h3>Rover-1 — Indoor SLAM</h3>
+            <p class="muted">Differential-drive testbed for navigation and mapping in dynamic environments.</p>
+            <ul class="specs">
+              <li><strong>Sensors:</strong> stereo camera, IMU, LiDAR</li>
+              <li><strong>Compute:</strong> edge GPU (NVIDIA Orin)</li>
+              <li><strong>Stack:</strong> ROS 2, Nav2, RTAB-Map</li>
+              <li><strong>Status:</strong> active testing</li>
+            </ul>
+            <div class="robot__links">
+              <span class="muted" aria-label="Documentation coming soon">Docs (coming soon)</span>
+              <span class="muted">Code (coming soon)</span>
+            </div>
+          </article>
+
+          <article class="robot">
+            <h3>Arm-2 — Bin Picking</h3>
+            <p class="muted">6-DoF arm with perception-driven grasping for tabletop manipulation tasks.</p>
+            <ul class="specs">
+              <li><strong>Payload:</strong> 1–2 kg</li>
+              <li><strong>End-effector:</strong> parallel gripper</li>
+              <li><strong>Stack:</strong> MoveIt 2, depth-based grasp planner</li>
+              <li><strong>Status:</strong> integration testing</li>
+            </ul>
+            <div class="robot__links">
+              <span class="muted" aria-label="URDF coming soon">URDF (coming soon)</span>
+              <span class="muted">ROS nodes (coming soon)</span>
+            </div>
+          </article>
+
+          <article class="robot">
+            <h3>Drone-3 — Outdoor Nav</h3>
+            <p class="muted">Vision-aided quadrotor for GPS-denied waypoint navigation.</p>
+            <ul class="specs">
+              <li><strong>Frame:</strong> 250 mm racing frame</li>
+              <li><strong>Autopilot:</strong> PX4 + companion computer</li>
+              <li><strong>Stack:</strong> VIO, custom planner</li>
+              <li><strong>Status:</strong> hardware bring-up</li>
+            </ul>
+            <div class="robot__links">
+              <span class="muted" aria-label="Flight logs coming soon">Flight logs (coming soon)</span>
+              <span class="muted">Videos (coming soon)</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Updates / News teaser -->
+    <section class="section" id="news">
+      <div class="container">
+        <div class="section__head">
+          <h2>Latest updates</h2>
+          <p class="muted">Recent milestones and test results.</p>
+        </div>
+
+        <div class="timeline">
+          <article class="update">
+            <div class="update__date">2026-05-30</div>
+            <div>
+              <div class="update__title">Site scaffolded</div>
+              <p class="update__body">Landing page, sections, and a simple telemetry demo added. Replace placeholders with your real content.</p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-05-28</div>
+            <div>
+              <div class="update__title">Navigation baseline</div>
+              <p class="update__body">Configured mapping + localization pipeline; started collecting repeatable hallway datasets.</p>
+            </div>
+          </article>
+
+          <article class="update">
+            <div class="update__date">2026-05-20</div>
+            <div>
+              <div class="update__title">Hardware bring-up</div>
+              <p class="update__body">Motor drivers tuned; safety E-stop and current limits verified on the bench.</p>
+            </div>
+          </article>
+        </div>
+
+        <p style="margin-top: 18px;">
+          <a class="link" href="./index.html#updates">See all updates on the main page →</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- Contact CTA -->
+    <section class="section" id="contact">
+      <div class="container">
+        <div class="section__head">
+          <h2>Get in touch</h2>
+          <p class="muted">Interested in collaborating, contributing, or just learning more?</p>
+        </div>
+
+        <div class="contact">
+          <a class="btn" href="mailto:you@example.com">Email us</a>
+          <a class="btn btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">View on GitHub</a>
+          <a class="btn btn--ghost" href="./index.html">Back to home</a>
+        </div>
+
+        <p class="footnote">
+          Site hosted on GitHub Pages. Enable via Settings → Pages → Deploy from branch → <code>main</code> / <code>/(root)</code>.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> OPC Project 1</span>
+      <a class="link" href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script>
+    /* Minimal boot for the robotics page */
+    document.addEventListener("DOMContentLoaded", function () {
+      const yearEl = document.getElementById("year");
+      if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+      /* Highlight active nav link based on scroll position */
+      const nav = document.querySelector(".nav");
+      if (!nav) return;
+      const links = Array.from(nav.querySelectorAll('a[href^="#"]'));
+      const sections = links
+        .map((link) => document.querySelector(link.getAttribute("href")))
+        .filter(Boolean);
+      if (links.length === 0 || sections.length === 0) return;
+
+      const header = document.querySelector(".header");
+      const OFFSET = 140;
+      const setActive = () => {
+        const scrollOffsetPx = (header ? header.offsetHeight : OFFSET) + 16;
+        const y = window.scrollY + scrollOffsetPx;
+        let activeId = sections[0].id;
+        for (const section of sections) {
+          if (section.offsetTop <= y) activeId = section.id;
+        }
+        for (const link of links) {
+          const isActive = link.getAttribute("href") === "#" + activeId;
+          link.classList.toggle("is-active", isActive);
+          if (isActive) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        }
+      };
+      setActive();
+      window.addEventListener("scroll", setActive, { passive: true });
+    });
+  </script>
+</body>
+</html>
