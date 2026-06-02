@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — OPC Project 1</title>
+  <meta name="description" content="Contact the OPC Project 1 robotics team." />
+  <link rel="canonical" href="https://qkfang.github.io/opc-project-1/contact.html" />
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a class="brand" href="./index.html">
+        <div class="brand__mark" aria-hidden="true">⚙</div>
+        <div class="brand__text">
+          <div class="brand__name">OPC Project 1</div>
+          <div class="brand__tag">Robotics Lab</div>
+        </div>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="./index.html">Home</a>
+        <a href="./projects.html">Projects</a>
+        <a href="./updates.html">Updates</a>
+        <a class="btn btn--small is-active" href="./contact.html" aria-current="page">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section">
+      <div class="container contact-page">
+        <div class="section__head">
+          <div>
+            <h1 class="page-h1">Contact</h1>
+            <p class="muted">Get in touch with the team.</p>
+          </div>
+        </div>
+
+        <div class="contact">
+          <a class="btn" href="mailto:you@example.com">Email us</a>
+          <a class="btn btn--ghost" href="https://github.com/qkfang/opc-project-1" target="_blank" rel="noreferrer">GitHub repo</a>
+        </div>
+
+        <form class="contact-form" id="contactForm" aria-label="Send a message">
+          <h2>Send a message</h2>
+          <p class="muted">
+            This is a static site — the form below is wired to open your email client
+            with the message pre-filled. To enable server-side delivery, connect it to a
+            service like <a class="link" href="https://formspree.io" target="_blank" rel="noreferrer">Formspree</a>.
+          </p>
+          <div class="form-group">
+            <label for="contactName">Name</label>
+            <input type="text" id="contactName" name="name" placeholder="Your name" autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="contactEmail">Email</label>
+            <input type="email" id="contactEmail" name="email" placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="contactMessage">Message</label>
+            <textarea id="contactMessage" name="message" rows="5" placeholder="Your message…"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn" type="submit">Send message</button>
+            <p class="form-note muted" id="formNote" aria-live="polite" hidden></p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> OPC Project 1</span>
+      <a class="link" href="#top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script src="./site-data.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

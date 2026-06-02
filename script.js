@@ -1,39 +1,25 @@
-/* Minimal interactivity + sample update timeline */
+/* Minimal interactivity + timeline + project rendering */
 
 const $ = (id) => document.getElementById(id);
 // Fallback for cases where header height cannot be read.
 const SCROLL_OFFSET_PX = 140;
 
-const updates = [
-  {
-    date: "2026-05-30",
-    title: "Site scaffolded",
-    body: "Landing page, sections, and a simple telemetry demo added. Replace placeholders with your real content."
-  },
-  {
-    date: "2026-05-28",
-    title: "Navigation baseline",
-    body: "Configured mapping + localization pipeline; started collecting repeatable hallway datasets."
-  },
-  {
-    date: "2026-05-20",
-    title: "Hardware bring-up",
-    body: "Motor drivers tuned; safety E-stop and current limits verified on the bench."
-  }
-];
+/* ── Updates timeline ─────────────────────────────── */
 
-function renderTimeline(items = updates){
+function renderTimeline(items){
+  // Use UPDATES from site-data.js when available; fall back to empty array.
+  const data = items || (typeof UPDATES !== "undefined" ? UPDATES : []);
   const root = $("timeline");
   const state = $("timelineState");
   if(!root) return;
   try {
-    if(!Array.isArray(items)) throw new Error(`Expected updates array, received ${typeof items}`);
-    if(items.length === 0){
+    if(!Array.isArray(data)) throw new Error(`Expected updates array, received ${typeof data}`);
+    if(data.length === 0){
       root.innerHTML = "";
       if(state) state.textContent = "No updates yet. Check back soon for milestones.";
       return;
     }
-    root.innerHTML = items.map(u => `
+    root.innerHTML = data.map(u => `
       <article class="update">
         <div class="update__date">${escapeHtml(u.date)}</div>
         <div>
@@ -45,10 +31,81 @@ function renderTimeline(items = updates){
     if(state) state.hidden = true;
   } catch (err) {
     root.innerHTML = "";
-    if(state) state.textContent = "We couldn’t load updates right now. Please refresh to try again.";
+    if(state) state.textContent = "We couldn't load updates right now. Please refresh to try again.";
     console.error(err);
   }
 }
+
+/* ── Projects grid ────────────────────────────────── */
+
+const STATUS_LABELS = {
+  "active":       "Active",
+  "in-progress":  "In Progress",
+  "experimental": "Experimental",
+  "archived":     "Archived"
+};
+
+function renderProjects(items){
+  const data = items || (typeof PROJECTS !== "undefined" ? PROJECTS : []);
+  const root = $("projectGrid");
+  const state = $("projectsState");
+  if(!root) return;
+  try {
+    if(!Array.isArray(data)) throw new Error(`Expected projects array, received ${typeof data}`);
+    if(data.length === 0){
+      root.innerHTML = "";
+      if(state){ state.hidden = false; state.textContent = "No projects yet. Check back soon."; }
+      return;
+    }
+    root.innerHTML = data.map(p => {
+      const tags = (p.tags || []).map(t => `<span class="pill">${escapeHtml(t)}</span>`).join("");
+      const statusKey = (p.status || "").toLowerCase().replace(/\s+/g, "-");
+      const statusLabel = STATUS_LABELS[statusKey] || escapeHtml(p.status || "");
+      const links = (p.links || []).map(l =>
+        `<a class="link" href="${escapeHtml(l.href)}"${l.href.startsWith("http") ? ' target="_blank" rel="noreferrer"' : ""}>${escapeHtml(l.label)}</a>`
+      ).join("");
+      return `
+        <article class="project-card">
+          <div class="project-card__head">
+            <h2 class="project-card__title">${escapeHtml(p.title)}</h2>
+            <span class="status-badge status-badge--${escapeHtml(statusKey)}">${statusLabel}</span>
+          </div>
+          <p class="project-card__desc muted">${escapeHtml(p.description)}</p>
+          <div class="project-card__tags">${tags}</div>
+          <div class="project-card__links">${links}</div>
+        </article>
+      `;
+    }).join("");
+    if(state) state.hidden = true;
+  } catch (err) {
+    root.innerHTML = "";
+    if(state){ state.hidden = false; state.textContent = "We couldn't load projects right now. Please refresh to try again."; }
+    console.error(err);
+  }
+}
+
+/* ── Contact form ─────────────────────────────────── */
+
+function initContactForm(){
+  const form = $("contactForm");
+  if(!form) return;
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name    = (form.elements["name"]?.value    || "").trim();
+    const email   = (form.elements["email"]?.value   || "").trim();
+    const message = (form.elements["message"]?.value || "").trim();
+    if(!name || !email || !message){
+      const note = $("formNote");
+      if(note){ note.hidden = false; note.textContent = "Please fill in all fields before sending."; }
+      return;
+    }
+    const subject = encodeURIComponent(`Message from ${name}`);
+    const body    = encodeURIComponent(`From: ${name} <${email}>\n\n${message}`);
+    window.location.href = `mailto:you@example.com?subject=${subject}&body=${body}`;
+  });
+}
+
+/* ── Shared utilities ─────────────────────────────── */
 
 function escapeHtml(s){
   return String(s)
@@ -64,15 +121,19 @@ function setText(id, value){
   if(el) el.textContent = value;
 }
 
+/* ── Boot ─────────────────────────────────────────── */
+
 function boot(){
   setText("year", String(new Date().getFullYear()));
 
-  // Stats (static-ish)
+  // Stats (home page only — IDs absent on other pages so safely no-ops)
   setText("statRuns", "128");
   setText("statUptime", "97.3%");
   setText("statBuild", "v0.1.0");
 
   renderTimeline();
+  renderProjects();
+  initContactForm();
   initNavState();
 
   const btn = $("runDemo");
@@ -143,3 +204,4 @@ function runTelemetryDemo(){
 }
 
 document.addEventListener("DOMContentLoaded", boot);
+
