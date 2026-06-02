@@ -1,0 +1,23 @@
+name: TLS Certificate Check
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check-certificate:
+    runs-on: ubuntu-latest
+    env:
+      SITE_HOST: ${{ vars.SITE_HOST }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check TLS certificate validity
+        run: |
+          if [ -z "${SITE_HOST}" ]; then
+            echo "::error::Repository variable SITE_HOST is required (example: your-domain.com)"
+            exit 1
+          fi
+          bash scripts/check-tls-cert.sh "${SITE_HOST}"

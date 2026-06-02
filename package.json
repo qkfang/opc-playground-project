@@ -4,7 +4,8 @@
   "description": "A simple, fast, one-page robotics project website (HTML/CSS/JS) designed to deploy cleanly on **GitHub Pages**.",
   "main": "script.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check:tls": "bash scripts/check-tls-cert.sh"
   },
   "repository": {
     "type": "git",
