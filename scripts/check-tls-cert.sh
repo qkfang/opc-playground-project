@@ -21,6 +21,12 @@ if [[ -z "${TLS_OUTPUT}" ]]; then
   exit 1
 fi
 
+if ! printf '%s\n' "${TLS_OUTPUT}" | grep -q "BEGIN CERTIFICATE"; then
+  echo "Could not retrieve a certificate from ${HOST}:443"
+  printf '%s\n' "${TLS_OUTPUT}" >&2
+  exit 1
+fi
+
 VERIFY_LINE="$(printf '%s\n' "${TLS_OUTPUT}" | sed -n '/Verify return code:/p' | tail -n1 | sed 's/^[[:space:]]*//')"
 
 if [[ "${VERIFY_LINE}" != "Verify return code: 0 (ok)" ]]; then
