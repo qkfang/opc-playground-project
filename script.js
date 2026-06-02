@@ -107,6 +107,11 @@ function initContactForm() {
     const name = $("contactName")?.value.trim() ?? "";
     const email = $("contactEmail")?.value.trim() ?? "";
     const message = $("contactMessage")?.value.trim() ?? "";
+    const hint = $("contactFormHint");
+    if (!EMAIL_PATTERN.test(CONTACT_RECIPIENT)) {
+      if (hint) hint.textContent = "Contact email is not configured yet. Please use the links above.";
+      return;
+    }
     const subject = encodeURIComponent(`OPC Project 1 inquiry${name ? ` from ${name}` : ""}`);
     const body = encodeURIComponent([
       name ? `Name: ${name}` : "",
@@ -114,9 +119,9 @@ function initContactForm() {
       "",
       message || "Hello, I’d like to connect about your robotics projects."
     ].filter(Boolean).join("\n"));
-    const recipient = EMAIL_PATTERN.test(CONTACT_RECIPIENT) ? CONTACT_RECIPIENT : "hello@opc-project-1.dev";
 
-    window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+    if (hint) hint.textContent = "Submitting opens your local mail app with the message prefilled.";
+    window.location.href = `mailto:${CONTACT_RECIPIENT}?subject=${subject}&body=${body}`;
   });
 }
 
