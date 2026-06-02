@@ -51,12 +51,11 @@ Edit `index.html` for:
 
 - hero text and quick-link copy
 - contact links
-- contact form recipient (`data-recipient`)
 
 ### Update styling/behavior
 
 - `styles.css` controls the layout and visual theme
-- `script.js` controls rendering, nav highlighting, telemetry demo, and the email-form behavior
+- `script.js` controls rendering, nav highlighting, telemetry demo, and the email-form behavior (including the contact recipient constant)
 
 ## Run locally
 
