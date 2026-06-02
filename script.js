@@ -4,6 +4,7 @@ const $ = (id) => document.getElementById(id);
 // Fallback for cases where header height cannot be read.
 const SCROLL_OFFSET_PX = 140;
 const CONTACT_RECIPIENT = "hello@opc-project-1.dev";
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const siteContent = window.siteContent ?? {};
 const projects = Array.isArray(siteContent.projects) ? siteContent.projects : [];
@@ -113,8 +114,9 @@ function initContactForm() {
       "",
       message || "Hello, I’d like to connect about your robotics projects."
     ].filter(Boolean).join("\n"));
+    const recipient = EMAIL_PATTERN.test(CONTACT_RECIPIENT) ? CONTACT_RECIPIENT : "hello@opc-project-1.dev";
 
-    window.location.href = `mailto:${CONTACT_RECIPIENT}?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
   });
 }
 
