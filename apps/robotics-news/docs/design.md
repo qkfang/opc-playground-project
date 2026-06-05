@@ -5,7 +5,7 @@ A simple robotics news site.
 
 - Frontend: Azure Static Web Apps (SWA)
 - Backend: .NET Web API on Azure App Service (Web App)
-- Data: mocked JSON (for now)
+- Data: robotics RSS feeds aggregated by the API
 
 ## UX / UI
 Single page:
@@ -21,18 +21,16 @@ Single page:
 ## API
 ### `GET /api/news`
 Returns latest robotics news items.
+- Supports `limit` query string (default 20, max 50).
 
 Response (200):
 ```json
 [
   {
-    "id": "rn_0001",
     "title": "...",
     "url": "https://...",
     "source": "Mock Robotics Daily",
-    "publishedAt": "2026-06-05T07:12:00Z",
-    "summary": "...",
-    "tags": ["humanoid", "computer-vision"]
+    "publishedAt": "2026-06-05T07:12:00Z"
   }
 ]
 ```
@@ -42,17 +40,19 @@ CORS: allow SWA origin(s) (dev: allow all).
 ## Backend
 - ASP.NET Core Web API
 - `INewsService` abstraction
-- `MockNewsService` returns in-memory list
+- `RssNewsService` fetches RSS feeds and caches normalized items for 5 minutes
+- `GET /health` returns a simple health payload
 
 ## Frontend
-- Minimal SPA (likely React + Vite) hosted on SWA
-- Reads `VITE_API_BASE_URL` in local dev
-- Production points to Web App base URL.
+- Plain HTML/CSS/JS frontend hosted on SWA
+- Reads API base URL from `config.js`, which is written from `ROBOTICS_NEWS_API_BASE_URL` during deployment
+- Production points to the Azure Web App base URL
 
 ## Deployment (target)
 - SWA: deploy from GitHub Actions
 - Web App: deploy from GitHub Actions
-- Infra: Bicep to `rg-playgound-01` using `sp-playgound-01` (per workflow)
+- Both workflows authenticate with `azure/login@v1` using `AZURE_CREDENTIALS`
+- Infra: Bicep provisions resources in `rg-playgound-01`
 
 ## Later extensions
 - Replace mock service with RSS aggregation

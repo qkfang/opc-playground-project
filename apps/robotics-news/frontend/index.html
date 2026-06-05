@@ -10,25 +10,26 @@
   <header class="header">
     <div class="container">
       <h1>Robotics News</h1>
-      <p class="sub">Fresh robotics headlines (mocked JSON via .NET API)</p>
+      <p class="sub">Latest robotics headlines powered by an RSS-backed .NET API.</p>
     </div>
   </header>
 
   <main class="container">
-    <section class="controls">
-      <label>
-        API Base URL
-        <input id="apiBaseUrl" placeholder="https://<your-api>.azurewebsites.net" />
-      </label>
-      <button id="loadBtn">Load news</button>
-      <span id="status" class="status"></span>
+    <section class="controls" aria-live="polite">
+      <div>
+        <h2>Latest robotics news</h2>
+        <p class="sub">Refresh to load the newest stories from the configured RSS feeds.</p>
+      </div>
+      <button id="refreshBtn" type="button">Refresh</button>
     </section>
+    <p id="status" class="status" role="status"></p>
 
     <section>
       <ul id="list" class="list"></ul>
     </section>
   </main>
 
+  <script src="./config.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
