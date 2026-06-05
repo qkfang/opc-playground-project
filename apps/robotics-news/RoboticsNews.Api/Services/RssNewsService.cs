@@ -13,7 +13,7 @@ public sealed class RssNewsService(
     IOptions<NewsFeedOptions> options,
     ILogger<RssNewsService> logger) : INewsService
 {
-    private const string CacheKey = $"{nameof(RssNewsService)}:latest";
+    private const string CacheKey = "RssNewsService:latest";
 
     public async Task<IReadOnlyList<NewsItemDto>> GetLatestAsync(int limit, CancellationToken cancellationToken)
     {
