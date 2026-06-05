@@ -8,11 +8,14 @@ namespace RoboticsNews.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class NewsController(INewsService newsService) : ControllerBase
 {
+    private const int DefaultLimit = 20;
+    private const int MaxLimit = 50;
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<NewsItemDto>>> Get([FromQuery] int? limit, CancellationToken cancellationToken)
     {
-        var requestedLimit = limit.GetValueOrDefault(20);
-        var normalizedLimit = requestedLimit <= 0 ? 20 : Math.Min(requestedLimit, 50);
+        var requestedLimit = limit.GetValueOrDefault(DefaultLimit);
+        var normalizedLimit = requestedLimit <= 0 ? DefaultLimit : Math.Min(requestedLimit, MaxLimit);
 
         try
         {

@@ -22,6 +22,7 @@ Single page:
 ### `GET /api/news`
 Returns latest robotics news items.
 - Supports `limit` query string (default 20, max 50).
+- Invalid or non-positive `limit` values fall back to the default of 20.
 
 Response (200):
 ```json

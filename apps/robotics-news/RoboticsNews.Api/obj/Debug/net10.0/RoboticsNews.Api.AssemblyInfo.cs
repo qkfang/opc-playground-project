@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RoboticsNews.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+25cc0ce4d6a1bb147c6409bf862503da19e54fd7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a575cb8d9e9dbad371509b91f007fd704e341a2e")]
 [assembly: System.Reflection.AssemblyProductAttribute("RoboticsNews.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RoboticsNews.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

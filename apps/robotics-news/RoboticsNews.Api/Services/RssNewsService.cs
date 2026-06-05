@@ -14,12 +14,14 @@ public sealed class RssNewsService(
     ILogger<RssNewsService> logger) : INewsService
 {
     private const string CacheKey = "RssNewsService:latest";
+    private const int MinCacheDurationMinutes = 1;
+    private const int MaxCacheDurationMinutes = 60;
 
     public async Task<IReadOnlyList<NewsItemDto>> GetLatestAsync(int limit, CancellationToken cancellationToken)
     {
         var items = await cache.GetOrCreateAsync(CacheKey, async entry =>
         {
-            var cacheDuration = Math.Clamp(options.Value.CacheDurationMinutes, 1, 60);
+            var cacheDuration = Math.Clamp(options.Value.CacheDurationMinutes, MinCacheDurationMinutes, MaxCacheDurationMinutes);
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(cacheDuration);
             return await FetchLatestAsync(cancellationToken);
         });

@@ -1,6 +1,8 @@
 using RoboticsNews.Api.Options;
 using RoboticsNews.Api.Services;
 
+const int NewsFeedTimeoutSeconds = 15;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>() ?? new();
@@ -18,7 +20,7 @@ builder.Services.Configure<NewsFeedOptions>(builder.Configuration.GetSection(New
 
 builder.Services.AddHttpClient<INewsService, RssNewsService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(15);
+    client.Timeout = TimeSpan.FromSeconds(NewsFeedTimeoutSeconds);
 });
 
 builder.Services.AddCors(options =>

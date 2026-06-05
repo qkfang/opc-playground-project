@@ -1,5 +1,8 @@
 function byId(id){ return document.getElementById(id); }
 
+const API_BASE_URL_PLACEHOLDER_PREFIX = '__ROBOTICS_NEWS_';
+const DEFAULT_NEWS_LIMIT = 20;
+
 const refreshBtn = byId('refreshBtn');
 const statusEl = byId('status');
 const listEl = byId('list');
@@ -9,7 +12,7 @@ const configuredApiBaseUrl = params.get('apiBaseUrl') || window.ROBOTICS_NEWS_CO
 
 function normalizeApiBaseUrl(value){
   const normalized = String(value || '').trim().replace(/\/+$/, '');
-  return normalized.startsWith('__ROBOTICS_NEWS_') ? '' : normalized;
+  return normalized.startsWith(API_BASE_URL_PLACEHOLDER_PREFIX) ? '' : normalized;
 }
 
 function setStatus(text, state = 'info'){
@@ -67,7 +70,7 @@ async function loadNews(){
   refreshBtn.disabled = true;
 
   try{
-    const response = await fetch(`${apiBaseUrl}/api/news?limit=20`, {
+    const response = await fetch(`${apiBaseUrl}/api/news?limit=${DEFAULT_NEWS_LIMIT}`, {
       headers: { accept: 'application/json' }
     });
 

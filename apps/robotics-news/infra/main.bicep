@@ -18,7 +18,7 @@ param webAppName string = 'app-robotics-news-api-01'
 @description('Name of the Azure Static Web App that hosts the frontend.')
 param staticWebAppName string = 'swa-robotics-news-01'
 
-@description('SKU for the App Service plan.')
+@description('SKU for the App Service plan. Use B1 for a low-cost single-slot deployment or S1 when you need Standard tier capabilities such as staging slots.')
 @allowed([
   'B1'
   'S1'
