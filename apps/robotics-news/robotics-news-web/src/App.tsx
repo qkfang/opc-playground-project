@@ -2,9 +2,9 @@ import { useEffect, useState, useCallback } from 'react'
 import type { NewsItem } from './types'
 import './App.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
-function formatDate(iso: string): string {
+function formatPublishedDate(iso: string): string {
   try {
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: 'medium',
@@ -25,7 +25,7 @@ function NewsCard({ item }: { item: NewsItem }) {
       </h2>
       <p className="news-meta">
         <span className="news-source">{item.source}</span>
-        <span className="news-date">{formatDate(item.publishedAt)}</span>
+        <span className="news-date">{formatPublishedDate(item.publishedAt)}</span>
       </p>
       {item.summary && <p className="news-summary">{item.summary}</p>}
       {item.tags.length > 0 && (
