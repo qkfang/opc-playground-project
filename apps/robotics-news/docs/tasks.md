@@ -4,7 +4,7 @@ Status legend: [ ] todo, [~] in progress, [x] done
 
 ## Design
 - [x] Write design doc (`docs/design.md`)
-- [ ] Confirm stack for SWA frontend (React/Vite recommended)
+- [x] Confirm stack for SWA frontend (React/Vite recommended)
 
 ## Backend (.NET API)
 - [x] Scaffold API project
@@ -13,10 +13,10 @@ Status legend: [ ] todo, [~] in progress, [x] done
 - [ ] Add minimal config for allowed origins (prod)
 
 ## Frontend (SWA)
-- [ ] Scaffold SWA frontend app
-- [ ] Implement news list UI + refresh
-- [ ] Wire to API base URL via env var
-- [ ] Local dev instructions
+- [x] Scaffold SWA frontend app
+- [x] Implement news list UI + refresh
+- [x] Wire to API base URL via env var
+- [x] Local dev instructions
 
 ## Infra (Azure)
 - [ ] Bicep: resource group target `rg-playgound-01`
