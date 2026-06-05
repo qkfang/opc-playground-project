@@ -1,0 +1,6 @@
+@RoboticsNews.Api_HostAddress = http://localhost:5276
+
+GET {{RoboticsNews.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
