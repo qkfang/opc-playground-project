@@ -1,16 +1,29 @@
 function byId(id){ return document.getElementById(id); }
 
-const apiInput = byId('apiBaseUrl');
-const loadBtn = byId('loadBtn');
+const API_BASE_URL_PLACEHOLDER_PREFIX = '__ROBOTICS_NEWS_';
+const DEFAULT_NEWS_LIMIT = 20;
+
+const refreshBtn = byId('refreshBtn');
 const statusEl = byId('status');
 const listEl = byId('list');
 
-// Allow ?apiBaseUrl=... to prefill (useful for SWA deployments)
-const params = new URLSearchParams(location.search);
-const apiBaseFromQuery = params.get('apiBaseUrl');
-if (apiBaseFromQuery) apiInput.value = apiBaseFromQuery;
+const params = new URLSearchParams(window.location.search);
+const configuredApiBaseUrl = params.get('apiBaseUrl') || window.ROBOTICS_NEWS_CONFIG?.apiBaseUrl || '';
 
-function setStatus(text){ statusEl.textContent = text || ''; }
+function normalizeApiBaseUrl(value){
+  const normalized = String(value || '').trim().replace(/\/+$/, '');
+  return normalized.startsWith(API_BASE_URL_PLACEHOLDER_PREFIX) ? '' : normalized;
+}
+
+function setStatus(text, state = 'info'){
+  statusEl.textContent = text || '';
+  statusEl.dataset.state = state;
+}
+
+function formatPublishedAt(value){
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
 
 function render(articles){
   listEl.innerHTML = '';
@@ -18,67 +31,65 @@ function render(articles){
   if (!articles.length){
     const li = document.createElement('li');
     li.className = 'item';
-    li.textContent = 'No articles found.';
+    li.textContent = 'No robotics news articles are available right now.';
     listEl.appendChild(li);
     return;
   }
 
-  for (const a of articles){
+  for (const article of articles){
     const li = document.createElement('li');
     li.className = 'item';
 
-    const h3 = document.createElement('h3');
+    const title = document.createElement('h3');
     const link = document.createElement('a');
-    link.href = a.url;
+    link.href = article.url;
     link.target = '_blank';
     link.rel = 'noreferrer';
-    link.textContent = a.title;
-    h3.appendChild(link);
+    link.textContent = article.title;
+    title.appendChild(link);
 
-    const meta = document.createElement('div');
+    const meta = document.createElement('p');
     meta.className = 'meta';
-    const date = new Date(a.publishedAt);
-    meta.textContent = `${a.source} • ${isNaN(date.getTime()) ? a.publishedAt : date.toLocaleString()}`;
+    meta.textContent = `${article.source} • ${formatPublishedAt(article.publishedAt)}`;
 
-    const summary = document.createElement('div');
-    summary.textContent = a.summary || '';
-
-    const tags = document.createElement('div');
-    tags.className = 'tags';
-    for (const t of (a.tags || [])){
-      const span = document.createElement('span');
-      span.className = 'tag';
-      span.textContent = t;
-      tags.appendChild(span);
-    }
-
-    li.append(h3, meta, summary, tags);
+    li.append(title, meta);
     listEl.appendChild(li);
   }
 }
 
 async function loadNews(){
-  const base = (apiInput.value || '').trim().replace(/\/$/, '');
-  if (!base){
-    setStatus('Enter an API Base URL (or use ?apiBaseUrl=...)');
+  const apiBaseUrl = normalizeApiBaseUrl(configuredApiBaseUrl);
+
+  if (!apiBaseUrl){
+    render([]);
+    setStatus('API base URL is not configured.', 'error');
     return;
   }
 
-  setStatus('Loading…');
-  loadBtn.disabled = true;
+  setStatus('Loading latest robotics news…', 'loading');
+  refreshBtn.disabled = true;
 
   try{
-    const res = await fetch(`${base}/api/news`, { headers: { 'accept': 'application/json' }});
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    render(Array.isArray(data) ? data : []);
-    setStatus(`Loaded ${Array.isArray(data) ? data.length : 0} article(s).`);
-  }catch(err){
-    console.error(err);
-    setStatus(`Error loading news: ${err.message || err}`);
+    const response = await fetch(`${apiBaseUrl}/api/news?limit=${DEFAULT_NEWS_LIMIT}`, {
+      headers: { accept: 'application/json' }
+    });
+
+    if (!response.ok){
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const articles = Array.isArray(data) ? data : [];
+    render(articles);
+    setStatus(`Loaded ${articles.length} article(s).`, 'success');
+  }catch(error){
+    console.error(error);
+    render([]);
+    setStatus(`Unable to load robotics news: ${error.message || error}`, 'error');
   }finally{
-    loadBtn.disabled = false;
+    refreshBtn.disabled = false;
   }
 }
 
-loadBtn.addEventListener('click', loadNews);
+refreshBtn.addEventListener('click', loadNews);
+loadNews();

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appServicePlanName": {
+      "value": "plan-robotics-news-01"
+    },
+    "webAppName": {
+      "value": "app-robotics-news-api-01"
+    },
+    "staticWebAppName": {
+      "value": "swa-robotics-news-01"
+    },
+    "corsAllowedOrigins": {
+      "value": [
+        "https://swa-robotics-news-01.azurestaticapps.net"
+      ]
+    },
+    "rssFeedUrls": {
+      "value": [
+        "https://www.therobotreport.com/feed/",
+        "https://roboticsandautomationnews.com/feed/"
+      ]
+    }
+  }
+}
