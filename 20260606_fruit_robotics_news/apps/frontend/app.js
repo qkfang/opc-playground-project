@@ -58,7 +58,7 @@
     }
 
     try {
-      const parsed = new URL(value, window.location.origin);
+      const parsed = new URL(value);
       if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
         return parsed.href;
       }
@@ -96,7 +96,7 @@
 
   async function loadNews() {
     refreshButton.disabled = true;
-    setStatus(`Loading robotics news from ${requestUrl}…`, 'loading');
+    setStatus('Loading robotics news…', 'loading');
 
     try {
       const response = await fetch(requestUrl, {
