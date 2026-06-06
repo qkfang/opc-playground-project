@@ -70,6 +70,25 @@ Use one public robotics RSS feed (can be swapped later). Example candidates:
   - `{project_id}_api.yml` for API build+deploy
   - `{project_id}_frontend.yml` for SWA build+deploy via **deployment token**
 
+### Infra deployment notes
+- Infra template: `20260606_fruit_robotics_news/bicep/main.bicep`
+- Infra workflow: `.github/workflows/20260606_fruit_robotics_news_infra.yml`
+- The infra workflow deploys to resource group `rg-playground-01` and logs the API hostname plus the Static Web App resource name from Bicep outputs.
+
+### Static Web App deployment token
+After the infra workflow creates the Static Web App, fetch its deployment token with Azure CLI and save it as the GitHub secret `SWA_DEPLOYMENT_TOKEN_20260606_FRUIT_ROBOTICS_NEWS`.
+
+```bash
+az staticwebapp secrets list \
+  --name <static-web-app-name> \
+  --resource-group rg-playground-01 \
+  --query properties.apiKey \
+  --output tsv
+```
+
+Then add the returned value to the repository secret:
+- Secret name: `SWA_DEPLOYMENT_TOKEN_20260606_FRUIT_ROBOTICS_NEWS`
+
 ## Non-goals
 - Auth
 - User accounts

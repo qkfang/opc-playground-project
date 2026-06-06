@@ -1,0 +1,63 @@
+name: 20260606_fruit_robotics_news_infra
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '20260606_fruit_robotics_news/bicep/**'
+      - '.github/workflows/20260606_fruit_robotics_news_infra.yml'
+      - '20260606_fruit_robotics_news/docs/solution.md'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    outputs:
+      api_hostname: ${{ steps.deploy.outputs.api_hostname }}
+      api_url: ${{ steps.deploy.outputs.api_url }}
+      static_web_app_name: ${{ steps.deploy.outputs.static_web_app_name }}
+    env:
+      RESOURCE_GROUP_NAME: rg-playground-01
+      TEMPLATE_FILE: 20260606_fruit_robotics_news/bicep/main.bicep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy infrastructure
+        id: deploy
+        shell: bash
+        run: |
+          outputs_json="$(az deployment group create \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --template-file "$TEMPLATE_FILE" \
+            --query properties.outputs \
+            --output json)"
+
+          api_hostname="$(echo "$outputs_json" | jq -r '.apiHostname.value')"
+          api_url="$(echo "$outputs_json" | jq -r '.apiUrl.value')"
+          static_web_app_name="$(echo "$outputs_json" | jq -r '.staticWebAppName.value')"
+
+          echo "API hostname: $api_hostname"
+          echo "API URL: $api_url"
+          echo "Static Web App name: $static_web_app_name"
+
+          {
+            echo "api_hostname=$api_hostname"
+            echo "api_url=$api_url"
+            echo "static_web_app_name=$static_web_app_name"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### 20260606_fruit_robotics_news infrastructure"
+            echo "- API hostname: \`$api_hostname\`"
+            echo "- API URL: \`$api_url\`"
+            echo "- Static Web App name: \`$static_web_app_name\`"
+          } >> "$GITHUB_STEP_SUMMARY"
