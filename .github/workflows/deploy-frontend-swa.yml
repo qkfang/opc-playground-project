@@ -22,4 +22,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: apps/frontend
+          app_artifact_location: '.'
           output_location: ''
