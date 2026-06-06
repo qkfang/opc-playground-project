@@ -5,26 +5,39 @@
   --muted:#aab3d6;
   --accent:#7aa2ff;
   --border:rgba(255,255,255,.12);
+  --fruit-orange:#ff8c42;
+  --fruit-green:#6fcf6f;
+  --fruit-red:#ff5c6e;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 
-.header{border-bottom:1px solid var(--border);background:linear-gradient(180deg, rgba(122,162,255,.15), transparent)}
+.header{border-bottom:1px solid var(--border);background:linear-gradient(180deg, rgba(255,140,66,.15), rgba(122,162,255,.1), transparent)}
 .container{max-width:960px;margin:0 auto;padding:20px}
 .sub{color:var(--muted);margin:6px 0 0}
 
+.header-fruit{display:flex;gap:8px;margin-bottom:10px;font-size:28px}
+.fruit-emoji{display:inline-block;animation:sway 2s ease-in-out infinite alternate}
+.fruit-emoji:nth-child(2){animation-delay:.4s}
+.fruit-emoji:nth-child(3){animation-delay:.8s}
+@keyframes sway{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+
 .controls{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:18px 0}
-button{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(122,162,255,.18);color:var(--text);cursor:pointer}
-button:hover{background:rgba(122,162,255,.28)}
+button{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,140,66,.2);color:var(--text);cursor:pointer;font-size:14px}
+button:hover{background:rgba(255,140,66,.35)}
 button:disabled{cursor:progress;opacity:.7}
 
 .status{color:var(--muted);font-size:14px;min-height:20px;margin:0 0 18px}
 .status[data-state="error"]{color:#ffb4b4}
-.status[data-state="success"]{color:#b9f7c5}
+.status[data-state="success"]{color:var(--fruit-green)}
+.status[data-state="loading"]{color:var(--fruit-orange)}
 
 .list{list-style:none;padding:0;margin:0;display:grid;gap:12px}
-.item{border:1px solid var(--border);background:var(--card);border-radius:14px;padding:14px}
+.item{border:1px solid var(--border);background:var(--card);border-radius:14px;padding:14px;border-left:3px solid var(--fruit-orange)}
 .item h3{margin:0 0 6px;font-size:18px}
 .meta{color:var(--muted);font-size:13px;margin:0}
+
+.footer{border-top:1px solid var(--border);margin-top:40px;padding:10px 0;text-align:center;color:var(--muted);font-size:13px}
+.footer p{margin:0}

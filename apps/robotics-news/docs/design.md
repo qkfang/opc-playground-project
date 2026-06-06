@@ -9,7 +9,7 @@ A simple robotics news site.
 
 ## UX / UI
 Single page:
-- Header: “Robotics News”
+- Header: "Fruit Robotics News" with fruit emoji decorations (🍓🤖🍊)
 - Button: “Refresh”
 - States: loading, error, empty
 - List of cards/rows:
@@ -23,6 +23,13 @@ Single page:
 Returns latest robotics news items.
 - Supports `limit` query string (default 20, max 50).
 - Invalid or non-positive `limit` values fall back to the default of 20.
+
+### `GET /api/news/robotics`
+Alias with `count` parameter (default 20, max 50).
+- Supports `count` query string.
+
+### `GET /healthz` (and `/health`)
+Returns a simple health payload.
 
 Response (200):
 ```json
@@ -41,8 +48,9 @@ CORS: allow SWA origin(s) (dev: allow all).
 ## Backend
 - ASP.NET Core Web API
 - `INewsService` abstraction
-- `RssNewsService` fetches RSS feeds and caches normalized items for 5 minutes
-- `GET /health` returns a simple health payload
+- `RssNewsService` fetches RSS feeds and caches normalized items for 5 minutes (configurable via `NewsFeeds__CacheDurationMinutes`)
+- `GET /health` and `GET /healthz` return a simple health payload
+- RSS feeds configured via `NewsFeeds__FeedUrls` app settings (default: The Robot Report, Robotics & Automation News)
 
 ## Frontend
 - Plain HTML/CSS/JS frontend hosted on SWA
@@ -53,7 +61,7 @@ CORS: allow SWA origin(s) (dev: allow all).
 - SWA: deploy from GitHub Actions
 - Web App: deploy from GitHub Actions
 - Both workflows authenticate with `azure/login@v1` using `AZURE_CREDENTIALS`
-- Infra: Bicep provisions resources in `rg-playgound-01`
+- Infra: Bicep provisions resources in `rg-playground-01`
 
 ## Later extensions
 - Replace mock service with RSS aggregation

@@ -70,7 +70,7 @@ async function loadNews(){
   refreshBtn.disabled = true;
 
   try{
-    const response = await fetch(`${apiBaseUrl}/api/news?limit=${DEFAULT_NEWS_LIMIT}`, {
+    const response = await fetch(`${apiBaseUrl}/api/news/robotics?count=${DEFAULT_NEWS_LIMIT}`, {
       headers: { accept: 'application/json' }
     });
 

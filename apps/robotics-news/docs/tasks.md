@@ -9,7 +9,8 @@ Status legend: [ ] todo, [~] in progress, [x] done
 ## Backend (.NET API)
 - [x] Scaffold API project
 - [x] Add `/api/news` endpoint returning RSS-backed normalized data
-- [x] Add health endpoint `/health`
+- [x] Add `/api/news/robotics` endpoint (`?count=N`) returning RSS-backed normalized data
+- [x] Add health endpoints `/health` and `/healthz`
 - [x] Add minimal config for allowed origins (prod)
 
 ## Frontend (SWA)

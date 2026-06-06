@@ -3,24 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Robotics News</title>
+  <title>🍓 Fruit Robotics News</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <header class="header">
     <div class="container">
-      <h1>Robotics News</h1>
-      <p class="sub">Latest robotics headlines powered by an RSS-backed .NET API.</p>
+      <div class="header-fruit">
+        <span class="fruit-emoji">🍓</span>
+        <span class="fruit-emoji">🤖</span>
+        <span class="fruit-emoji">🍊</span>
+      </div>
+      <h1>Fruit Robotics News</h1>
+      <p class="sub">Fresh robotics headlines, served daily 🍋 — powered by an RSS-backed .NET API.</p>
     </div>
   </header>
 
   <main class="container">
     <section class="controls" aria-live="polite">
       <div>
-        <h2>Latest robotics news</h2>
+        <h2>🍇 Latest robotics news</h2>
         <p class="sub">Refresh to load the newest stories from the configured RSS feeds.</p>
       </div>
-      <button id="refreshBtn" type="button">Refresh</button>
+      <button id="refreshBtn" type="button">🔄 Refresh</button>
     </section>
     <p id="status" class="status" role="status"></p>
 
@@ -28,6 +33,12 @@
       <ul id="list" class="list"></ul>
     </section>
   </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>🍑 Fruit Robotics News &mdash; powered by Azure Static Web Apps &amp; .NET API</p>
+    </div>
+  </footer>
 
   <script src="./config.js"></script>
   <script src="./app.js"></script>

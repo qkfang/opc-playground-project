@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_RESOURCE_GROUP: rg-playgound-01
+  AZURE_RESOURCE_GROUP: rg-playground-01
   AZURE_STATIC_WEB_APP_NAME: swa-robotics-news-01
   APP_LOCATION: "apps/robotics-news/frontend"
   API_BASE_URL: ${{ vars.ROBOTICS_NEWS_API_BASE_URL }}
@@ -30,15 +30,19 @@ jobs:
       - name: Write frontend config
         run: |
           if [ -z "${API_BASE_URL}" ]; then
-            echo "ROBOTICS_NEWS_API_BASE_URL is not configured."
-            exit 1
-          fi
-
-          cat <<EOF > "${APP_LOCATION}/config.js"
+            echo "::warning::ROBOTICS_NEWS_API_BASE_URL is not configured; deploying with placeholder config."
+            cat <<EOF > "${APP_LOCATION}/config.js"
+          window.ROBOTICS_NEWS_CONFIG = {
+            apiBaseUrl: "__ROBOTICS_NEWS_API_BASE_URL__"
+          };
+          EOF
+          else
+            cat <<EOF > "${APP_LOCATION}/config.js"
           window.ROBOTICS_NEWS_CONFIG = {
             apiBaseUrl: "${API_BASE_URL}"
           };
           EOF
+          fi
 
       - name: Get Static Web App deployment token
         id: deployment-token
