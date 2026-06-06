@@ -1,0 +1,25 @@
+name: deploy-frontend-swa
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'repo/2026-06-06-lego-robotics-news/apps/frontend/**'
+      - '.github/workflows/deploy-frontend-swa.yml'
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Azure Static Web Apps
+      # No repo integration: use deployment token
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: repo/2026-06-06-lego-robotics-news/apps/frontend
+          output_location: ''
