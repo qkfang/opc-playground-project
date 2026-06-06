@@ -1,0 +1,37 @@
+name: 20260606_fruit_robotics_news_infra
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '20260606_fruit_robotics_news/bicep/**'
+      - '.github/workflows/20260606_fruit_robotics_news_infra.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    env:
+      RESOURCE_GROUP: rg-playground-01
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --template-file "20260606_fruit_robotics_news/bicep/main.bicep" \
+              --parameters projectPrefix=fruitroboticsnews
