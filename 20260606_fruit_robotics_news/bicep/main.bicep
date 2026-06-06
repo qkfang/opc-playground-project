@@ -3,7 +3,7 @@ param apiLocation string = resourceGroup().location
 param staticWebAppLocation string = 'eastasia'
 param appServicePlanSkuName string = 'B1'
 param appServicePlanSkuTier string = 'Basic'
-param linuxFxVersion string = 'DOTNETCORE|8.0'
+param linuxFxVersion string = 'DOTNET|8.0'
 param newsFeedUrl string = 'https://news.google.com/rss/search?q=robotics&hl=en-US&gl=US&ceid=US:en'
 
 var suffix = toLower(uniqueString(subscription().subscriptionId, resourceGroup().id, projectId))
