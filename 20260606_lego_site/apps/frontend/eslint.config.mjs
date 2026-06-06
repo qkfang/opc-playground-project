@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // SWA standalone Next.js server handler (infra glue, CommonJS).
+    "next_function.js",
   ]),
 ]);
 

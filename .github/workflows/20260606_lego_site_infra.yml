@@ -1,0 +1,53 @@
+name: 20260606_lego_site_infra
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployCosmos:
+        description: "Provision Cosmos DB (false = mock/in-memory store)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+  PROJECT_DIR: 20260606_lego_site
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        id: bicep
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            cd "$PROJECT_DIR/bicep"
+            az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "lego-infra-${GITHUB_RUN_NUMBER}" \
+              --template-file main.bicep \
+              --parameters deployCosmos=${{ inputs.deployCosmos }} \
+              --only-show-errors \
+              --output json > deploy.json
+            echo "swaName=$(jq -r '.properties.outputs.staticWebAppName.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "swaHost=$(jq -r '.properties.outputs.staticWebAppHostname.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "funcName=$(jq -r '.properties.outputs.functionAppName.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "funcHost=$(jq -r '.properties.outputs.functionAppHostname.value' deploy.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "### LEGO infra deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- SWA: ${{ steps.bicep.outputs.swaName }} (https://${{ steps.bicep.outputs.swaHost }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Function App: ${{ steps.bicep.outputs.funcName }} (https://${{ steps.bicep.outputs.funcHost }})" >> "$GITHUB_STEP_SUMMARY"

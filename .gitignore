@@ -11,3 +11,17 @@ Thumbs.db
 
 # Build output
 dist/
+.next/
+
+# Azure Functions local secrets
+local.settings.json
+
+# SWA build scratch
+**/public/.swa/
+
+# Workspace persona/scratch files (do not commit)
+/SOUL.md
+/USER.md
+/IDENTITY.md
+/HEARTBEAT.md
+/TOOLS.md
