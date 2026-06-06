@@ -1,0 +1,6 @@
+@FruitRoboticsNews.Api_HostAddress = http://localhost:5166
+
+GET {{FruitRoboticsNews.Api_HostAddress}}/api/news
+Accept: application/json
+
+###
