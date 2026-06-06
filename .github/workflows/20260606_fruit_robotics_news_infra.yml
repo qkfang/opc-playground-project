@@ -36,15 +36,25 @@ jobs:
           inlineScript: |
             set -euo pipefail
 
-            result=$(az deployment group create \
+            deployment_name="20260606-fruit-robotics-news-infra-${GITHUB_RUN_ID}"
+
+            az deployment group create \
+              --name "$deployment_name" \
               --resource-group "$AZURE_RESOURCE_GROUP" \
               --template-file "$BICEP_FILE" \
               --parameters location="$AZURE_LOCATION" \
-              --query properties.outputs \
-              --output json)
+              --output none
 
-            web_app_name=$(echo "$result" | jq -r '.webAppName.value')
-            static_web_app_name=$(echo "$result" | jq -r '.staticWebAppName.value')
+            web_app_name=$(az deployment group show \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "$deployment_name" \
+              --query "properties.outputs.webAppName.value" \
+              --output tsv)
+            static_web_app_name=$(az deployment group show \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "$deployment_name" \
+              --query "properties.outputs.staticWebAppName.value" \
+              --output tsv)
 
             echo "web_app_name=$web_app_name" >> "$GITHUB_OUTPUT"
             echo "static_web_app_name=$static_web_app_name" >> "$GITHUB_OUTPUT"

@@ -1,5 +1,5 @@
 @description('Project identifier used as the resource name prefix.')
-param projectId string = '20260606-fruit-robotics-news'
+param projectId string = '20260606_fruit_robotics_news'
 
 @description('Azure region for all resources.')
 param location string = resourceGroup().location
@@ -12,9 +12,10 @@ param location string = resourceGroup().location
 ])
 param appServicePlanSku string = 'B1'
 
-var appServicePlanName = '${projectId}-plan'
-var webAppName = toLower('${projectId}-api-${uniqueString(resourceGroup().id)}')
-var staticWebAppName = toLower('${projectId}-web-${uniqueString(resourceGroup().id)}')
+var resourceNamePrefix = replace(toLower(projectId), '_', '-')
+var appServicePlanName = '${resourceNamePrefix}-plan'
+var webAppName = '${resourceNamePrefix}-api-${uniqueString(resourceGroup().id)}'
+var staticWebAppName = '${resourceNamePrefix}-web-${uniqueString(resourceGroup().id)}'
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
