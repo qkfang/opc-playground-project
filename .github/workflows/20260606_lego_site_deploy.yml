@@ -3,148 +3,109 @@ name: 20260606_lego_site_deploy
 on:
   workflow_dispatch:
     inputs:
-      backendApiBaseUrl:
-        description: "Override backend API base URL (default: derive from Function App host)"
-        required: false
-        default: ""
+      deployBackend:
+        description: "Also build+deploy the backend Function App"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
 env:
   RESOURCE_GROUP: rg-playground-01
-  PROJECT_DIR: 20260606_lego_site
   FUNC_DIR: 20260606_lego_site/apps/backend
   FRONTEND_DIR: 20260606_lego_site/apps/frontend
+  FUNC_PREFIX: lego20260606-func
+  SWA_PREFIX: lego20260606-swa
 
 jobs:
   deploy-backend:
+    if: ${{ inputs.deployBackend }}
     runs-on: ubuntu-latest
     outputs:
-      funcName: ${{ steps.discover.outputs.funcName }}
       funcHost: ${{ steps.discover.outputs.funcHost }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-
+          node-version: "22"
       - name: Build backend
         run: |
           set -euo pipefail
           cd "$FUNC_DIR"
           npm ci
           npm run build
-          # Prune to production deps for a lean Functions package
           npm prune --omit=dev
-
       - name: Azure CLI Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Discover Function App name
+      - name: Discover Function App
         id: discover
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
-            FUNC_NAME=$(az functionapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'lego20260606-func')].name | [0]" -o tsv)
-            if [ -z "$FUNC_NAME" ]; then echo "No matching Function App found"; exit 1; fi
-            FUNC_HOST=$(az functionapp show -g "$RESOURCE_GROUP" -n "$FUNC_NAME" --query defaultHostName -o tsv)
-            echo "funcName=$FUNC_NAME" >> "$GITHUB_OUTPUT"
-            echo "funcHost=$FUNC_HOST" >> "$GITHUB_OUTPUT"
-            echo "Function App: $FUNC_NAME ($FUNC_HOST)"
-
+            FN=$(az functionapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'$FUNC_PREFIX')].name | [0]" -o tsv)
+            HOST=$(az functionapp show -g "$RESOURCE_GROUP" -n "$FN" --query defaultHostName -o tsv)
+            echo "funcName=$FN" >> "$GITHUB_OUTPUT"
+            echo "funcHost=$HOST" >> "$GITHUB_OUTPUT"
       - name: Zip deploy backend
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
             cd "$FUNC_DIR"
-            zip -r -q ../backend-package.zip . -x "*.git*" "src/test/*"
+            zip -r -q ../backend-package.zip . -x "*.git*" "dist/src/test/*"
             az functionapp deployment source config-zip \
-              -g "$RESOURCE_GROUP" \
-              -n "${{ steps.discover.outputs.funcName }}" \
-              --src ../backend-package.zip \
-              --build-remote false
-            # Mock-store mode: ensure Cosmos vars are NOT set (code falls back to mock)
-            az functionapp config appsettings delete \
               -g "$RESOURCE_GROUP" -n "${{ steps.discover.outputs.funcName }}" \
-              --setting-names COSMOS_CONNECTION_STRING COSMOS_DATABASE_NAME COSMOS_CONTAINER_NAME \
-              --only-show-errors >/dev/null 2>&1 || true
-
-      - name: Smoke check backend
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            set -euo pipefail
-            HOST="${{ steps.discover.outputs.funcHost }}"
-            for i in $(seq 1 12); do
-              CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$HOST/api/sets" || echo 000)
-              echo "attempt $i: /api/sets -> $CODE"
-              if [ "$CODE" = "200" ]; then echo "Backend healthy"; exit 0; fi
-              sleep 10
-            done
-            echo "Backend did not return 200 in time (may still be warming)."
+              --src ../backend-package.zip --only-show-errors
 
   deploy-frontend:
-    needs: deploy-backend
+    needs: [deploy-backend]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Azure CLI Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Resolve SWA + backend URL
         id: cfg
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
-            SWA_NAME=$(az staticwebapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'lego20260606-swa')].name | [0]" -o tsv)
-            if [ -z "$SWA_NAME" ]; then echo "No matching SWA found"; exit 1; fi
-            TOKEN=$(az staticwebapp secrets list -g "$RESOURCE_GROUP" -n "$SWA_NAME" --query "properties.apiKey" -o tsv)
-            BACKEND_URL="${{ inputs.backendApiBaseUrl }}"
-            if [ -z "$BACKEND_URL" ]; then
-              BACKEND_URL="https://${{ needs.deploy-backend.outputs.funcHost }}/api"
-            fi
-            echo "swaName=$SWA_NAME" >> "$GITHUB_OUTPUT"
-            echo "backendUrl=$BACKEND_URL" >> "$GITHUB_OUTPUT"
+            SWA=$(az staticwebapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'$SWA_PREFIX')].name | [0]" -o tsv)
+            TOKEN=$(az staticwebapp secrets list -g "$RESOURCE_GROUP" -n "$SWA" --query "properties.apiKey" -o tsv)
+            FN=$(az functionapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'$FUNC_PREFIX')].name | [0]" -o tsv)
+            FN_HOST=$(az functionapp show -g "$RESOURCE_GROUP" -n "$FN" --query defaultHostName -o tsv)
+            echo "swaName=$SWA" >> "$GITHUB_OUTPUT"
             echo "::add-mask::$TOKEN"
             echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
-            echo "SWA: $SWA_NAME  backend: $BACKEND_URL"
-
-      - name: Set SWA app settings (backend proxy target)
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            set -euo pipefail
-            az staticwebapp appsettings set \
-              -g "$RESOURCE_GROUP" -n "${{ steps.cfg.outputs.swaName }}" \
-              --setting-names "BACKEND_API_BASE_URL=${{ steps.cfg.outputs.backendUrl }}" \
-              --only-show-errors
-
-      - name: Build and deploy frontend to SWA
+            echo "apiBase=https://$FN_HOST" >> "$GITHUB_OUTPUT"
+      - name: Build frontend (static export)
+        run: |
+          set -euo pipefail
+          cd "$FRONTEND_DIR"
+          npm ci
+          NEXT_PUBLIC_API_BASE_URL="${{ steps.cfg.outputs.apiBase }}" npm run build
+          cp staticwebapp.config.json out/staticwebapp.config.json
+      - name: Deploy to SWA
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ steps.cfg.outputs.token }}
           action: upload
-          app_location: "20260606_lego_site/apps/frontend"
-          output_location: ""
+          app_location: "20260606_lego_site/apps/frontend/out"
+          skip_app_build: true
           skip_api_build: true
-        env:
-          BACKEND_API_BASE_URL: ${{ steps.cfg.outputs.backendUrl }}
-
+          output_location: ""
       - name: Summary
         run: |
-          echo "### LEGO app deployed :bricks:" >> "$GITHUB_STEP_SUMMARY"
+          echo "### LEGO marketplace deployed :bricks:" >> "$GITHUB_STEP_SUMMARY"
           echo "- SWA: ${{ steps.cfg.outputs.swaName }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Backend proxy target: ${{ steps.cfg.outputs.backendUrl }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- API base (baked): ${{ steps.cfg.outputs.apiBase }}" >> "$GITHUB_STEP_SUMMARY"

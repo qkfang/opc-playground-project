@@ -25,3 +25,7 @@ local.settings.json
 /IDENTITY.md
 /HEARTBEAT.md
 /TOOLS.md
+
+# backend deploy artifact
+20260606_lego_site/apps/backend-deploy.zip
+20260606_lego_site/apps/frontend/out/

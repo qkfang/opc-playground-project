@@ -2,6 +2,15 @@ import type { LegoSet, Listing, ListingInput } from "./types";
 
 const localDevUserId = process.env.NEXT_PUBLIC_LOCAL_USER_ID?.trim();
 
+// When deployed to SWA (static export), the backend Azure Functions app lives on a
+// different origin, so prefix API calls with its base URL. Empty => same-origin
+// relative paths (local dev).
+const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+
+function apiUrl(path: string): string {
+  return apiBase ? `${apiBase}${path}` : path;
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -12,7 +21,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(apiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",

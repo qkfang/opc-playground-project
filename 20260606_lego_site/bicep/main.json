@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "2152793022893595858"
+      "templateHash": "15555904760569582462"
     }
   },
   "parameters": {
@@ -316,7 +316,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "2144683818356005213"
+              "templateHash": "13640471919226845935"
             }
           },
           "parameters": {
@@ -339,18 +339,25 @@
                 "description": "Storage account name (3-24 chars, lowercase letters and numbers)."
               }
             },
+            "nodeVersion": {
+              "type": "string",
+              "defaultValue": "22",
+              "metadata": {
+                "description": "Function runtime version for Flex Consumption (Node)."
+              }
+            },
             "cosmosEndpoint": {
               "type": "string",
               "defaultValue": "",
               "metadata": {
-                "description": "Cosmos DB endpoint URI."
+                "description": "Cosmos DB endpoint URI (empty = mock store)."
               }
             },
             "cosmosKey": {
               "type": "securestring",
               "defaultValue": "",
               "metadata": {
-                "description": "Cosmos DB primary key."
+                "description": "Cosmos DB primary key (empty = mock store)."
               }
             },
             "cosmosDatabase": {
@@ -362,7 +369,9 @@
             }
           },
           "variables": {
-            "hostingPlanName": "[format('{0}-plan', parameters('functionAppName'))]"
+            "hostingPlanName": "[format('{0}-plan', parameters('functionAppName'))]",
+            "deploymentContainerName": "deploymentpackage",
+            "storageBlobDataOwnerRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')]"
           },
           "resources": [
             {
@@ -380,13 +389,32 @@
               }
             },
             {
+              "type": "Microsoft.Storage/storageAccounts/blobServices",
+              "apiVersion": "2023-05-01",
+              "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+              "apiVersion": "2023-05-01",
+              "name": "[format('{0}/{1}/{2}', parameters('storageAccountName'), 'default', variables('deploymentContainerName'))]",
+              "properties": {
+                "publicAccess": "None"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]"
+              ]
+            },
+            {
               "type": "Microsoft.Web/serverfarms",
               "apiVersion": "2023-12-01",
               "name": "[variables('hostingPlanName')]",
               "location": "[parameters('location')]",
               "sku": {
-                "name": "Y1",
-                "tier": "Dynamic"
+                "name": "FC1",
+                "tier": "FlexConsumption"
               },
               "kind": "functionapp",
               "properties": {
@@ -399,12 +427,32 @@
               "name": "[parameters('functionAppName')]",
               "location": "[parameters('location')]",
               "kind": "functionapp,linux",
+              "identity": {
+                "type": "SystemAssigned"
+              },
               "properties": {
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
                 "httpsOnly": true,
+                "functionAppConfig": {
+                  "deployment": {
+                    "storage": {
+                      "type": "blobContainer",
+                      "value": "[format('{0}{1}', reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.blob, variables('deploymentContainerName'))]",
+                      "authentication": {
+                        "type": "SystemAssignedIdentity"
+                      }
+                    }
+                  },
+                  "scaleAndConcurrency": {
+                    "maximumInstanceCount": 40,
+                    "instanceMemoryMB": 2048
+                  },
+                  "runtime": {
+                    "name": "node",
+                    "version": "[parameters('nodeVersion')]"
+                  }
+                },
                 "siteConfig": {
-                  "linuxFxVersion": "NODE|20",
-                  "ftpsState": "Disabled",
                   "cors": {
                     "allowedOrigins": [
                       "*"
@@ -412,28 +460,24 @@
                   },
                   "appSettings": [
                     {
-                      "name": "AzureWebJobsStorage",
-                      "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', parameters('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').keys[0].value, environment().suffixes.storage)]"
+                      "name": "AzureWebJobsStorage__accountName",
+                      "value": "[parameters('storageAccountName')]"
                     },
                     {
-                      "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-                      "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', parameters('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').keys[0].value, environment().suffixes.storage)]"
+                      "name": "AzureWebJobsStorage__credential",
+                      "value": "managedidentity"
                     },
                     {
-                      "name": "WEBSITE_CONTENTSHARE",
-                      "value": "[toLower(parameters('functionAppName'))]"
+                      "name": "AzureWebJobsStorage__blobServiceUri",
+                      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.blob]"
                     },
                     {
-                      "name": "FUNCTIONS_EXTENSION_VERSION",
-                      "value": "~4"
+                      "name": "AzureWebJobsStorage__queueServiceUri",
+                      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.queue]"
                     },
                     {
-                      "name": "FUNCTIONS_WORKER_RUNTIME",
-                      "value": "node"
-                    },
-                    {
-                      "name": "WEBSITE_NODE_DEFAULT_VERSION",
-                      "value": "~20"
+                      "name": "AzureWebJobsStorage__tableServiceUri",
+                      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-05-01').primaryEndpoints.table]"
                     },
                     {
                       "name": "COSMOS_ENDPOINT",
@@ -456,6 +500,21 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+              "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), resourceId('Microsoft.Web/sites', parameters('functionAppName')), variables('storageBlobDataOwnerRoleId'))]",
+              "properties": {
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-12-01', 'full').identity.principalId]",
+                "roleDefinitionId": "[variables('storageBlobDataOwnerRoleId')]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
                 "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
               ]
             }
