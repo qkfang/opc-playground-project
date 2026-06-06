@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx serve . -l 4280"
+    "start": "npx serve . -l 4280",
+    "build": "echo 'no build'"
   },
   "keywords": [],
   "author": "",
