@@ -1,59 +1,76 @@
-# Robotics News (SWA + .NET Web App) — Design
+# Design — Lego Robotics News (SWA frontend + .NET API backend)
 
 ## Goal
-A simple robotics website that shows a list of “robotics news” items.
+A simple “Lego Robotics News” website:
+- Frontend: Azure Static Web Apps (SWA) serving a small web UI.
+- Backend: .NET API hosted on Azure Web App.
+- Feature: fetch and display a list of robotics-related news items (title, source, date, link).
 
-- **Frontend**: Azure Static Web Apps (plain HTML/CSS/JS)
-- **Backend**: ASP.NET Core Web API (.NET 10) on Azure Web App
-- **Data**: mocked RSS articles stored as JSON in the API (no external feeds/keys)
+## Assumptions (can change)
+- No auth/login.
+- Use public news feeds (RSS/Atom or public JSON endpoints). No paid APIs.
+- Keep it simple: 1 page, 1 API endpoint.
 
-## User Experience (MVP)
-- Page: **Robotics News**
-- On load:
-  - Calls the backend API endpoint `GET /api/news`
-  - Renders a list of articles (title, source, published date, short summary)
-  - Each item links to `url` in a new tab
-- Simple status:
-  - Loading state
-  - Error state
+## User experience
+### Pages
+- `/` Home: header + short description + “Refresh” button.
+- News list:
+  - Title (clickable)
+  - Source name
+  - Published date (local)
+  - Short snippet (optional)
 
-## API Contract
-### `GET /api/news`
-Returns a JSON array of article objects.
+### UI style
+- “Lego-ish” look: bright primary colors, blocky card style.
+- Responsive, mobile-friendly.
 
-Article shape:
+## Backend API
+### Endpoints
+- `GET /api/news?limit=30`
+  - Returns normalized list of news items.
+
+### Response shape (v1)
 ```json
 {
-  "id": "string",
-  "title": "string",
-  "source": "string",
-  "url": "https://...",
-  "publishedAt": "2026-06-05T00:00:00Z",
-  "summary": "string",
-  "tags": ["string"]
+  "items": [
+    {
+      "id": "string",
+      "title": "string",
+      "url": "https://...",
+      "source": "string",
+      "publishedAt": "2026-06-06T00:00:00Z",
+      "summary": "string"
+    }
+  ],
+  "generatedAt": "2026-06-06T00:00:00Z"
 }
 ```
 
-Notes:
-- Backend enables CORS for the SWA origin.
-- Versioning not required for MVP.
+### Data sources
+Start with 3–6 robotics news sources. Prefer:
+- Robotics Business Review (RSS)
+- IEEE Spectrum Robotics (RSS)
+- The Robot Report (RSS)
+- NASA Robotics (if available)
+- arXiv robotics category (if useful)
 
-## Repo Layout (proposed)
-- `apps/robotics-news/`
-  - `frontend/` (SWA content)
-  - `RoboticsNews.Api/` (.NET 10 Web API)
+(We’ll validate actual feed URLs during implementation.)
 
-## Local Dev
-- API:
-  - `dotnet run` in `apps/robotics-news/RoboticsNews.Api`
-  - Default: `http://localhost:5000`
-- Frontend:
-  - static files; can use `npx http-server` or similar
-  - configure API base URL via a small `config.js` (or query param)
+### Normalization + caching
+- Parse RSS/Atom -> normalize.
+- Cache aggregated results in memory for ~10 minutes to avoid hammering feeds.
+- Sort by `publishedAt` desc.
+- Deduplicate by canonical URL.
 
-## Azure Deployment (later steps)
-- **Azure Web App**: deploy the .NET API
-- **Azure Static Web Apps**: deploy the static frontend
-- Configure frontend to call API via:
-  - a build-time constant (GitHub Actions env), or
-  - `config.json`/`config.js` served with the site and edited per environment.
+## Deployment architecture
+- Azure Static Web Apps: hosts static frontend.
+- Azure Web App (Linux): hosts .NET API.
+- Frontend calls API via `API_BASE_URL` env/config.
+
+## Configuration
+- Frontend config via build-time env var (or a small `config.json` served by SWA).
+- API has no secrets.
+
+## Observability
+- Basic structured logs in API.
+- (Optional) App Insights later.

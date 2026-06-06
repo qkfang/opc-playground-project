@@ -1,27 +1,35 @@
-# Robotics News — Tasks
+# Tasks — Lego Robotics News
 
-## 0. Repo / Docs
-- [ ] Add `docs/design.md`
-- [ ] Add `docs/tasks.md`
+## Build
+- [ ] Create solution structure:
+  - `apps/frontend/` static site (HTML/CSS/JS)
+  - `apps/api/` .NET minimal API
+- [ ] Implement API:
+  - Feed list config
+  - RSS/Atom fetch + parse
+  - Normalize + dedupe + sort
+  - In-memory cache
+  - `GET /api/news`
+- [ ] Implement frontend:
+  - Fetch from API base URL
+  - Render cards
+  - Refresh button
+  - Loading/error states
 
-## 1. Backend: RoboticsNews.Api (.NET 10)
-- [ ] Scaffold ASP.NET Core Web API project
-- [ ] Add model for `NewsArticle`
-- [ ] Add mocked JSON data file (or inline seed)
-- [ ] Implement `GET /api/news`
-- [ ] Enable CORS (allow SWA origin; permissive for local dev)
-- [ ] Add basic health endpoint `GET /health` (optional)
+## Local verification
+- [ ] Run API locally, hit `GET /api/news`
+- [ ] Run frontend locally (simple static server), ensure it calls API
 
-## 2. Frontend: Azure Static Web Apps (plain)
-- [ ] Create `apps/robotics-news/frontend/index.html`
-- [ ] Create `styles.css` + minimal layout
-- [ ] Create `app.js` to fetch from API and render list
-- [ ] Add loading + error UI
+## Azure infra
+- [ ] Create SWA
+- [ ] Create Web App (Linux) for .NET 8
+- [ ] Configure CORS on API to allow SWA origin
 
-## 3. Verification
-- [ ] `dotnet build` + `dotnet test` (if any)
-- [ ] Local smoke: run API and load frontend; confirm list renders
+## CI/CD
+- [ ] GitHub Action: deploy frontend to SWA via deployment token (no repo integration)
+- [ ] GitHub Action: build+deploy .NET API to Web App
 
-## 4. Azure wiring (next)
-- [ ] Add GitHub Actions workflows (SWA + Web App)
-- [ ] Add app settings: API URL for frontend, CORS origin for backend
+## Validate
+- [ ] Deployed API endpoint works
+- [ ] Deployed SWA page loads and shows items
+- [ ] Screenshot evidence
