@@ -28,6 +28,7 @@ export function createListing(input: ListingInput): Listing {
   const newListing: Listing = {
     ...input,
     id: `listing-${Date.now()}`,
+    sellerUserId: "demo-user",
     createdAt: new Date().toISOString(),
   };
 

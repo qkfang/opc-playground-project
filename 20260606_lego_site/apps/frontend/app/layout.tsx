@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import AuthStatus from "./components/auth-status";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,13 +25,16 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-slate-50 text-slate-900">
         <header className="border-b bg-white">
-          <nav className="mx-auto flex max-w-5xl flex-wrap gap-4 px-4 py-4 text-sm font-medium">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} className="hover:text-blue-700">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4 text-sm font-medium">
+            <nav className="flex flex-wrap gap-4">
+              {navItems.map((item) => (
+                <Link key={item.href} href={item.href} className="hover:text-blue-700">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <AuthStatus />
+          </div>
         </header>
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
       </body>

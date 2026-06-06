@@ -42,6 +42,18 @@ Azure Functions (TypeScript) backend for `20260606_lego_site` Task 2.
 
 If `COSMOS_CONNECTION_STRING`, `COSMOS_DATABASE_NAME`, or `COSMOS_CONTAINER_NAME` are missing, the app falls back to an in-memory mock store and returns `x-data-source: mock` on responses. When Cosmos is configured, the backend uses a single container with partition key `/type` and seeds the default sets/listings if they do not exist yet.
 
+## Run with frontend
+
+To run end-to-end locally with the Next.js frontend:
+
+1. Keep this backend running with `ALLOW_LOCAL_DEV_AUTH=true` in `local.settings.json`.
+2. In `../frontend`, set:
+   - `BACKEND_API_BASE_URL=http://localhost:7071/api`
+   - `NEXT_PUBLIC_LOCAL_USER_ID=demo-user` (or another user id)
+3. Start frontend with `npm run dev`.
+
+The frontend proxies `/api/*` to this Functions app and sends `x-user-id` for local auth-gated listing CRUD.
+
 ## Verification
 
 ```bash

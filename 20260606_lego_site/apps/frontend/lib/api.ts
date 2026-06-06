@@ -1,16 +1,41 @@
 import type { LegoSet, Listing, ListingInput } from "./types";
 
+const localDevUserId = process.env.NEXT_PUBLIC_LOCAL_USER_ID?.trim();
+
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string
+  ) {
+    super(message);
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...(localDevUserId ? { "x-user-id": localDevUserId } : {}),
       ...init?.headers,
     },
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    let message = `Request failed: ${response.status}`;
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body.message) {
+        message = body.message;
+      }
+    } catch {
+      // Ignore invalid/non-JSON responses and keep fallback error message.
+    }
+    throw new ApiError(response.status, message);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return (await response.json()) as T;
@@ -46,5 +71,11 @@ export function updateListing(id: string, input: ListingInput): Promise<Listing>
   return request<Listing>(`/api/listings/${id}`, {
     method: "PUT",
     body: JSON.stringify(input),
+  });
+}
+
+export function deleteListing(id: string): Promise<void> {
+  return request<void>(`/api/listings/${id}`, {
+    method: "DELETE",
   });
 }

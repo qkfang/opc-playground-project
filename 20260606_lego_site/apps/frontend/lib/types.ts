@@ -20,4 +20,4 @@ export type Listing = {
   status: "active" | "sold";
 };
 
-export type ListingInput = Omit<Listing, "id" | "createdAt">;
+export type ListingInput = Omit<Listing, "id" | "createdAt" | "sellerUserId">;
