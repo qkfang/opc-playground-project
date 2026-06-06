@@ -1,0 +1,27 @@
+name: Deploy Fruit Robotics SWA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/fruit-robotics-web/**'
+      - '.github/workflows/deploy-fruit-robotics-swa.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN_FRUIT_ROBOTICS }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: src/fruit-robotics-web
+          output_location: ''
+        env:
+          API_BASE_URL: ${{ secrets.FRUIT_API_BASE_URL }}

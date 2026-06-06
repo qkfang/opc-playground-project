@@ -72,8 +72,14 @@
       `).join('');
     }
 
+    // For SWA static hosting we can't rely on runtime env injection.
+    // We treat API_BASE_URL as an optional build-time global (can be injected by a build step if needed).
     const API_BASE_URL = (window.API_BASE_URL || window.__env?.API_BASE_URL || '').trim();
-    const apiBase = API_BASE_URL || 'http://localhost:5080';
+
+    // Deployed default (this repo's current Web App)
+    const DEFAULT_PROD_API = 'https://fruit-robotics-api-idb34vhhmgayi.azurewebsites.net';
+
+    const apiBase = API_BASE_URL || (location.hostname.includes('azurestaticapps.net') ? DEFAULT_PROD_API : 'http://localhost:5080');
     document.getElementById('apiBase').textContent = apiBase;
 
     async function refreshNews() {
