@@ -50,6 +50,24 @@ Then visit: <http://localhost:8000>
    - **Folder:** `/(root)`
 3. Save — Pages will publish the site.
 
+### HTTPS / TLS certificate
+
+- For GitHub Pages, TLS certificates are managed by GitHub (Let's Encrypt) and renewed automatically.
+- Keep **Enforce HTTPS** enabled in **Settings → Pages**.
+- If you use a custom domain, set repository variable `SITE_HOST` to that hostname so the TLS check workflow validates the production certificate.
+
+Manual verification:
+
+```bash
+npm run check:tls -- example.com
+```
+
+This verifies:
+- certificate chain validity (`Verify return code: 0 (ok)`)
+- certificate expiration date
+
+Automated verification is configured in `.github/workflows/tls-certificate-check.yml` and runs weekly (plus manual `workflow_dispatch`).
+
 ## Customization checklist
 
 Common edits in `index.html`:
