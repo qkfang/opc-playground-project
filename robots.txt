@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://qkfang.github.io/opc-project-1/sitemap.xml

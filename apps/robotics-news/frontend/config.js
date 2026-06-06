@@ -1,3 +1,0 @@
-window.ROBOTICS_NEWS_CONFIG = {
-  apiBaseUrl: "__ROBOTICS_NEWS_API_BASE_URL__"
-};
