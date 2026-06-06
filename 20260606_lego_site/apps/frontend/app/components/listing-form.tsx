@@ -102,12 +102,13 @@ export default function ListingForm({ sets, listing }: ListingFormProps) {
           step="0.01"
           className="mt-1 w-full rounded border px-3 py-2"
           value={formData.price}
-          onChange={(event) =>
+          onChange={(event) => {
+            const parsedPrice = Number.parseFloat(event.target.value);
             setFormData((current) => ({
               ...current,
-              price: Number.parseFloat(event.target.value) || 0,
-            }))
-          }
+              price: Number.isNaN(parsedPrice) ? current.price : parsedPrice,
+            }));
+          }}
         />
       </label>
 
