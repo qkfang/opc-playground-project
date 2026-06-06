@@ -42,7 +42,7 @@ export default function EditListingPage() {
       .finally(() => setIsAuthLoading(false));
   }, [params.id]);
 
-  const canEdit = Boolean(user && listing?.sellerUserId && listing.sellerUserId === user.userId);
+  const isDifferentOwner = Boolean(user && listing?.sellerUserId && listing.sellerUserId !== user.userId);
 
   return (
     <section className="space-y-4">
@@ -58,10 +58,13 @@ export default function EditListingPage() {
         </p>
       )}
       {user && isLoading && <p className="text-slate-600">Loading listing...</p>}
-      {user && listing && !canEdit && (
+      {user && listing && isDifferentOwner && (
         <p className="text-red-600">You can only edit your own listings.</p>
       )}
-      {canEdit && sets.length > 0 && <ListingForm sets={sets} listing={listing ?? undefined} />}
+      {user &&
+        listing &&
+        listing.sellerUserId === user.userId &&
+        sets.length > 0 && <ListingForm sets={sets} listing={listing} />}
     </section>
   );
 }

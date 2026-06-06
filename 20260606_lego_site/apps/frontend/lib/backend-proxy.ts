@@ -57,7 +57,7 @@ export async function proxyBackend(request: Request, pathWithQuery: string): Pro
       headers: getResponseHeaders(backendResponse),
     });
   } catch (error) {
-    console.error("Backend proxy request failed", error);
+    console.error(`Backend proxy request failed: ${request.method} ${pathWithQuery}`, error);
     return new Response(
       JSON.stringify({
         message:
