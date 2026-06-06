@@ -1,14 +1,15 @@
-# opc-project-1 — Robotics Website
+# opc-project-1 — Robotics GitHub Pages Site
 
-A simple, fast, one-page robotics project website built with **vanilla HTML/CSS/JS**, designed to deploy cleanly on **GitHub Pages**.
+A robotics-themed static site built with **vanilla HTML/CSS/JS** for **GitHub Pages**.
 
 ## Overview
 
-This repo contains a polished single-page site you can use for a robotics team, lab, or project:
+The site is organized into the four requested sections:
 
-- Sectioned landing page (About / Robots / Demos / Team / Updates / Contact)
-- Responsive layout and modern styling
-- Small interactive “telemetry” demo in the browser
+- **Home** — hero section, intro copy, and quick links
+- **Projects** — rendered project cards with tags, status, and links
+- **Updates** — reverse-chronological dated log
+- **Contact** — social links plus a small no-backend email form
 
 ## Screenshots
 
@@ -20,12 +21,41 @@ This repo contains a polished single-page site you can use for a robotics team, 
 ![Mobile preview](assets/screenshot-mobile.png)
 </details>
 
-## Features
+## Editing content
 
-- **Fast + lightweight:** no framework, minimal JavaScript
-- **Responsive:** looks good on desktop and mobile
-- **Easy to edit:** update content directly in `index.html`
-- **GitHub Pages friendly:** deploy from `main` with a couple clicks
+### Update projects and updates
+
+Edit `site-data.js`:
+
+- `projects` controls the cards shown in the **Projects** section
+- `updates` controls the reverse-chronological entries shown in **Updates**
+
+Each project supports:
+
+- `title`
+- `description`
+- `tags`
+- `status`
+- `links`
+
+Each update supports:
+
+- `date`
+- `title`
+- `body`
+- `highlights`
+
+### Update home/contact copy
+
+Edit `index.html` for:
+
+- hero text and quick-link copy
+- contact links
+
+### Update styling/behavior
+
+- `styles.css` controls the layout and visual theme
+- `script.js` controls rendering, nav highlighting, telemetry demo, and the email-form behavior (including the contact recipient constant)
 
 ## Run locally
 
@@ -41,29 +71,25 @@ python -m http.server 8000
 
 Then visit: <http://localhost:8000>
 
-## Deploy (GitHub Pages)
+## GitHub Pages configuration
+
+This site is designed to deploy directly from the repository root.
 
 1. Go to **Settings → Pages**
 2. Under **Build and deployment** choose:
    - **Source:** Deploy from a branch
    - **Branch:** `main`
    - **Folder:** `/(root)`
-3. Save — Pages will publish the site.
+3. Save to publish the site
 
-## Customization checklist
+The published home page is `index.html`, so visiting the Pages URL lands on the **Home** section by default.
 
-Common edits in `index.html`:
+## Visual verification
 
-- [ ] Project/team name + tagline
-- [ ] About section copy
-- [ ] Robots list (names, specs, status)
-- [ ] Demo links (videos, papers, repositories)
-- [ ] Team roster (names, roles, links)
-- [ ] Updates/timeline items
-- [ ] Contact info (email, socials)
+Install dependencies and regenerate the desktop/mobile previews with:
 
-Optional tweaks:
-
-- [ ] Update colors/typography in `styles.css`
-- [ ] Adjust the telemetry demo behavior in `script.js`
-- [ ] Replace the favicon (`assets/favicon.svg`) and/or add your own images in `assets/`
+```bash
+npm install
+npx playwright install chromium
+node scripts/take-screenshots.mjs
+```
