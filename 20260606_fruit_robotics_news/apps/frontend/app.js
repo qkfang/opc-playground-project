@@ -53,7 +53,7 @@
     return [];
   }
 
-  function getSafeUrl(value) {
+  function getHttpUrl(value) {
     if (typeof value !== 'string' || value.trim() === '') {
       return '#';
     }
@@ -70,8 +70,6 @@
     } catch {
       return '#';
     }
-
-    return '#';
   }
 
   function createNewsCard(item) {
@@ -80,7 +78,7 @@
 
     const title = document.createElement('h2');
     const link = document.createElement('a');
-    const href = getSafeUrl(item.url || item.link);
+    const href = getHttpUrl(item.url || item.link);
     link.href = href;
     link.target = '_blank';
     link.rel = 'noreferrer noopener';
