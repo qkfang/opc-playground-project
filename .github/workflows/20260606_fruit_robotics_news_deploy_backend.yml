@@ -15,7 +15,7 @@ permissions:
 env:
   BACKEND_PROJECT_PATH: 20260606_fruit_robotics_news/apps/backend
   DOTNET_VERSION: '8.0.x'
-  PUBLISH_OUTPUT_PATH: /tmp/publish-backend
+  PUBLISH_OUTPUT_PATH: ${{ runner.temp }}/publish-backend
   AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_20260606_FRUIT_ROBOTICS_NEWS }}
 
 jobs:

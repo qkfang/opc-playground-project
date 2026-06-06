@@ -36,7 +36,7 @@ jobs:
           inlineScript: |
             set -euo pipefail
 
-            deployment_name="20260606-fruit-robotics-news-infra-${GITHUB_RUN_ID}"
+            deployment_name="20260606_fruit_robotics_news_infra_${GITHUB_RUN_ID}"
 
             az deployment group create \
               --name "$deployment_name" \

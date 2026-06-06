@@ -16,6 +16,11 @@ var resourceNamePrefix = replace(toLower(projectId), '_', '-')
 var appServicePlanName = '${resourceNamePrefix}-plan'
 var webAppName = '${resourceNamePrefix}-api-${uniqueString(resourceGroup().id)}'
 var staticWebAppName = '${resourceNamePrefix}-web-${uniqueString(resourceGroup().id)}'
+var appServicePlanSkuTier = appServicePlanSku == 'B1'
+  ? 'Basic'
+  : appServicePlanSku == 'S1'
+    ? 'Standard'
+    : 'PremiumV3'
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
@@ -23,7 +28,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   kind: 'linux'
   sku: {
     name: appServicePlanSku
-    tier: appServicePlanSku == 'B1' ? 'Basic' : appServicePlanSku == 'S1' ? 'Standard' : 'PremiumV3'
+    tier: appServicePlanSkuTier
     size: appServicePlanSku
     capacity: 1
   }
