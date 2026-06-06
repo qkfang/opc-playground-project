@@ -23,13 +23,17 @@ export function getAuthenticatedUser(request: HttpRequest): AuthenticatedUser | 
 
   const principalHeader = request.headers.get("x-ms-client-principal");
   if (principalHeader) {
-    const principal = JSON.parse(Buffer.from(principalHeader, "base64").toString("utf8")) as StaticWebAppPrincipal;
-    if (principal.userId) {
-      return {
-        userId: principal.userId,
-        userDetails: principal.userDetails,
-        identityProvider: principal.identityProvider,
-      };
+    try {
+      const principal = JSON.parse(Buffer.from(principalHeader, "base64").toString("utf8")) as StaticWebAppPrincipal;
+      if (principal.userId) {
+        return {
+          userId: principal.userId,
+          userDetails: principal.userDetails,
+          identityProvider: principal.identityProvider,
+        };
+      }
+    } catch {
+      // Ignore malformed client principal headers and fall through to the next auth source.
     }
   }
 
