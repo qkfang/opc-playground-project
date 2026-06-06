@@ -1,0 +1,225 @@
+/* ── Fruit Robotics News — App styles ── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #fffbf0;
+  color: #2d2d2d;
+  min-height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.app-header {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7c948 50%, #4caf50 100%);
+  padding: 2rem 1.5rem 1.5rem;
+  text-align: center;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.header-emoji {
+  font-size: 2rem;
+}
+
+.header-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.header-subtitle {
+  margin-top: 0.4rem;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+/* ── Main ── */
+.app-main {
+  flex: 1;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.refresh-btn {
+  background: #ff6b35;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 3px 8px rgba(255, 107, 53, 0.35);
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #e55a25;
+  transform: translateY(-1px);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Error banner ── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #fff0f0;
+  border: 1px solid #ffb3b3;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  color: #c0392b;
+  font-weight: 500;
+}
+
+.retry-btn {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.retry-btn:hover {
+  background: #a93226;
+}
+
+/* ── Loading / Empty states ── */
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #777;
+}
+
+.loading-spinner,
+.empty-emoji {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  animation: bounce 1.2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ── News list ── */
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.news-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #f7c948;
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.news-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.news-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.news-title a {
+  color: #2d6a4f;
+  text-decoration: none;
+}
+
+.news-title a:hover {
+  text-decoration: underline;
+  color: #1b4332;
+}
+
+.news-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: #888;
+  margin-bottom: 0.6rem;
+}
+
+.news-source {
+  font-weight: 600;
+  color: #ff6b35;
+}
+
+.news-summary {
+  font-size: 0.92rem;
+  color: #555;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Footer ── */
+.app-footer {
+  text-align: center;
+  padding: 1.25rem;
+  font-size: 0.85rem;
+  color: #aaa;
+  background: #f5f5f5;
+  border-top: 1px solid #e8e8e8;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .header-title {
+    font-size: 1.4rem;
+  }
+  .app-main {
+    padding: 1.25rem 1rem;
+  }
+}
