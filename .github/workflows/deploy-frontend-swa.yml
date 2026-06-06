@@ -21,5 +21,5 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: repo/2026-06-06-lego-robotics-news/apps/frontend
+          app_location: apps/frontend
           output_location: ''

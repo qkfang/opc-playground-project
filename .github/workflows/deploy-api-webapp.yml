@@ -11,7 +11,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: lego-robotics-4071-api
   DOTNET_VERSION: '8.0.x'
-  PROJECT_PATH: repo/2026-06-06-lego-robotics-news/apps/api/LegoRoboticsNews.Api/LegoRoboticsNews.Api.csproj
+  PROJECT_PATH: apps/api/LegoRoboticsNews.Api/LegoRoboticsNews.Api.csproj
 
 jobs:
   build-and-deploy:
