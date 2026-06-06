@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lego Robotics News</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="logo">LEGO</div>
+    <div>
+      <h1>Lego Robotics News</h1>
+      <p class="sub">A tiny feed of robotics headlines (powered by a .NET API)</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="controls">
+      <input id="apiBase" class="input" placeholder="API base URL (e.g. https://your-api.azurewebsites.net)" />
+      <button id="refreshBtn" class="btn">Refresh</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div id="list" class="grid"></div>
+  </main>
+
+  <footer class="footer">
+    <span>Tip: set <code>localStorage.API_BASE_URL</code> to persist your API URL.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

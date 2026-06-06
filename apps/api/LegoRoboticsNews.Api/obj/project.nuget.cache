@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "jqsmQcIst4g=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\clawadmin\\.openclaw\\workspace-luigi\\repo\\2026-06-06-lego-robotics-news\\apps\\api\\LegoRoboticsNews.Api\\LegoRoboticsNews.Api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\clawadmin\\.nuget\\packages\\system.servicemodel.syndication\\10.0.8\\system.servicemodel.syndication.10.0.8.nupkg.sha512"
+  ],
+  "logs": []
+}
