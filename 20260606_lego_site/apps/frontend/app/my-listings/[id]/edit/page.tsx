@@ -42,7 +42,7 @@ export default function EditListingPage() {
       .finally(() => setIsAuthLoading(false));
   }, [params.id]);
 
-  const canEdit = user && listing && listing.sellerUserId === user.userId;
+  const canEdit = Boolean(user && listing?.sellerUserId && listing.sellerUserId === user.userId);
 
   return (
     <section className="space-y-4">
@@ -61,7 +61,7 @@ export default function EditListingPage() {
       {user && listing && !canEdit && (
         <p className="text-red-600">You can only edit your own listings.</p>
       )}
-      {canEdit && sets.length > 0 && <ListingForm sets={sets} listing={listing} />}
+      {canEdit && sets.length > 0 && <ListingForm sets={sets} listing={listing ?? undefined} />}
     </section>
   );
 }

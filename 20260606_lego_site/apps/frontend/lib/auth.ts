@@ -15,8 +15,6 @@ type StaticWebAppAuthResponse = Array<{
   clientPrincipal?: StaticWebAppPrincipal;
 }>;
 
-const localDevUserId = process.env.NEXT_PUBLIC_LOCAL_USER_ID?.trim();
-
 export async function fetchCurrentUser(): Promise<CurrentUser | null> {
   try {
     const response = await fetch("/.auth/me", { cache: "no-store" });
@@ -35,6 +33,7 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
     // Ignore auth endpoint errors and fall back to local development auth.
   }
 
+  const localDevUserId = process.env.NEXT_PUBLIC_LOCAL_USER_ID?.trim();
   if (localDevUserId) {
     return {
       userId: localDevUserId,

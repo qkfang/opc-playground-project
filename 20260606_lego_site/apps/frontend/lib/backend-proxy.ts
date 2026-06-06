@@ -41,10 +41,14 @@ function getResponseHeaders(response: Response): Headers {
 export async function proxyBackend(request: Request, pathWithQuery: string): Promise<Response> {
   try {
     const method = request.method.toUpperCase();
+    const requestBody =
+      method === "GET" || method === "HEAD" || method === "DELETE"
+        ? undefined
+        : await request.text();
     const backendResponse = await fetch(`${getBackendBaseUrl()}${pathWithQuery}`, {
       method,
       headers: getForwardHeaders(request),
-      body: method === "GET" || method === "HEAD" ? undefined : await request.text(),
+      body: requestBody,
       cache: "no-store",
     });
 

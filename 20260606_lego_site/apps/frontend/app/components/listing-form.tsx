@@ -41,7 +41,7 @@ export default function ListingForm({ sets, listing }: ListingFormProps) {
       router.push("/my-listings");
       router.refresh();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to save listing due to an unexpected error.");
+      setError(error instanceof Error ? error.message : "Failed to save listing.");
     } finally {
       setIsSubmitting(false);
     }
