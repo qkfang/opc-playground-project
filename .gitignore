@@ -8,3 +8,8 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# .NET build artifacts
+**/bin/
+**/obj/
+20260606_fruit_robotics_news/apps/backend/publish/
