@@ -46,17 +46,15 @@ public sealed class RoboticsNewsService(
 
     private async Task<IReadOnlyList<RoboticsNewsItem>> FetchFeedItemsAsync(CancellationToken cancellationToken)
     {
+        var allItems = new List<RoboticsNewsItem>();
+
         foreach (var feedUrl in FeedUrls)
         {
             try
             {
                 await using var stream = await httpClient.GetStreamAsync(feedUrl, cancellationToken);
                 var document = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken);
-                var items = ParseItems(document).ToArray();
-                if (items.Length > 0)
-                {
-                    return items;
-                }
+                allItems.AddRange(ParseItems(document));
             }
             catch (Exception ex)
             {
@@ -64,7 +62,14 @@ public sealed class RoboticsNewsService(
             }
         }
 
-        return [];
+        return allItems
+            .GroupBy(item => item.Url, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .OrderByDescending(item =>
+                DateTimeOffset.TryParse(item.Published, out var published)
+                    ? published
+                    : DateTimeOffset.MinValue)
+            .ToArray();
     }
 
     private static IEnumerable<RoboticsNewsItem> ParseItems(XDocument document)
@@ -129,14 +134,14 @@ public sealed class RoboticsNewsService(
 
     private static RoboticsNewsItem CreateItem(string title, string url, string publishedValue, string summary)
     {
-        var parsedDate = DateTimeOffset.TryParse(publishedValue, out var published)
-            ? published.ToUniversalTime()
-            : DateTimeOffset.UnixEpoch;
+        var published = DateTimeOffset.TryParse(publishedValue, out var parsedPublished)
+            ? parsedPublished
+            : DateTimeOffset.UtcNow;
 
         return new RoboticsNewsItem(
             title,
             url,
-            parsedDate.ToString("O"),
+            published.ToUniversalTime().ToString("O"),
             summary);
     }
 }

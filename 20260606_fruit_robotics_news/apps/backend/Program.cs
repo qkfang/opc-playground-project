@@ -4,7 +4,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient<IRoboticsNewsService, RoboticsNewsService>();
+builder.Services.AddHttpClient<IRoboticsNewsService, RoboticsNewsService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 

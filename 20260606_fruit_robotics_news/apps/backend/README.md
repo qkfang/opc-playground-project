@@ -6,9 +6,10 @@ ASP.NET Core Web API endpoint:
 
 ## Robotics feed source
 
-This API fetches robotics news from **The Robot Report RSS feed**:
+This API fetches robotics news from these public feeds:
 
 - `https://www.therobotreport.com/feed/`
+- `https://news.google.com/rss/search?q=robotics`
 
 ## Environment variables
 
@@ -18,7 +19,7 @@ This API fetches robotics news from **The Robot Report RSS feed**:
 ## Run locally
 
 ```bash
-cd /tmp/workspace/qkfang/opc-project-1/20260606_fruit_robotics_news/apps/backend
+cd 20260606_fruit_robotics_news/apps/backend
 dotnet restore
 dotnet build
 ALLOWED_ORIGINS=http://localhost:4280 dotnet run
