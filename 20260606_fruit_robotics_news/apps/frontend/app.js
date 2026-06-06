@@ -2,12 +2,13 @@
   const refreshButton = document.getElementById('refresh-button');
   const statusElement = document.getElementById('status');
   const newsListElement = document.getElementById('news-list');
+  const newsCount = 10;
 
   const config = window.FRUIT_ROBOTICS_CONFIG || {};
   const apiBaseUrl = typeof config.apiBaseUrl === 'string'
     ? config.apiBaseUrl.replace(/\/+$/, '')
     : '';
-  const requestUrl = `${apiBaseUrl}/api/news/robotics?count=10`;
+  const requestUrl = `${apiBaseUrl}/api/news/robotics?count=${newsCount}`;
 
   function setStatus(message, variant) {
     statusElement.textContent = message;
@@ -54,6 +55,10 @@
 
   function getSafeUrl(value) {
     if (typeof value !== 'string' || value.trim() === '') {
+      return '#';
+    }
+
+    if (!/^https?:\/\//i.test(value)) {
       return '#';
     }
 
@@ -110,7 +115,7 @@
       }
 
       const payload = await response.json();
-      const items = normalizeItems(payload).slice(0, 10);
+      const items = normalizeItems(payload).slice(0, newsCount);
 
       clearNewsList();
 
