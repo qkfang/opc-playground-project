@@ -53,7 +53,7 @@
     return [];
   }
 
-  function getHttpUrl(value) {
+  function validateWebUrl(value) {
     if (typeof value !== 'string' || value.trim() === '') {
       return '#';
     }
@@ -67,6 +67,8 @@
       if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
         return parsed.href;
       }
+
+      return '#';
     } catch {
       return '#';
     }
@@ -78,7 +80,7 @@
 
     const title = document.createElement('h2');
     const link = document.createElement('a');
-    const href = getHttpUrl(item.url || item.link);
+    const href = validateWebUrl(item.url || item.link);
     link.href = href;
     link.target = '_blank';
     link.rel = 'noreferrer noopener';
