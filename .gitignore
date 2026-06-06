@@ -4,6 +4,7 @@ node_modules/
 # Tooling / scratch
 .openclaw/
 .tmp-*.md
+20260606_fruit_robotics_news/bicep/main.json
 
 # OS
 .DS_Store

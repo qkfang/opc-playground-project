@@ -7,9 +7,9 @@
 - [ ] Commit docs + structure
 
 ## T1 — Infra (Bicep + GitHub Actions)
-- [ ] Bicep: App Service plan + Web App for .NET API
-- [ ] Bicep: Static Web App (no repo integration) + output deployment token retrieval notes
-- [ ] GitHub Action: 20260606_fruit_robotics_news_infra.yml
+- [x] Bicep: App Service plan + Web App for .NET API
+- [x] Bicep: Static Web App (no repo integration) + output deployment token retrieval notes
+- [x] GitHub Action: 20260606_fruit_robotics_news_infra.yml
 
 ## T2 — Backend (.NET API)
 - [ ] Create .NET Web API project
