@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "ALLOW_LOCAL_DEV_AUTH": "true",
+    "COSMOS_CONNECTION_STRING": "",
+    "COSMOS_DATABASE_NAME": "lego-marketplace",
+    "COSMOS_CONTAINER_NAME": "catalog"
+  }
+}
