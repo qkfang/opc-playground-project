@@ -10,8 +10,6 @@ type ListingFormProps = {
   listing?: Listing;
 };
 
-const defaultSeller = "demo-user";
-
 export default function ListingForm({ sets, listing }: ListingFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +21,6 @@ export default function ListingForm({ sets, listing }: ListingFormProps) {
     price: listing?.price ?? 0,
     currency: listing?.currency ?? "USD",
     description: listing?.description ?? "",
-    sellerUserId: listing?.sellerUserId ?? defaultSeller,
     status: listing?.status ?? "active",
   });
 
@@ -43,8 +40,8 @@ export default function ListingForm({ sets, listing }: ListingFormProps) {
 
       router.push("/my-listings");
       router.refresh();
-    } catch {
-      setError("Failed to save listing. Please try again.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to save listing. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

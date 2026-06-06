@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-import { getSets } from "@/lib/data-store";
+import { proxyBackend } from "@/lib/backend-proxy";
 
-export async function GET() {
-  return NextResponse.json(getSets());
+export async function GET(request: Request) {
+  return proxyBackend(request, "/sets");
 }

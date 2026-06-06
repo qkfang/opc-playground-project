@@ -1,13 +1,27 @@
 # LEGO Marketplace Frontend
 
-Next.js (TypeScript) frontend scaffold for `20260606_lego_site` Task 1.
+Next.js (TypeScript) frontend for `20260606_lego_site`.
 
 ## Local run
 
-From this folder:
+1. Start backend API in another terminal:
+
+   ```bash
+   cd ../backend
+   npm install
+   cp local.settings.sample.json local.settings.json
+   # set ALLOW_LOCAL_DEV_AUTH=true in local.settings.json
+   npm run start
+   ```
+
+2. In this folder:
 
 ```bash
 npm install
+# defaults to http://localhost:7071/api
+export BACKEND_API_BASE_URL=http://localhost:7071/api
+# optional local auth identity used for CRUD owner checks
+export NEXT_PUBLIC_LOCAL_USER_ID=demo-user
 npm run dev
 ```
 
@@ -31,4 +45,4 @@ npm run lint
 npm run build
 ```
 
-The UI uses API calls to `/api/*`. Route handlers under `app/api` provide mock-backed responses until backend work is completed.
+The UI calls `/api/*` route handlers that proxy to the Azure Functions backend (`BACKEND_API_BASE_URL`).
