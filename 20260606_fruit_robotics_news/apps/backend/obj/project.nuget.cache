@@ -1,11 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "7zYwlHb2Tag=",
+  "dgSpecHash": "dpmT4TD5Oho=",
   "success": true,
   "projectFilePath": "/tmp/workspace/qkfang/opc-project-1/20260606_fruit_robotics_news/apps/backend/backend.csproj",
   "expectedPackageFiles": [
-    "/home/runner/.nuget/packages/microsoft.aspnetcore.openapi/10.0.8/microsoft.aspnetcore.openapi.10.0.8.nupkg.sha512",
-    "/home/runner/.nuget/packages/microsoft.openapi/2.0.0/microsoft.openapi.2.0.0.nupkg.sha512"
+    "/tmp/codeql-scratch-b6f03831be4a6103/dbs/csharp/working/packages/microsoft.aspnetcore.openapi/10.0.8/microsoft.aspnetcore.openapi.10.0.8.nupkg.sha512",
+    "/tmp/codeql-scratch-b6f03831be4a6103/dbs/csharp/working/packages/microsoft.openapi/2.0.0/microsoft.openapi.2.0.0.nupkg.sha512",
+    "/tmp/codeql-scratch-b6f03831be4a6103/dbs/csharp/working/packages/system.text.json/8.0.5/system.text.json.8.0.5.nupkg.sha512",
+    "/tmp/codeql-scratch-b6f03831be4a6103/dbs/csharp/working/packages/microsoft.netcore.app.ref/10.0.8/microsoft.netcore.app.ref.10.0.8.nupkg.sha512",
+    "/tmp/codeql-scratch-b6f03831be4a6103/dbs/csharp/working/packages/microsoft.aspnetcore.app.ref/10.0.8/microsoft.aspnetcore.app.ref.10.0.8.nupkg.sha512",
+    "/tmp/codeql-scratch-b6f03831be4a6103/dbs/csharp/working/packages/microsoft.netcore.app.host.linux-x64/10.0.8/microsoft.netcore.app.host.linux-x64.10.0.8.nupkg.sha512"
   ],
   "logs": []
 }
