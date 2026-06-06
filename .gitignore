@@ -1,6 +1,10 @@
 # Node
 node_modules/
 
+# .NET
+**/bin/
+**/obj/
+
 # Tooling / scratch
 .openclaw/
 .tmp-*.md
