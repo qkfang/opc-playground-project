@@ -12,9 +12,16 @@ public sealed class NewsController(INewsService newsService) : ControllerBase
     private const int MaxLimit = 50;
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<NewsItemDto>>> Get([FromQuery] int? limit, CancellationToken cancellationToken)
+    public Task<ActionResult<IReadOnlyList<NewsItemDto>>> Get([FromQuery] int? limit, CancellationToken cancellationToken)
+        => GetNewsAsync(limit, cancellationToken);
+
+    [HttpGet("robotics")]
+    public Task<ActionResult<IReadOnlyList<NewsItemDto>>> GetRobotics([FromQuery] int? count, CancellationToken cancellationToken)
+        => GetNewsAsync(count, cancellationToken);
+
+    private async Task<ActionResult<IReadOnlyList<NewsItemDto>>> GetNewsAsync(int? requestedCount, CancellationToken cancellationToken)
     {
-        var requestedLimit = limit.GetValueOrDefault(DefaultLimit);
+        var requestedLimit = requestedCount.GetValueOrDefault(DefaultLimit);
         var normalizedLimit = requestedLimit <= 0 ? DefaultLimit : Math.Min(requestedLimit, MaxLimit);
 
         try

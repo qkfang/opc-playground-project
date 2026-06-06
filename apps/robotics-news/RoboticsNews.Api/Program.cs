@@ -54,5 +54,6 @@ app.UseCors("FrontendOrigins");
 
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
+app.MapGet("/healthz", () => Results.Ok(new { status = "Healthy" }));
 
 app.Run();
