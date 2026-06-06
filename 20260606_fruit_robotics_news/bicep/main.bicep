@@ -1,4 +1,4 @@
-param projectId string = '20260606-fruit-robotics-news'
+param projectId string = '20260606_fruit_robotics_news'
 param apiLocation string = resourceGroup().location
 param staticWebAppLocation string = 'eastasia'
 param appServicePlanSkuName string = 'B1'
