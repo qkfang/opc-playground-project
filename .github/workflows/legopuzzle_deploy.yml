@@ -62,7 +62,12 @@ jobs:
           set -euo pipefail
           cd "${{ inputs.backendPath }}"
           npm ci --omit=dev
-          zip -r ../backend-package.zip .
+          cp package.json ../package.json
+          cp package-lock.json ../package-lock.json
+          cp -R src ../src
+          if [ -d public ]; then cp -R public ../public; fi
+          cd ..
+          zip -r backend-package.zip package.json package-lock.json src public node_modules
 
       - name: Configure backend runtime settings
         uses: azure/cli@v2
