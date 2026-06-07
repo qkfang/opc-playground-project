@@ -1,4 +1,5 @@
 const DEFAULT_PORT = 3000;
+const MAX_PORT = 65535;
 
 function getOptionalString(value) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -10,7 +11,7 @@ function parsePort(value) {
   }
 
   const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > MAX_PORT) {
     throw new Error("PORT must be a valid TCP port number");
   }
 

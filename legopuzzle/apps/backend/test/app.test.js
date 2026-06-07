@@ -16,8 +16,25 @@ test("GET /api/health returns ok", async () => {
 });
 
 test("POST /api/scores validates payload", async () => {
-  const response = await createTestClient().post("/api/scores").send({ playerName: "", score: -1, completionTimeMs: 0 });
+  const response = await createTestClient().post("/api/scores").send({ playerName: "", score: 100, completionTimeMs: 2000 });
   assert.equal(response.status, 400);
+  assert.equal(response.body.message, "playerName is required");
+});
+
+test("POST /api/scores validates score and completionTimeMs boundaries", async () => {
+  const client = createTestClient();
+
+  const badScoreResponse = await client
+    .post("/api/scores")
+    .send({ playerName: "Demo", score: -1, completionTimeMs: 2000 });
+  assert.equal(badScoreResponse.status, 400);
+  assert.equal(badScoreResponse.body.message, "score must be an integer between 0 and 1000000000");
+
+  const badCompletionResponse = await client
+    .post("/api/scores")
+    .send({ playerName: "Demo", score: 100, completionTimeMs: 0 });
+  assert.equal(badCompletionResponse.status, 400);
+  assert.equal(badCompletionResponse.body.message, "completionTimeMs must be an integer between 1 and 86400000");
 });
 
 test("leaderboard sorts by score desc then completionTime asc and respects limit", async () => {

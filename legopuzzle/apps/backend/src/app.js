@@ -1,10 +1,13 @@
 const express = require("express");
 const { parseLeaderboardLimit, parseScorePayload } = require("./validation");
+const { ValidationError } = require("./errors");
+
+const JSON_BODY_LIMIT = "100kb";
 
 function createApp(scoreStore) {
   const app = express();
   app.disable("x-powered-by");
-  app.use(express.json({ limit: "100kb" }));
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
   app.get("/api/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
@@ -35,10 +38,8 @@ function createApp(scoreStore) {
       return res.status(400).json({ message: "Request body must be valid JSON" });
     }
 
-    if (error instanceof Error) {
-      if (error.message.includes("must") || error.message.includes("required") || error.message.includes("Request body")) {
-        return res.status(400).json({ message: error.message });
-      }
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ message: error.message });
     }
 
     console.error(error);

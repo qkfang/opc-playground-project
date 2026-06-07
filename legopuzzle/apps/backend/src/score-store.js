@@ -21,7 +21,12 @@ class InMemoryScoreStore {
 
   async getLeaderboard(limit) {
     return [...this.scores]
-      .sort((a, b) => b.score - a.score || a.completionTimeMs - b.completionTimeMs || a.createdAt.localeCompare(b.createdAt))
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          a.completionTimeMs - b.completionTimeMs ||
+          Date.parse(a.createdAt) - Date.parse(b.createdAt),
+      )
       .slice(0, limit);
   }
 }
@@ -54,11 +59,15 @@ class CosmosScoreStore {
 
   async getLeaderboard(limit) {
     const query = {
-      query: `SELECT TOP ${limit} c.id, c.playerName, c.score, c.completionTimeMs, c.createdAt
+      query: `SELECT c.id, c.playerName, c.score, c.completionTimeMs, c.createdAt
               FROM c
               WHERE c.type = @type
-              ORDER BY c.score DESC, c.completionTimeMs ASC, c.createdAt ASC`,
-      parameters: [{ name: "@type", value: "score" }],
+              ORDER BY c.score DESC, c.completionTimeMs ASC, c.createdAt ASC
+              OFFSET 0 LIMIT @limit`,
+      parameters: [
+        { name: "@type", value: "score" },
+        { name: "@limit", value: limit },
+      ],
     };
 
     const { resources } = await this.container.items.query(query).fetchAll();
