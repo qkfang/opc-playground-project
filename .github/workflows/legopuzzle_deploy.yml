@@ -61,7 +61,23 @@ jobs:
         run: |
           set -euo pipefail
           cd "${{ inputs.backendPath }}"
+          npm ci --omit=dev
           zip -r ../backend-package.zip .
+
+      - name: Configure backend runtime settings
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            az webapp config set \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.discover.outputs.webAppName }}" \
+              --startup-file "npm start"
+
+            az webapp config appsettings set \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.discover.outputs.webAppName }}" \
+              --settings WEBSITE_RUN_FROM_PACKAGE=0 SCM_DO_BUILD_DURING_DEPLOYMENT=true PORT=8080
 
       - name: Deploy backend package
         uses: azure/cli@v2
@@ -72,7 +88,8 @@ jobs:
               --resource-group "$RESOURCE_GROUP" \
               --name "${{ steps.discover.outputs.webAppName }}" \
               --src-path "$(dirname "${{ inputs.backendPath }}")/backend-package.zip" \
-              --type zip
+              --type zip \
+              --timeout 1800000
 
   deploy-frontend:
     needs: [deploy-backend]
