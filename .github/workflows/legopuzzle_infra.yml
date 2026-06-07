@@ -1,0 +1,66 @@
+name: legopuzzle_infra
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming"
+        required: true
+        default: "legopuzzle"
+      location:
+        description: "Region for App Service and Cosmos DB"
+        required: true
+        default: "eastasia"
+      swaLocation:
+        description: "Region for Static Web App"
+        required: true
+        default: "eastasia"
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+  PROJECT_DIR: legopuzzle
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        id: deploy
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            cd "$PROJECT_DIR/bicep"
+            az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "legopuzzle-infra-${GITHUB_RUN_NUMBER}" \
+              --template-file main.bicep \
+              --parameters baseName="${{ inputs.baseName }}" location="${{ inputs.location }}" swaLocation="${{ inputs.swaLocation }}" \
+              --output json > deploy.json
+
+            echo "webAppName=$(jq -r '.properties.outputs.webAppName.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "webAppHostname=$(jq -r '.properties.outputs.webAppHostname.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "cosmosAccountName=$(jq -r '.properties.outputs.cosmosAccountName.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "cosmosEndpoint=$(jq -r '.properties.outputs.cosmosEndpoint.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "staticWebAppName=$(jq -r '.properties.outputs.staticWebAppName.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "staticWebAppHostname=$(jq -r '.properties.outputs.staticWebAppHostname.value' deploy.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "### legopuzzle infra deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Resource group: $RESOURCE_GROUP" >> "$GITHUB_STEP_SUMMARY"
+          echo "- App Service API: ${{ steps.deploy.outputs.webAppName }} (https://${{ steps.deploy.outputs.webAppHostname }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Cosmos DB: ${{ steps.deploy.outputs.cosmosAccountName }} (${{ steps.deploy.outputs.cosmosEndpoint }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Static Web App: ${{ steps.deploy.outputs.staticWebAppName }} (https://${{ steps.deploy.outputs.staticWebAppHostname }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Next: create/update secret LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN for frontend deploy." >> "$GITHUB_STEP_SUMMARY"

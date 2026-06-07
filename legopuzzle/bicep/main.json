@@ -1,0 +1,225 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "6484093526945582681"
+    }
+  },
+  "parameters": {
+    "baseName": {
+      "type": "string",
+      "defaultValue": "legopuzzle",
+      "metadata": {
+        "description": "Base name used to derive deterministic resource names."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Region for App Service and Cosmos DB."
+      }
+    },
+    "swaLocation": {
+      "type": "string",
+      "defaultValue": "eastasia",
+      "metadata": {
+        "description": "Region for Azure Static Web App."
+      }
+    },
+    "appServicePlanSku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "metadata": {
+        "description": "SKU name for the App Service plan."
+      }
+    },
+    "cosmosDatabaseName": {
+      "type": "string",
+      "defaultValue": "legopuzzle",
+      "metadata": {
+        "description": "Cosmos DB SQL database name."
+      }
+    },
+    "cosmosContainerName": {
+      "type": "string",
+      "defaultValue": "scores",
+      "metadata": {
+        "description": "Cosmos DB SQL container name for scores."
+      }
+    },
+    "cosmosContainerThroughput": {
+      "type": "int",
+      "defaultValue": 400,
+      "minValue": 400,
+      "metadata": {
+        "description": "Cosmos DB throughput (RU/s) for the scores container."
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[substring(toLower(uniqueString(resourceGroup().id, parameters('baseName'))), 0, 6)]",
+    "appServicePlanName": "[format('{0}-plan-{1}', parameters('baseName'), variables('uniqueSuffix'))]",
+    "webAppName": "[format('{0}-api-{1}', parameters('baseName'), variables('uniqueSuffix'))]",
+    "staticWebAppName": "[format('{0}-swa-{1}', parameters('baseName'), variables('uniqueSuffix'))]",
+    "cosmosAccountName": "[format('{0}cosmos{1}', parameters('baseName'), variables('uniqueSuffix'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('appServicePlanSku')]",
+        "capacity": 1
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('webAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "NODE|22-lts",
+          "alwaysOn": true
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2024-05-15",
+      "name": "[variables('cosmosAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0,
+            "isZoneRedundant": false
+          }
+        ],
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "capabilities": []
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}', variables('cosmosAccountName'), parameters('cosmosDatabaseName'))]",
+      "properties": {
+        "resource": {
+          "id": "[parameters('cosmosDatabaseName')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2024-05-15",
+      "name": "[format('{0}/{1}/{2}', variables('cosmosAccountName'), parameters('cosmosDatabaseName'), parameters('cosmosContainerName'))]",
+      "properties": {
+        "resource": {
+          "id": "[parameters('cosmosContainerName')]",
+          "partitionKey": {
+            "paths": [
+              "/playerId"
+            ],
+            "kind": "Hash"
+          },
+          "indexingPolicy": {
+            "indexingMode": "consistent",
+            "automatic": true,
+            "includedPaths": [
+              {
+                "path": "/*"
+              }
+            ],
+            "excludedPaths": [
+              {
+                "path": "/\"_etag\"/?"
+              }
+            ]
+          }
+        },
+        "options": {
+          "throughput": "[parameters('cosmosContainerThroughput')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('cosmosAccountName'), parameters('cosmosDatabaseName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('staticWebAppName')]",
+      "location": "[parameters('swaLocation')]",
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      },
+      "properties": {
+        "allowConfigFileUpdates": true
+      }
+    }
+  ],
+  "outputs": {
+    "appServicePlanName": {
+      "type": "string",
+      "value": "[variables('appServicePlanName')]"
+    },
+    "webAppName": {
+      "type": "string",
+      "value": "[variables('webAppName')]"
+    },
+    "webAppHostname": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', variables('webAppName')), '2023-12-01').defaultHostName]"
+    },
+    "cosmosAccountName": {
+      "type": "string",
+      "value": "[variables('cosmosAccountName')]"
+    },
+    "cosmosEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosAccountName')), '2024-05-15').documentEndpoint]"
+    },
+    "cosmosDatabase": {
+      "type": "string",
+      "value": "[parameters('cosmosDatabaseName')]"
+    },
+    "cosmosContainer": {
+      "type": "string",
+      "value": "[parameters('cosmosContainerName')]"
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[variables('staticWebAppName')]"
+    },
+    "staticWebAppHostname": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName')), '2023-12-01').defaultHostname]"
+    }
+  }
+}

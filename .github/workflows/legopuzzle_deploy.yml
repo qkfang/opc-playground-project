@@ -1,0 +1,102 @@
+name: legopuzzle_deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming"
+        required: true
+        default: "legopuzzle"
+      backendPath:
+        description: "Backend API source directory to package and deploy"
+        required: true
+        default: "legopuzzle/apps/backend"
+      frontendPath:
+        description: "Frontend static artifact directory for SWA upload"
+        required: true
+        default: "legopuzzle/apps/frontend"
+      deployBackend:
+        description: "Deploy backend API to App Service"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+
+jobs:
+  deploy-backend:
+    if: ${{ inputs.deployBackend }}
+    runs-on: ubuntu-latest
+    outputs:
+      webAppName: ${{ steps.discover.outputs.webAppName }}
+      apiBaseUrl: ${{ steps.discover.outputs.apiBaseUrl }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Discover App Service
+        id: discover
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            WEB_APP=$(az webapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'${{ inputs.baseName }}-api-')].name | [0]" -o tsv)
+            if [ -z "$WEB_APP" ]; then
+              echo "No App Service found for baseName=${{ inputs.baseName }} in $RESOURCE_GROUP"
+              exit 1
+            fi
+            HOST=$(az webapp show -g "$RESOURCE_GROUP" -n "$WEB_APP" --query defaultHostName -o tsv)
+            echo "webAppName=$WEB_APP" >> "$GITHUB_OUTPUT"
+            echo "apiBaseUrl=https://$HOST" >> "$GITHUB_OUTPUT"
+
+      - name: Create backend package
+        run: |
+          set -euo pipefail
+          cd "${{ inputs.backendPath }}"
+          zip -r ../backend-package.zip .
+
+      - name: Deploy backend package
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            az webapp deploy \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.discover.outputs.webAppName }}" \
+              --src-path "$(dirname "${{ inputs.backendPath }}")/backend-package.zip" \
+              --type zip
+
+  deploy-frontend:
+    needs: [deploy-backend]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy frontend to Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN }}
+          action: upload
+          app_location: ${{ inputs.frontendPath }}
+          skip_app_build: true
+          skip_api_build: true
+          output_location: ""
+
+      - name: Summary
+        run: |
+          echo "### legopuzzle deployment completed" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ needs.deploy-backend.outputs.webAppName }}" ]; then
+            echo "- Backend App Service: ${{ needs.deploy-backend.outputs.webAppName }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- API base URL: ${{ needs.deploy-backend.outputs.apiBaseUrl }}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "- Frontend deployed with LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN" >> "$GITHUB_STEP_SUMMARY"
