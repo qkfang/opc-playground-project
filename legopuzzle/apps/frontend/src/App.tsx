@@ -82,9 +82,10 @@ function getApiUrl(path: string) {
 
 async function fetchLeaderboard(signal?: AbortSignal) {
   const response = await fetch(getApiUrl('/leaderboard'), { signal })
+  const contentType = response.headers.get('content-type') ?? ''
 
-  if (!response.ok) {
-    throw new Error('Unable to load the leaderboard right now.')
+  if (!response.ok || !contentType.includes('application/json')) {
+    throw new Error('Unable to load leaderboard. Check that the backend API is running.')
   }
 
   const payload = (await response.json()) as LeaderboardEntry[]
@@ -109,7 +110,7 @@ async function submitScore(entry: Omit<LeaderboardEntry, 'id' | 'createdAt'>) {
   })
 
   if (!response.ok) {
-    throw new Error('Unable to submit your score yet.')
+    throw new Error('Unable to submit your score. Check that the backend API is running.')
   }
 }
 
@@ -147,7 +148,10 @@ function App() {
     const abortController = new AbortController()
 
     fetchLeaderboard(abortController.signal)
-      .then(setLeaderboard)
+      .then((entries) => {
+        setLeaderboard(entries)
+        setLeaderboardError(null)
+      })
       .catch((error: unknown) => {
         if (abortController.signal.aborted) {
           return
@@ -227,6 +231,7 @@ function App() {
 
       const refreshedLeaderboard = await fetchLeaderboard()
       setLeaderboard(refreshedLeaderboard)
+      setLeaderboardError(null)
       setSubmitted(true)
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Unable to submit score.')

@@ -21,6 +21,7 @@ When `VITE_API_BASE_URL` is set, the UI calls:
 - `POST /leaderboard` to submit `{ displayName, score, moves, seconds }`
 
 If the variable is omitted, the app uses same-origin relative `/leaderboard` requests.
+For local development, set `VITE_API_BASE_URL` if your backend API runs on a different origin than Vite.
 
 ## Verification
 
