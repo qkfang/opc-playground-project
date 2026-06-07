@@ -7,7 +7,17 @@
 - [x] (T5) Copilot task: wire frontend to API + auth-gated listing CRUD — PR #54
 - [x] (T6) Local smoke test — backend 3/3 tests pass, frontend build + lint clean
 - [x] (T7) Add infra (Bicep) + GitHub Actions deploy (SWA token, Function App)
-- [ ] (T8) Deploy to Azure rg-playground-01 and validate
+- [x] (T8) Deploy to Azure rg-playground-01 and validate
+
+## Validation
+- Live frontend: `https://blue-meadow-0f3902100.7.azurestaticapps.net`
+- Live backend: `https://lego20260606-func-t4kkdmb53srxc.azurewebsites.net`
+- Checked on 2026-06-07:
+  - `GET /api/sets` returns `200 OK`
+  - Frontend `/`, `/sets`, and `/marketplace` return `200 OK`
+- Workflow fixes applied:
+  - backend deploy package creation no longer depends on `zip` being present inside `azure/cli`
+  - infra workflow now falls back to existing LEGO SWA/Function resources when Bicep re-run hits the storage-policy provisioning edge case
 
 ## Notes
 - First cut uses the **mock (in-memory) data store** — Cosmos is provisioned only when

@@ -50,16 +50,42 @@ jobs:
             HOST=$(az functionapp show -g "$RESOURCE_GROUP" -n "$FN" --query defaultHostName -o tsv)
             echo "funcName=$FN" >> "$GITHUB_OUTPUT"
             echo "funcHost=$HOST" >> "$GITHUB_OUTPUT"
+      - name: Create backend deployment package
+        run: |
+          set -euo pipefail
+          cd "$FUNC_DIR"
+          rm -f ../backend-package.zip
+          python - <<'PY'
+          import os
+          import zipfile
+
+          root = '.'
+          out = os.path.normpath('../backend-package.zip')
+          excludes = {'.git', '.github'}
+
+          with zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+              for current_root, dirs, files in os.walk(root):
+                  dirs[:] = [d for d in dirs if d not in excludes and not d.startswith('.git')]
+                  rel_root = os.path.relpath(current_root, root)
+                  if rel_root.startswith(os.path.join('dist', 'src', 'test')):
+                      continue
+                  for file_name in files:
+                      if file_name.endswith('.zip'):
+                          continue
+                      full_path = os.path.join(current_root, file_name)
+                      rel_path = os.path.relpath(full_path, root)
+                      if rel_path.startswith(os.path.join('dist', 'src', 'test')):
+                          continue
+                      zf.write(full_path, rel_path)
+          PY
       - name: Zip deploy backend
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
-            cd "$FUNC_DIR"
-            zip -r -q ../backend-package.zip . -x "*.git*" "dist/src/test/*"
             az functionapp deployment source config-zip \
               -g "$RESOURCE_GROUP" -n "${{ steps.discover.outputs.funcName }}" \
-              --src ../backend-package.zip --only-show-errors
+              --src 20260606_lego_site/apps/backend-package.zip --only-show-errors
 
   deploy-frontend:
     needs: [deploy-backend]
