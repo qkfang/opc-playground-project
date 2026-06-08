@@ -8,7 +8,7 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-playground-01
-  SWA_NAME: difficultywebapp20260608
+  SWA_NAME: difficulty20260608-swa
   APP_DIR: 20260608_difficulty_webapp/apps/frontend
 
 jobs:
