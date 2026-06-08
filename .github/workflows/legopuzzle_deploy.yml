@@ -12,7 +12,7 @@ on:
         required: true
         default: "legopuzzle/apps/backend"
       frontendPath:
-        description: "Frontend static artifact directory for SWA upload"
+        description: "Frontend source directory to build and deploy to SWA"
         required: true
         default: "legopuzzle/apps/frontend"
       deployBackend:
@@ -104,12 +104,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build frontend
+        run: |
+          set -euo pipefail
+          cd "${{ inputs.frontendPath }}"
+          npm ci
+          npm run build
+          cp staticwebapp.config.json dist/staticwebapp.config.json
+
       - name: Deploy frontend to Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN }}
           action: upload
-          app_location: ${{ inputs.frontendPath }}
+          app_location: ${{ inputs.frontendPath }}/dist
           skip_app_build: true
           skip_api_build: true
           output_location: ""
