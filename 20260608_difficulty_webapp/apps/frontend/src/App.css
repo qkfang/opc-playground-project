@@ -118,8 +118,6 @@
   border-radius: 999px;
   background: var(--accent);
   color: #fff;
-  font-size: 0.9rem;
-  font-weight: 800;
   flex-shrink: 0;
 }
 
