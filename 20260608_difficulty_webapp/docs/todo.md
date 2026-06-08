@@ -19,5 +19,10 @@
 
 - [x] Confirm local lint passes
 - [x] Confirm local production build passes
-- [ ] Trigger GitHub Actions deploy workflow
-- [ ] Validate live Azure Static Web App after deploy
+- [x] Trigger GitHub Actions deploy workflow
+- [x] Validate live Azure Static Web App after deploy
+
+## Deployment notes
+
+- GitHub Actions deploy run succeeded: `27127818068`
+- Live URL: `https://kind-cliff-08f876f00.7.azurestaticapps.net`
