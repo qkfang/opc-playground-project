@@ -55,13 +55,36 @@ function DifficultyCard({ difficulty, selected, onSelect }: DifficultyCardProps)
   )
 }
 
+function getInitialSelectedId() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const savedId = window.localStorage.getItem('difficulty-selection')
+  const hasSavedDifficulty = difficulties.some((difficulty) => difficulty.id === savedId)
+
+  return hasSavedDifficulty ? savedId : null
+}
+
 function App() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(getInitialSelectedId)
+  const [startedId, setStartedId] = useState<string | null>(null)
 
   const selected = difficulties.find((d) => d.id === selectedId) ?? null
+  const started = difficulties.find((d) => d.id === startedId) ?? null
 
   function handleSelect(id: string) {
+    setStartedId(null)
     setSelectedId((prev) => (prev === id ? null : id))
+  }
+
+  function handleStart() {
+    if (!selected) {
+      return
+    }
+
+    window.localStorage.setItem('difficulty-selection', selected.id)
+    setStartedId(selected.id)
   }
 
   return (
@@ -89,11 +112,21 @@ function App() {
       <section className="confirm-bar">
         {selected ? (
           <>
-            <p className="confirm-hint">
-              Selected: <strong>{selected.label}</strong>
-            </p>
-            <button className="play-button" type="button">
-              Play on {selected.label}
+            <div className="confirm-copy">
+              <p className="confirm-hint">
+                Selected: <strong>{selected.label}</strong>
+              </p>
+              <p className="confirm-subhint">
+                Save this difficulty and start your next run with the selected balance preset.
+              </p>
+              {started ? (
+                <p className="start-banner" role="status">
+                  Game ready on <strong>{started.label}</strong>. Difficulty saved to this device.
+                </p>
+              ) : null}
+            </div>
+            <button className="play-button" type="button" onClick={handleStart}>
+              {started?.id === selected.id ? `Ready: ${selected.label}` : `Start Game · ${selected.label}`}
             </button>
           </>
         ) : (
