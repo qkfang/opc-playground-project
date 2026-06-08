@@ -35,7 +35,13 @@ function DifficultyCard({ difficulty, selected, onSelect }: DifficultyCardProps)
     >
       <div className="card-header">
         <span className="card-badge">{label}</span>
-        {selected && <span className="card-check" aria-hidden="true">✓</span>}
+        {selected && (
+          <span className="card-check" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 12 10" width="12" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1,5 4.5,9 11,1" />
+            </svg>
+          </span>
+        )}
       </div>
       <p className="card-description">{description}</p>
       <div className="card-stats">
