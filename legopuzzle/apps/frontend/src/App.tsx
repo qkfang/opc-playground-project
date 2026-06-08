@@ -65,6 +65,39 @@ function isAdjacent(first: number, second: number) {
   return Math.abs(firstRow - secondRow) + Math.abs(firstColumn - secondColumn) === 1
 }
 
+function getAdjacentIndices(emptyIndex: number) {
+  return SOLVED_BOARD.map((_, index) => index).filter((index) => isAdjacent(index, emptyIndex))
+}
+
+function getHintIndex(board: number[]) {
+  const emptyIndex = board.indexOf(0)
+  const adjacentIndices = getAdjacentIndices(emptyIndex)
+
+  const winningMove = adjacentIndices.find((index) => {
+    const nextBoard = [...board]
+    ;[nextBoard[index], nextBoard[emptyIndex]] = [nextBoard[emptyIndex], nextBoard[index]]
+    return isSolved(nextBoard)
+  })
+
+  if (winningMove !== undefined) {
+    return winningMove
+  }
+
+  return adjacentIndices.reduce((bestIndex, currentIndex) => {
+    const currentTile = board[currentIndex]
+
+    if (bestIndex === null) {
+      return currentIndex
+    }
+
+    const bestTile = board[bestIndex]
+    const currentDistance = Math.abs(currentIndex - (currentTile - 1))
+    const bestDistance = Math.abs(bestIndex - (bestTile - 1))
+
+    return currentDistance < bestDistance ? currentIndex : bestIndex
+  }, null as number | null)
+}
+
 function formatDuration(seconds: number) {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
@@ -120,6 +153,7 @@ function App() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [completed, setCompleted] = useState(false)
+  const [hintIndex, setHintIndex] = useState<number | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -174,8 +208,17 @@ function App() {
     setElapsedSeconds(0)
     setStartedAt(null)
     setCompleted(false)
+    setHintIndex(null)
     setSubmitted(false)
     setSubmitError(null)
+  }
+
+  function showHint() {
+    if (completed) {
+      return
+    }
+
+    setHintIndex(getHintIndex(board))
   }
 
   function handleTileClick(index: number, timestamp: number) {
@@ -199,6 +242,7 @@ function App() {
 
     setBoard(nextBoard)
     setMoves(nextMoves)
+    setHintIndex(null)
 
     if (!startedAt) {
       setStartedAt(startTime)
@@ -251,9 +295,14 @@ function App() {
             leaderboard.
           </p>
         </div>
-        <button className="restart-button" type="button" onClick={restartGame}>
-          Shuffle new puzzle
-        </button>
+        <div className="hero-actions">
+          <button className="restart-button" type="button" onClick={restartGame}>
+            Shuffle new puzzle
+          </button>
+          <button className="hint-button" type="button" onClick={showHint}>
+            Hint
+          </button>
+        </div>
       </section>
 
       <section className="dashboard" aria-label="Game stats">
@@ -281,6 +330,7 @@ function App() {
             <div>
               <h2>Brick board</h2>
               <p>Arrange the bricks from 1 to 8 with the empty space in the bottom-right corner.</p>
+              <p className="board-tip">Tap Hint to glow the next brick you can move.</p>
             </div>
             {completed ? <span className="completion-badge">Great build!</span> : null}
           </div>
@@ -292,7 +342,7 @@ function App() {
               ) : (
                 <button
                   key={tile}
-                  className="tile"
+                  className={`tile ${hintIndex === index ? 'tile--hint' : ''}`}
                   style={{ '--tile-color': TILE_COLORS[tile - 1] } as CSSProperties}
                   type="button"
                   onClick={(event) => handleTileClick(index, event.timeStamp)}

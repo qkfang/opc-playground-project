@@ -30,6 +30,13 @@
     linear-gradient(135deg, #fef3c7, #fde68a 45%, #f97316 120%);
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
 .hero-copy {
   display: grid;
   gap: 0.75rem;
@@ -50,6 +57,7 @@
 }
 
 .restart-button,
+.hint-button,
 .score-form button,
 .tile {
   border: 0;
@@ -58,6 +66,7 @@
 }
 
 .restart-button,
+.hint-button,
 .score-form button {
   align-self: start;
   border-radius: 999px;
@@ -70,13 +79,21 @@
     box-shadow 120ms ease;
 }
 
+.hint-button {
+  background: #fff;
+  color: #0f172a;
+  border: 3px solid #0f172a;
+}
+
 .restart-button:hover,
+.hint-button:hover,
 .score-form button:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 12px 20px rgba(15, 23, 42, 0.2);
 }
 
 .restart-button:focus-visible,
+.hint-button:focus-visible,
 .score-form button:focus-visible,
 .score-form input:focus-visible,
 .tile:focus-visible {
@@ -140,6 +157,12 @@
   color: #475569;
 }
 
+.board-tip {
+  margin-top: 0.35rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
 .completion-badge {
   border-radius: 999px;
   background: #dcfce7;
@@ -178,6 +201,14 @@
 
 .tile:hover {
   transform: translateY(-2px);
+}
+
+.tile--hint {
+  animation: hintPulse 1.1s ease-in-out infinite;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.18),
+    0 0 0 5px rgba(250, 204, 21, 0.9),
+    0 16px 24px rgba(234, 179, 8, 0.35);
 }
 
 .tile span {
@@ -287,6 +318,16 @@
 .leaderboard-list p {
   margin-top: 0.15rem;
   color: #475569;
+}
+
+@keyframes hintPulse {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.03);
+  }
 }
 
 @media (max-width: 900px) {
