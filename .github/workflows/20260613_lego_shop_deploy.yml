@@ -8,7 +8,7 @@ on:
         required: true
         default: "legoshop20260613"
       appPath:
-        description: "App source directory to package and deploy"
+        description: "App source directory to build and deploy"
         required: true
         default: "20260613_lego_shop/apps/web"
 
@@ -27,6 +27,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ inputs.appPath }}/package-lock.json
+
+      - name: Build (Next.js standalone) in CI
+        run: |
+          set -euo pipefail
+          cd "${{ inputs.appPath }}"
+          npm ci
+          npm run build
+          # Assemble a self-contained deploy folder from the standalone output.
+          # standalone/ already contains server.js + minimal node_modules + .next/server.
+          # Static assets and public/ must be copied alongside.
+          cp -R .next/static .next/standalone/.next/static
+          if [ -d public ]; then cp -R public .next/standalone/public; fi
+          echo "Standalone package contents:"
+          ls -la .next/standalone
+
+      - name: Create deployment package
+        run: |
+          set -euo pipefail
+          cd "${{ inputs.appPath }}/.next/standalone"
+          zip -r "$GITHUB_WORKSPACE/app-package.zip" . -x '.git/*'
+          echo "Package listing (top level):"
+          unzip -l "$GITHUB_WORKSPACE/app-package.zip" | head -n 30
 
       - name: Azure login
         uses: azure/login@v1
@@ -49,7 +78,7 @@ jobs:
             echo "appUrl=https://$HOST" >> "$GITHUB_OUTPUT"
             echo "App Service: $WEB_APP ; URL: https://$HOST"
 
-      - name: Configure runtime settings (Oryx remote build)
+      - name: Configure runtime settings (prebuilt standalone)
         uses: azure/cli@v2
         with:
           inlineScript: |
@@ -58,30 +87,17 @@ jobs:
               --resource-group "$RESOURCE_GROUP" \
               --name "${{ steps.discover.outputs.webAppName }}" \
               --linux-fx-version "NODE|22-lts" \
-              --startup-file "npm run start"
+              --startup-file "node server.js"
 
+            # Prebuilt package: do NOT run Oryx build on the server.
             az webapp config appsettings set \
               --resource-group "$RESOURCE_GROUP" \
               --name "${{ steps.discover.outputs.webAppName }}" \
               --settings \
                 WEBSITE_RUN_FROM_PACKAGE=0 \
-                SCM_DO_BUILD_DURING_DEPLOYMENT=true \
-                NPM_CONFIG_PRODUCTION=false \
+                SCM_DO_BUILD_DURING_DEPLOYMENT=false \
                 NODE_ENV=production \
                 PORT=8080
-
-      - name: Create deployment package
-        run: |
-          set -euo pipefail
-          cd "${{ inputs.appPath }}"
-          # Package source only; Oryx installs deps and runs `npm run build` on the server.
-          zip -r "$GITHUB_WORKSPACE/app-package.zip" . \
-            -x 'node_modules/*' \
-            -x '.next/*' \
-            -x 'out/*' \
-            -x '.git/*'
-          echo "Package contents (top level):"
-          unzip -l "$GITHUB_WORKSPACE/app-package.zip" | head -n 40
 
       - name: Deploy package
         uses: azure/cli@v2
@@ -109,15 +125,15 @@ jobs:
           done
           if [ "$ok" != "1" ]; then
             echo "Health endpoint did not return 200 in time"
-            echo "Last home page fetch:"
             curl -s -i "$URL" | head -n 20 || true
             exit 1
           fi
           echo "Health OK. Sampling endpoints:"
           echo "--- /api/health ---"; curl -s "$URL/api/health"; echo
-          echo "--- /api/products (count) ---"; curl -s "$URL/api/products" | head -c 300; echo
-          echo "--- / (status) ---"; curl -s -o /dev/null -w "home %{http_code}\n" "$URL"
-          echo "--- /shop (status) ---"; curl -s -o /dev/null -w "shop %{http_code}\n" "$URL/shop"
+          echo "--- /api/products (head) ---"; curl -s "$URL/api/products" | head -c 300; echo
+          echo "--- / ---"; curl -s -o /dev/null -w "home %{http_code}\n" "$URL"
+          echo "--- /shop ---"; curl -s -o /dev/null -w "shop %{http_code}\n" "$URL/shop"
+          echo "--- /cart ---"; curl -s -o /dev/null -w "cart %{http_code}\n" "$URL/cart"
 
       - name: Summary
         run: |

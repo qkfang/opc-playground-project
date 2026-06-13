@@ -36,13 +36,14 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     siteConfig: {
       linuxFxVersion: 'NODE|22-lts'
       alwaysOn: true
-      // Next.js standalone/standard server. `next start` honours process.env.PORT.
-      appCommandLine: 'npm run start'
+      // Next.js standalone server bundle. Deploy ships a prebuilt package
+      // (.next/standalone) and starts it with `node server.js`. next listens on PORT.
+      appCommandLine: 'node server.js'
       appSettings: [
         {
-          // Let Oryx run `npm install` + `npm run build` on deploy.
+          // Prebuilt package: do not run Oryx build on the server.
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-          value: 'true'
+          value: 'false'
         }
         {
           name: 'WEBSITE_RUN_FROM_PACKAGE'
@@ -56,11 +57,6 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'NODE_ENV'
           value: 'production'
-        }
-        {
-          // Ensure devDependencies (tailwind/postcss/typescript) are installed for the build.
-          name: 'NPM_CONFIG_PRODUCTION'
-          value: 'false'
         }
       ]
     }
