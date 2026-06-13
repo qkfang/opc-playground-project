@@ -1,7 +1,7 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/_next/*", "/favicon.ico", "/*.svg", "/*.png", "/*.txt"]
+    "exclude": ["/_next/*", "/favicon.ico", "/*.{svg,png,txt}"]
   },
   "routes": [
     { "route": "/sets/*", "rewrite": "/sets/_/index.html" },
