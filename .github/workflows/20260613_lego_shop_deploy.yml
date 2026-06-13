@@ -78,68 +78,39 @@ jobs:
             echo "appUrl=https://$HOST" >> "$GITHUB_OUTPUT"
             echo "App Service: $WEB_APP ; URL: https://$HOST"
 
-      - name: Deploy via Run-From-Package (storage blob)
-        id: rfp
+      - name: Configure runtime settings (prebuilt standalone)
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
             WEB_APP="${{ steps.discover.outputs.webAppName }}"
-
-            # Dedicated package storage account provisioned by infra.
-            # NOTE: this subscription enforces an Azure Policy that disables
-            # storage shared-key access, so we authenticate to blob via Entra
-            # (AAD) and mint a USER-DELEGATION SAS. The SP running this workflow
-            # has "Storage Blob Data Contributor" on the account (granted by infra).
-            PREFIX=$(echo "st${{ inputs.baseName }}" | tr -d '-' | cut -c1-13 | tr '[:upper:]' '[:lower:]')
-            STORAGE=$(az storage account list -g "$RESOURCE_GROUP" \
-              --query "[?starts_with(name,'${PREFIX}')].name | [0]" -o tsv)
-            if [ -z "$STORAGE" ]; then
-              echo "No package storage account (prefix ${PREFIX}) found in $RESOURCE_GROUP"
-              echo "Run the infra workflow first to provision it."; exit 1
-            fi
-            echo "Using storage account: $STORAGE"
-
-            CONTAINER="app-packages"
-            BLOB="${WEB_APP}-$(date +%Y%m%d%H%M%S).zip"
-
-            az storage container create --name "$CONTAINER" \
-              --account-name "$STORAGE" --auth-mode login --only-show-errors >/dev/null
-
-            az storage blob upload --account-name "$STORAGE" --auth-mode login \
-              --container-name "$CONTAINER" --name "$BLOB" \
-              --file "$GITHUB_WORKSPACE/app-package.zip" --overwrite --only-show-errors >/dev/null
-            echo "Uploaded package as $CONTAINER/$BLOB"
-
-            # User-delegation (AAD) SAS. Max lifetime is 7 days; this workflow
-            # re-mints + re-points the app on every deploy, so re-run within 7
-            # days (or on any new build) to refresh access to the package.
-            EXPIRY=$(date -u -d "+7 days" '+%Y-%m-%dT%H:%MZ')
-            SAS=$(az storage blob generate-sas --account-name "$STORAGE" \
-              --auth-mode login --as-user \
-              --container-name "$CONTAINER" --name "$BLOB" \
-              --permissions r --expiry "$EXPIRY" --https-only -o tsv)
-            PKG_URL="https://${STORAGE}.blob.core.windows.net/${CONTAINER}/${BLOB}?${SAS}"
-
             az webapp config set \
               --resource-group "$RESOURCE_GROUP" --name "$WEB_APP" \
               --linux-fx-version "NODE|22-lts" --startup-file "node server.js"
 
-            # Point the app at the package URL. App Service mounts the zip
-            # read-only at /home/site/wwwroot — no Kudu extract / node_modules
-            # optimize / rsync, which is what 502s on B1.
+            # Prebuilt standalone bundle: no on-server Oryx build, deploy lands
+            # in wwwroot. On PremiumV3 the Kudu node-module optimize/rsync has
+            # enough CPU/memory and no longer OOMs (the B1 502 cause).
             az webapp config appsettings set \
               --resource-group "$RESOURCE_GROUP" --name "$WEB_APP" \
               --settings \
-                WEBSITE_RUN_FROM_PACKAGE="$PKG_URL" \
+                WEBSITE_RUN_FROM_PACKAGE=0 \
                 SCM_DO_BUILD_DURING_DEPLOYMENT=false \
                 NODE_ENV=production \
                 PORT=8080 \
               --only-show-errors >/dev/null
 
-            echo "Restarting app to mount the new package..."
-            az webapp restart --resource-group "$RESOURCE_GROUP" --name "$WEB_APP"
-            echo "Configured run-from-package for $WEB_APP"
+      - name: Deploy package (zip)
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            az webapp deploy \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.discover.outputs.webAppName }}" \
+              --src-path "$GITHUB_WORKSPACE/app-package.zip" \
+              --type zip \
+              --timeout 1800000
 
       - name: Smoke check live site
         run: |
