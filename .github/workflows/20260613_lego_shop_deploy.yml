@@ -78,7 +78,7 @@ jobs:
             echo "appUrl=https://$HOST" >> "$GITHUB_OUTPUT"
             echo "App Service: $WEB_APP ; URL: https://$HOST"
 
-      - name: Configure runtime settings (prebuilt standalone)
+      - name: Configure runtime settings (prebuilt standalone, run-from-package)
         uses: azure/cli@v2
         with:
           inlineScript: |
@@ -89,26 +89,30 @@ jobs:
               --linux-fx-version "NODE|22-lts" \
               --startup-file "node server.js"
 
-            # Prebuilt package: do NOT run Oryx build on the server.
+            # Prebuilt package + run-from-package: mount the zip read-only.
+            # This avoids the fragile Kudu extract/build that 502s on B1.
             az webapp config appsettings set \
               --resource-group "$RESOURCE_GROUP" \
               --name "${{ steps.discover.outputs.webAppName }}" \
               --settings \
-                WEBSITE_RUN_FROM_PACKAGE=0 \
+                WEBSITE_RUN_FROM_PACKAGE=1 \
                 SCM_DO_BUILD_DURING_DEPLOYMENT=false \
                 NODE_ENV=production \
                 PORT=8080
 
-      - name: Deploy package
+      - name: Deploy package (run-from-package)
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
+            # --type zip with WEBSITE_RUN_FROM_PACKAGE=1 mounts the archive
+            # instead of extracting it via Kudu, which is far more reliable on B1.
             az webapp deploy \
               --resource-group "$RESOURCE_GROUP" \
               --name "${{ steps.discover.outputs.webAppName }}" \
               --src-path "$GITHUB_WORKSPACE/app-package.zip" \
               --type zip \
+              --async false \
               --timeout 1800000
 
       - name: Smoke check live site
