@@ -1,0 +1,59 @@
+name: 20260613_survival_game_infra
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming"
+        required: true
+        default: "survival20260613"
+      swaLocation:
+        description: "Region for the Static Web App"
+        required: true
+        default: "eastasia"
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+  PROJECT_DIR: 20260613_survival_game
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        id: deploy
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            cd "$PROJECT_DIR/bicep"
+            az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "survival-infra-${GITHUB_RUN_NUMBER}" \
+              --template-file main.bicep \
+              --parameters baseName="${{ inputs.baseName }}" swaLocation="${{ inputs.swaLocation }}" \
+              --only-show-errors \
+              --output json > deploy.json
+
+            echo "staticWebAppName=$(jq -r '.properties.outputs.staticWebAppName.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "staticWebAppHostname=$(jq -r '.properties.outputs.staticWebAppHostname.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "staticWebAppUrl=$(jq -r '.properties.outputs.staticWebAppUrl.value' deploy.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "### Last Stand (survival game) infra deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Resource group: $RESOURCE_GROUP" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Static Web App: ${{ steps.deploy.outputs.staticWebAppName }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: ${{ steps.deploy.outputs.staticWebAppUrl }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Next: run 20260613_survival_game_deploy to ship the static build." >> "$GITHUB_STEP_SUMMARY"
