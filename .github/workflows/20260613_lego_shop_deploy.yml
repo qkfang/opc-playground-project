@@ -78,42 +78,61 @@ jobs:
             echo "appUrl=https://$HOST" >> "$GITHUB_OUTPUT"
             echo "App Service: $WEB_APP ; URL: https://$HOST"
 
-      - name: Configure runtime settings (prebuilt standalone, run-from-package)
+      - name: Deploy via Run-From-Package (storage blob)
+        id: rfp
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
-            az webapp config set \
-              --resource-group "$RESOURCE_GROUP" \
-              --name "${{ steps.discover.outputs.webAppName }}" \
-              --linux-fx-version "NODE|22-lts" \
-              --startup-file "node server.js"
+            WEB_APP="${{ steps.discover.outputs.webAppName }}"
 
-            # Prebuilt package + run-from-package: mount the zip read-only.
-            # This avoids the fragile Kudu extract/build that 502s on B1.
+            # Reuse an existing Standard storage account in the RG to host the package.
+            STORAGE=$(az storage account list -g "$RESOURCE_GROUP" \
+              --query "[?kind=='StorageV2'].name | [0]" -o tsv)
+            if [ -z "$STORAGE" ]; then
+              echo "No StorageV2 account found in $RESOURCE_GROUP to host the package"; exit 1
+            fi
+            echo "Using storage account: $STORAGE"
+
+            CONTAINER="app-packages"
+            BLOB="${WEB_APP}-$(date +%Y%m%d%H%M%S).zip"
+            KEY=$(az storage account keys list -g "$RESOURCE_GROUP" -n "$STORAGE" \
+              --query "[0].value" -o tsv)
+
+            az storage container create --name "$CONTAINER" \
+              --account-name "$STORAGE" --account-key "$KEY" --only-show-errors >/dev/null
+
+            az storage blob upload --account-name "$STORAGE" --account-key "$KEY" \
+              --container-name "$CONTAINER" --name "$BLOB" \
+              --file "$GITHUB_WORKSPACE/app-package.zip" --overwrite --only-show-errors >/dev/null
+            echo "Uploaded package as $CONTAINER/$BLOB"
+
+            # Long-lived read-only SAS so the app can mount the package.
+            EXPIRY=$(date -u -d "+3 years" '+%Y-%m-%dT%H:%MZ')
+            SAS=$(az storage blob generate-sas --account-name "$STORAGE" --account-key "$KEY" \
+              --container-name "$CONTAINER" --name "$BLOB" \
+              --permissions r --expiry "$EXPIRY" --https-only -o tsv)
+            PKG_URL="https://${STORAGE}.blob.core.windows.net/${CONTAINER}/${BLOB}?${SAS}"
+
+            az webapp config set \
+              --resource-group "$RESOURCE_GROUP" --name "$WEB_APP" \
+              --linux-fx-version "NODE|22-lts" --startup-file "node server.js"
+
+            # Point the app at the package URL. App Service mounts the zip
+            # read-only at /home/site/wwwroot — no Kudu extract / node_modules
+            # optimize / rsync, which is what 502s on B1.
             az webapp config appsettings set \
-              --resource-group "$RESOURCE_GROUP" \
-              --name "${{ steps.discover.outputs.webAppName }}" \
+              --resource-group "$RESOURCE_GROUP" --name "$WEB_APP" \
               --settings \
-                WEBSITE_RUN_FROM_PACKAGE=1 \
+                WEBSITE_RUN_FROM_PACKAGE="$PKG_URL" \
                 SCM_DO_BUILD_DURING_DEPLOYMENT=false \
                 NODE_ENV=production \
-                PORT=8080
+                PORT=8080 \
+              --only-show-errors >/dev/null
 
-      - name: Deploy package (run-from-package)
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            set -euo pipefail
-            # --type zip with WEBSITE_RUN_FROM_PACKAGE=1 mounts the archive
-            # instead of extracting it via Kudu, which is far more reliable on B1.
-            az webapp deploy \
-              --resource-group "$RESOURCE_GROUP" \
-              --name "${{ steps.discover.outputs.webAppName }}" \
-              --src-path "$GITHUB_WORKSPACE/app-package.zip" \
-              --type zip \
-              --async false \
-              --timeout 1800000
+            echo "Restarting app to mount the new package..."
+            az webapp restart --resource-group "$RESOURCE_GROUP" --name "$WEB_APP"
+            echo "Configured run-from-package for $WEB_APP"
 
       - name: Smoke check live site
         run: |
