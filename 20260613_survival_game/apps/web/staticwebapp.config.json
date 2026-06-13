@@ -1,0 +1,9 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/_next/*", "/favicon.ico", "/*.svg", "/*.png", "/*.ico", "/*.txt"]
+  },
+  "responseOverrides": {
+    "404": { "rewrite": "/404.html" }
+  }
+}

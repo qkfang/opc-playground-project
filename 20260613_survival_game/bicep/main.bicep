@@ -1,31 +1,37 @@
+// Infra for 20260613_survival_game (Last Stand)
+// The game is a 100% client-side Next.js static export (no backend/API/DB),
+// so it deploys to a single Azure Static Web App (Free tier).
 targetScope = 'resourceGroup'
 
-@description('Base name used to derive deterministic resource names.')
-param baseName string = 'survival20260613'
+@description('Base name used to derive resource names.')
+param baseName string = 'survivalgame20260613'
 
-@description('Region for the Static Web App.')
+@description('Region for the Static Web App (limited region availability).')
 param swaLocation string = 'eastasia'
 
-var uniqueSuffix = substring(toLower(uniqueString(resourceGroup().id, baseName)), 0, 6)
-var staticWebAppName = '${baseName}-swa-${uniqueSuffix}'
+@description('SKU for the Static Web App.')
+@allowed([
+  'Free'
+  'Standard'
+])
+param sku string = 'Free'
 
-// Last Stand is a 100% client-side Next.js static export (no API/backend),
-// so a Free Static Web App is the cleanest, cheapest host. No App Service /
-// Kudu / storage needed.
+var uniqueSuffix = take(uniqueString(resourceGroup().id, baseName), 6)
+var swaName = '${baseName}-swa-${uniqueSuffix}'
+
 resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
-  name: staticWebAppName
+  name: swaName
   location: swaLocation
   sku: {
-    name: 'Free'
-    tier: 'Free'
+    name: sku
+    tier: sku
   }
   properties: {
-    // Deployment is driven by the GitHub Actions deploy workflow using the
-    // SWA deployment token (action: upload), not by a repo-linked build.
+    // Token-based deploy from GitHub Actions (no repo integration wired here).
     allowConfigFileUpdates: true
   }
 }
 
 output staticWebAppName string = staticWebApp.name
-output staticWebAppHostname string = staticWebApp.properties.defaultHostname
+output defaultHostname string = staticWebApp.properties.defaultHostname
 output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
