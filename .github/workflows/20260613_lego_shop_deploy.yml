@@ -86,30 +86,37 @@ jobs:
             set -euo pipefail
             WEB_APP="${{ steps.discover.outputs.webAppName }}"
 
-            # Reuse an existing Standard storage account in the RG to host the package.
+            # Dedicated package storage account provisioned by infra.
+            # NOTE: this subscription enforces an Azure Policy that disables
+            # storage shared-key access, so we authenticate to blob via Entra
+            # (AAD) and mint a USER-DELEGATION SAS. The SP running this workflow
+            # has "Storage Blob Data Contributor" on the account (granted by infra).
+            PREFIX=$(echo "st${{ inputs.baseName }}" | tr -d '-' | cut -c1-13 | tr '[:upper:]' '[:lower:]')
             STORAGE=$(az storage account list -g "$RESOURCE_GROUP" \
-              --query "[?kind=='StorageV2'].name | [0]" -o tsv)
+              --query "[?starts_with(name,'${PREFIX}')].name | [0]" -o tsv)
             if [ -z "$STORAGE" ]; then
-              echo "No StorageV2 account found in $RESOURCE_GROUP to host the package"; exit 1
+              echo "No package storage account (prefix ${PREFIX}) found in $RESOURCE_GROUP"
+              echo "Run the infra workflow first to provision it."; exit 1
             fi
             echo "Using storage account: $STORAGE"
 
             CONTAINER="app-packages"
             BLOB="${WEB_APP}-$(date +%Y%m%d%H%M%S).zip"
-            KEY=$(az storage account keys list -g "$RESOURCE_GROUP" -n "$STORAGE" \
-              --query "[0].value" -o tsv)
 
             az storage container create --name "$CONTAINER" \
-              --account-name "$STORAGE" --account-key "$KEY" --only-show-errors >/dev/null
+              --account-name "$STORAGE" --auth-mode login --only-show-errors >/dev/null
 
-            az storage blob upload --account-name "$STORAGE" --account-key "$KEY" \
+            az storage blob upload --account-name "$STORAGE" --auth-mode login \
               --container-name "$CONTAINER" --name "$BLOB" \
               --file "$GITHUB_WORKSPACE/app-package.zip" --overwrite --only-show-errors >/dev/null
             echo "Uploaded package as $CONTAINER/$BLOB"
 
-            # Long-lived read-only SAS so the app can mount the package.
-            EXPIRY=$(date -u -d "+3 years" '+%Y-%m-%dT%H:%MZ')
-            SAS=$(az storage blob generate-sas --account-name "$STORAGE" --account-key "$KEY" \
+            # User-delegation (AAD) SAS. Max lifetime is 7 days; this workflow
+            # re-mints + re-points the app on every deploy, so re-run within 7
+            # days (or on any new build) to refresh access to the package.
+            EXPIRY=$(date -u -d "+7 days" '+%Y-%m-%dT%H:%MZ')
+            SAS=$(az storage blob generate-sas --account-name "$STORAGE" \
+              --auth-mode login --as-user \
               --container-name "$CONTAINER" --name "$BLOB" \
               --permissions r --expiry "$EXPIRY" --https-only -o tsv)
             PKG_URL="https://${STORAGE}.blob.core.windows.net/${CONTAINER}/${BLOB}?${SAS}"
