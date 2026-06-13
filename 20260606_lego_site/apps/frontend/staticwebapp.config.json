@@ -5,8 +5,7 @@
   },
   "routes": [
     { "route": "/sets/*", "rewrite": "/sets/_/index.html" },
-    { "route": "/marketplace/*", "rewrite": "/marketplace/_/index.html" },
-    { "route": "/my-listings/*/edit", "rewrite": "/my-listings/_/edit/index.html" }
+    { "route": "/marketplace/*", "rewrite": "/marketplace/_/index.html" }
   ],
   "responseOverrides": {
     "404": { "rewrite": "/404.html" }
