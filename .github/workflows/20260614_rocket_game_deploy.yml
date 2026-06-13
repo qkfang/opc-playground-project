@@ -1,0 +1,91 @@
+name: 20260614_rocket_game_deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming (matches infra)"
+        required: true
+        default: "rocketgame20260614"
+      appPath:
+        description: "Static app source directory (no build step)"
+        required: true
+        default: "20260614_rocket_game/apps/web"
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Resolve SWA token + host
+        id: swa
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            SWA=$(az staticwebapp list -g "$RESOURCE_GROUP" \
+              --query "[?starts_with(name,'${{ inputs.baseName }}-swa-')].name | [0]" -o tsv)
+            if [ -z "$SWA" ]; then
+              echo "No Static Web App found for baseName=${{ inputs.baseName }} in $RESOURCE_GROUP"
+              echo "Run 20260614_rocket_game_infra first."; exit 1
+            fi
+            TOKEN=$(az staticwebapp secrets list --name "$SWA" \
+              --resource-group "$RESOURCE_GROUP" --query properties.apiKey -o tsv)
+            echo "::add-mask::$TOKEN"
+            HOST=$(az staticwebapp show --name "$SWA" \
+              --resource-group "$RESOURCE_GROUP" --query defaultHostname -o tsv)
+            echo "swaName=$SWA" >> "$GITHUB_OUTPUT"
+            echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+            echo "appUrl=https://$HOST" >> "$GITHUB_OUTPUT"
+            echo "Static Web App: $SWA ; URL: https://$HOST"
+
+      - name: Deploy to Azure Static Web Apps (no build — pure static)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
+          action: upload
+          app_location: ${{ inputs.appPath }}
+          output_location: ""
+          skip_app_build: true
+          skip_api_build: true
+
+      - name: Smoke check live site
+        run: |
+          set -euo pipefail
+          URL="${{ steps.swa.outputs.appUrl }}"
+          echo "Waiting for app to go live at $URL ..."
+          ok=0
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/" || echo "000")
+            echo "attempt $i: / -> $code"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then
+            echo "Home did not return 200 in time"
+            curl -s -i "$URL/" | head -n 20 || true
+            exit 1
+          fi
+          echo "Live OK. Sampling:"
+          echo "--- / ---"; curl -s -o /dev/null -w "home %{http_code}\n" "$URL/"
+          echo "--- title check ---"; curl -s "$URL/" | grep -io "<title>[^<]*</title>" | head -n 1 || true
+          echo "--- engine module ---"; curl -s -o /dev/null -w "engine.js %{http_code}\n" "$URL/game/engine.js"
+
+      - name: Summary
+        run: |
+          echo "### Star Ascent (rocket game) deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Static Web App: ${{ steps.swa.outputs.swaName }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: ${{ steps.swa.outputs.appUrl }}" >> "$GITHUB_STEP_SUMMARY"

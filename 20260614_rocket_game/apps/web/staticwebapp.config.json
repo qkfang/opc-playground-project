@@ -1,0 +1,12 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/game/*", "/favicon.ico", "/*.svg", "/*.png", "/*.ico", "/*.txt", "/*.css", "/*.js"]
+  },
+  "responseOverrides": {
+    "404": { "rewrite": "/index.html" }
+  },
+  "mimeTypes": {
+    ".js": "text/javascript"
+  }
+}

@@ -1,0 +1,53 @@
+name: 20260614_rocket_game_infra
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming"
+        required: true
+        default: "rocketgame20260614"
+      swaLocation:
+        description: "Static Web App region"
+        required: true
+        default: "eastasia"
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep (Static Web App)
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --template-file 20260614_rocket_game/bicep/main.bicep \
+              --parameters baseName='${{ inputs.baseName }}' swaLocation='${{ inputs.swaLocation }}' \
+              --query "properties.outputs" -o json
+
+      - name: Show resulting SWA
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            SWA=$(az staticwebapp list -g "$RESOURCE_GROUP" \
+              --query "[?starts_with(name,'${{ inputs.baseName }}-swa-')].name | [0]" -o tsv)
+            echo "Static Web App: $SWA"
+            az staticwebapp show --name "$SWA" -g "$RESOURCE_GROUP" \
+              --query "{name:name, host:defaultHostname}" -o json

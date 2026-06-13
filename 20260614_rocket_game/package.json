@@ -1,0 +1,12 @@
+{
+  "name": "star-ascent-rocket-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Star Ascent — browser rocket arcade game (proj34). Pure static site, no build step.",
+  "type": "module",
+  "scripts": {
+    "smoke": "node scripts/smoke.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test": "node scripts/smoke.mjs"
+  }
+}
