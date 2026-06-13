@@ -1,0 +1,59 @@
+name: 20260613_lego_shop_infra
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming"
+        required: true
+        default: "legoshop20260613"
+      location:
+        description: "Region for App Service plan and web app"
+        required: true
+        default: "australiaeast"
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+  PROJECT_DIR: 20260613_lego_shop
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        id: bicep
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            cd "$PROJECT_DIR/bicep"
+            az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "legoshop-infra-${GITHUB_RUN_NUMBER}" \
+              --template-file main.bicep \
+              --parameters baseName="${{ inputs.baseName }}" location="${{ inputs.location }}" \
+              --only-show-errors \
+              --output json > deploy.json
+
+            echo "webAppName=$(jq -r '.properties.outputs.webAppName.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "webAppHostname=$(jq -r '.properties.outputs.webAppHostname.value' deploy.json)" >> "$GITHUB_OUTPUT"
+            echo "webAppUrl=$(jq -r '.properties.outputs.webAppUrl.value' deploy.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "### Lego Shop infra deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Resource group: $RESOURCE_GROUP" >> "$GITHUB_STEP_SUMMARY"
+          echo "- App Service: ${{ steps.bicep.outputs.webAppName }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: ${{ steps.bicep.outputs.webAppUrl }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Next: run 20260613_lego_shop_deploy to ship the app." >> "$GITHUB_STEP_SUMMARY"

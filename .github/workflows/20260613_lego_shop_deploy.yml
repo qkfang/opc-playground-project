@@ -1,0 +1,127 @@
+name: 20260613_lego_shop_deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming (matches infra)"
+        required: true
+        default: "legoshop20260613"
+      appPath:
+        description: "App source directory to package and deploy"
+        required: true
+        default: "20260613_lego_shop/apps/web"
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    outputs:
+      webAppName: ${{ steps.discover.outputs.webAppName }}
+      appUrl: ${{ steps.discover.outputs.appUrl }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Discover App Service
+        id: discover
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            WEB_APP=$(az webapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'${{ inputs.baseName }}-web-')].name | [0]" -o tsv)
+            if [ -z "$WEB_APP" ]; then
+              echo "No App Service found for baseName=${{ inputs.baseName }} in $RESOURCE_GROUP"
+              exit 1
+            fi
+            HOST=$(az webapp show -g "$RESOURCE_GROUP" -n "$WEB_APP" --query defaultHostName -o tsv)
+            echo "webAppName=$WEB_APP" >> "$GITHUB_OUTPUT"
+            echo "appUrl=https://$HOST" >> "$GITHUB_OUTPUT"
+            echo "App Service: $WEB_APP ; URL: https://$HOST"
+
+      - name: Configure runtime settings (Oryx remote build)
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            az webapp config set \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.discover.outputs.webAppName }}" \
+              --linux-fx-version "NODE|22-lts" \
+              --startup-file "npm run start"
+
+            az webapp config appsettings set \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.discover.outputs.webAppName }}" \
+              --settings \
+                WEBSITE_RUN_FROM_PACKAGE=0 \
+                SCM_DO_BUILD_DURING_DEPLOYMENT=true \
+                NPM_CONFIG_PRODUCTION=false \
+                NODE_ENV=production \
+                PORT=8080
+
+      - name: Create deployment package
+        run: |
+          set -euo pipefail
+          cd "${{ inputs.appPath }}"
+          # Package source only; Oryx installs deps and runs `npm run build` on the server.
+          zip -r "$GITHUB_WORKSPACE/app-package.zip" . \
+            -x 'node_modules/*' \
+            -x '.next/*' \
+            -x 'out/*' \
+            -x '.git/*'
+          echo "Package contents (top level):"
+          unzip -l "$GITHUB_WORKSPACE/app-package.zip" | head -n 40
+
+      - name: Deploy package
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            az webapp deploy \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.discover.outputs.webAppName }}" \
+              --src-path "$GITHUB_WORKSPACE/app-package.zip" \
+              --type zip \
+              --timeout 1800000
+
+      - name: Smoke check live site
+        run: |
+          set -euo pipefail
+          URL="${{ steps.discover.outputs.appUrl }}"
+          echo "Waiting for app to warm up at $URL ..."
+          ok=0
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/health" || echo "000")
+            echo "attempt $i: /api/health -> $code"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then
+            echo "Health endpoint did not return 200 in time"
+            echo "Last home page fetch:"
+            curl -s -i "$URL" | head -n 20 || true
+            exit 1
+          fi
+          echo "Health OK. Sampling endpoints:"
+          echo "--- /api/health ---"; curl -s "$URL/api/health"; echo
+          echo "--- /api/products (count) ---"; curl -s "$URL/api/products" | head -c 300; echo
+          echo "--- / (status) ---"; curl -s -o /dev/null -w "home %{http_code}\n" "$URL"
+          echo "--- /shop (status) ---"; curl -s -o /dev/null -w "shop %{http_code}\n" "$URL/shop"
+
+      - name: Summary
+        run: |
+          echo "### Lego Shop app deployed :package:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- App Service: ${{ steps.discover.outputs.webAppName }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: ${{ steps.discover.outputs.appUrl }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Health: ${{ steps.discover.outputs.appUrl }}/api/health" >> "$GITHUB_STEP_SUMMARY"
