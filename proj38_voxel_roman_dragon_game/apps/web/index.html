@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="description" content="Legions vs the Castle Dragon — a voxel browser game where Roman legionaries defend a castle against a fire-breathing dragon." />
+  <title>Legions vs the Castle Dragon — Voxel Game</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%233f9b46'/><rect x='4' y='4' width='3' height='3' fill='%23ffd23b'/><rect x='9' y='4' width='3' height='3' fill='%23ffd23b'/></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Pinned Three.js via import map (no build step) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <!-- HUD -->
+    <div id="hud" class="hud">
+      <div class="hud-top">
+        <div class="panel hp-panel">
+          <div class="hp-bar"><div id="hpFill" class="hp-fill"></div></div>
+          <div id="hpText" class="hp-text">DRAGON</div>
+        </div>
+        <div class="panel stats-panel">
+          <div class="stat"><span class="label">SCORE</span><span id="score" class="value">0</span></div>
+          <div class="stat"><span class="label">BEST</span><span id="best" class="value">0</span></div>
+          <div class="stat"><span class="label">PHASE</span><span id="level" class="value phase">ADVANCING</span></div>
+          <span id="enrageBadge" class="badge enrage">DRAGON ENRAGED</span>
+        </div>
+      </div>
+
+      <div class="hud-left">
+        <div class="cohort-panel panel">
+          <div class="label">COHORT</div>
+          <div id="strengthPips" class="pips"></div>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="cooldown panel">
+          <span class="label">VOLLEY</span>
+          <div class="cd-bar"><div id="cooldownFill" class="cd-fill"></div></div>
+        </div>
+        <button id="btnPause" class="ctrl-btn" title="Pause (P)">⏸</button>
+      </div>
+
+      <!-- touch controls (mobile) -->
+      <div class="touch-controls">
+        <button id="btnLeft" class="touch-btn" aria-label="Move left">◀</button>
+        <button id="btnFire" class="touch-btn fire" aria-label="Throw volley">⚔</button>
+        <button id="btnRight" class="touch-btn" aria-label="Move right">▶</button>
+      </div>
+
+      <span id="pauseBadge" class="center-badge">PAUSED</span>
+    </div>
+
+    <!-- Title / Win / Lose overlay -->
+    <div id="overlay" class="overlay show">
+      <div class="overlay-card">
+        <div class="laurels">⚔️</div>
+        <h1 id="overlayTitle">LEGIONS vs THE CASTLE DRAGON</h1>
+        <p id="overlaySub"></p>
+        <button id="overlayBtn" class="overlay-btn">▶ Start the battle</button>
+        <div class="credits">Voxel browser game · proj38</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="game/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "legions-vs-castle-dragon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Legions vs the Castle Dragon — voxel browser game (proj38). Roman legionaries defend a castle against a fire-breathing dragon. Pure static site (Three.js via CDN), no build step.",
+  "type": "module",
+  "scripts": {
+    "smoke": "node scripts/smoke.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test": "node scripts/smoke.mjs"
+  }
+}
