@@ -4,7 +4,7 @@
 targetScope = 'resourceGroup'
 
 @description('Base name used to derive resource names.')
-param baseName string = 'survivalgame20260613'
+param baseName string = 'proj17'
 
 @description('Region for the Static Web App (limited region availability).')
 param swaLocation string = 'eastasia'

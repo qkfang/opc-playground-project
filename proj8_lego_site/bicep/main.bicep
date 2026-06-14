@@ -3,7 +3,7 @@
 targetScope = 'resourceGroup'
 
 @description('Base name used to derive resource names.')
-param baseName string = 'lego20260606'
+param baseName string = 'proj8'
 
 @description('Primary region for most resources.')
 param location string = resourceGroup().location

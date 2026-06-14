@@ -1,7 +1,7 @@
 targetScope = 'resourceGroup'
 
 @description('Base name used to derive deterministic resource names.')
-param baseName string = 'legoshop20260613'
+param baseName string = 'proj14'
 
 @description('Region for the App Service plan and web app.')
 param location string = resourceGroup().location

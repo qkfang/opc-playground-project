@@ -1,7 +1,7 @@
 targetScope = 'resourceGroup'
 
 @description('Base name used to derive deterministic resource names.')
-param baseName string = 'legopuzzle'
+param baseName string = 'proj6'
 
 @description('Region for App Service and Cosmos DB.')
 param location string = resourceGroup().location
