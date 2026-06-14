@@ -10,10 +10,24 @@ namespace Proj37.CostEstimator.Web.Services;
 ///
 /// Sheets:
 ///   1. Summary        — headline numbers + metadata
-///   2. Cost Model     — per-service line items with QUANTITY*UNITPRICE formulas, subtotal, contingency, totals
+///   2. Cost Model     — per-service line items in an editable Excel Table with QUANTITY*UNITPRICE
+///                       formulas, a SUBTOTAL totals row, contingency, totals
 ///   3. Requirements   — derived technical requirements
 ///   4. Scope          — scope summary (in/out/assumptions)
 ///   5. Documents      — ingested source documents
+///
+/// Cost Model design notes (driven by reviewer feedback):
+///   * The line items live in a native Excel <b>Table</b> ("CostModel"). <b>Quantity</b> and
+///     <b>Unit Price</b> are plain, editable input cells (highlighted) — users type new numbers and
+///     the workbook recalculates.
+///   * <b>Monthly Cost</b> is a table calculated column (=[@Quantity]*[@[Unit Price]]). Because it is
+///     a table column formula, Excel auto-fills it for any row added to the table.
+///   * The totals row uses <c>SUBTOTAL(109, CostModel[Monthly Cost])</c>, so it automatically includes
+///     <b>new / inserted line item rows</b> without the SUM range having to be edited. Reviewers can add
+///     a manual line item by typing in the row directly beneath the last one (the table auto-extends) or
+///     by inserting a row inside the table — totals keep working either way.
+///   * Contingency / monthly total / annual total reference the totals cell and are exposed as workbook
+///     <b>defined names</b> (Proj37_*) so the Summary sheet keeps tracking them even as the table grows.
 /// </summary>
 public sealed class ExcelReportGenerator
 {
@@ -21,6 +35,15 @@ public sealed class ExcelReportGenerator
     private static readonly XLColor HeaderText = XLColor.White;
     private static readonly XLColor AccentFill = XLColor.FromHtml("#E8F0FE");
     private static readonly XLColor TotalFill = XLColor.FromHtml("#FFF2CC");
+    private static readonly XLColor InputFill = XLColor.FromHtml("#FFFDE7");   // editable input cells (Qty / Unit Price)
+    private static readonly XLColor InputBorder = XLColor.FromHtml("#E0A800");
+
+    // Workbook-scoped defined names so the Summary sheet survives table growth / inserted rows.
+    private const string NameSubtotal = "Proj37_MonthlySubtotal";
+    private const string NameContingency = "Proj37_Contingency";
+    private const string NameMonthlyTotal = "Proj37_MonthlyTotal";
+    private const string NameAnnualTotal = "Proj37_AnnualTotal";
+    private const string CostTableName = "CostModel";
 
     public byte[] Generate(EstimationResult r)
     {
@@ -76,16 +99,17 @@ public sealed class ExcelReportGenerator
         row++;
         SectionHeader(ws, $"A{row}:B{row}", "Headline cost (reference, not a quote)");
         row++;
-        // Pull totals from the Cost Model sheet so Summary tracks edits.
+        // Pull totals from the Cost Model sheet (via workbook defined names) so Summary tracks edits
+        // and survives users adding / inserting line item rows in the table.
         ws.Cell(row, 1).Value = "Monthly subtotal"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = "='Cost Model'!B100"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 2).FormulaA1 = $"={NameSubtotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
         ws.Cell(row, 1).Value = $"Contingency ({r.Cost.ContingencyPercent}%)"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = "='Cost Model'!B101"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 2).FormulaA1 = $"={NameContingency}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
         ws.Cell(row, 1).Value = "Monthly total (incl. contingency)"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = "='Cost Model'!B102"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
+        ws.Cell(row, 2).FormulaA1 = $"={NameMonthlyTotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
         ws.Range($"A{row}:B{row}").Style.Fill.BackgroundColor = TotalFill; row++;
         ws.Cell(row, 1).Value = "Annual total (incl. contingency)"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = "='Cost Model'!B103"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
+        ws.Cell(row, 2).FormulaA1 = $"={NameAnnualTotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
         ws.Range($"A{row}:B{row}").Style.Fill.BackgroundColor = TotalFill; row += 2;
 
         SectionHeader(ws, $"A{row}:B{row}", "Disclaimer");
@@ -100,58 +124,114 @@ public sealed class ExcelReportGenerator
     private static IXLWorksheet BuildCostSheet(XLWorkbook wb, EstimationResult r)
     {
         var ws = wb.Worksheets.Add("Cost Model");
+
+        // Guidance banner so reviewers know exactly how to drive the sheet.
+        Title(ws, "A1:I1", "Azure Cost Model — editable");
+        ws.Cell("A2").Value =
+            "Tip: edit the highlighted Quantity / Unit Price cells and totals recalculate automatically. " +
+            "To add a manual line item, type in the empty row directly below the last one — the table grows " +
+            "and the Monthly subtotal includes it (or insert a row inside the table). Do not delete the totals row.";
+        ws.Range("A2:I2").Merge();
+        ws.Cell("A2").Style.Alignment.WrapText = true;
+        ws.Cell("A2").Style.Font.Italic = true;
+        ws.Cell("A2").Style.Font.FontColor = XLColor.FromHtml("#444444");
+        ws.Range("A2:I2").Style.Fill.BackgroundColor = AccentFill;
+        ws.Row(2).Height = 42;
+
         string[] headers = { "Category", "Service", "SKU / Tier", "Meter", "Assumption", "Quantity", "Unit Price", "Unit", "Monthly Cost" };
+        const int colQty = 6, colUnitPrice = 7, colMonthly = 9;
+        int headerRow = 4;
         for (int c = 0; c < headers.Length; c++)
         {
-            var cell = ws.Cell(1, c + 1);
+            var cell = ws.Cell(headerRow, c + 1);
             cell.Value = headers[c];
             HeaderStyle(cell);
         }
 
-        int row = 2;
+        int row = headerRow + 1;
         int firstDataRow = row;
-        foreach (var li in r.Cost.LineItems.OrderBy(l => l.Category).ThenBy(l => l.Service))
+        var ordered = r.Cost.LineItems.OrderBy(l => l.Category).ThenBy(l => l.Service).ToList();
+        // Guarantee at least one data row so the table is always valid even with an empty estimate.
+        if (ordered.Count == 0) ordered.Add(new CostLineItem { Category = "", Service = "" });
+        foreach (var li in ordered)
         {
             ws.Cell(row, 1).Value = li.Category;
             ws.Cell(row, 2).Value = li.Service;
             ws.Cell(row, 3).Value = li.Sku;
             ws.Cell(row, 4).Value = li.Meter;
             ws.Cell(row, 5).Value = li.Assumption;
-            ws.Cell(row, 6).Value = li.Quantity;
-            ws.Cell(row, 7).Value = li.UnitPrice;
-            MoneyCell(ws.Cell(row, 7), r.Cost.Currency, "#,##0.000000");
+            ws.Cell(row, colQty).Value = li.Quantity;            // editable input
+            ws.Cell(row, colUnitPrice).Value = li.UnitPrice;     // editable input
             ws.Cell(row, 8).Value = li.Unit;
-            // Live formula: quantity * unit price
-            ws.Cell(row, 9).FormulaA1 = $"=F{row}*G{row}";
-            MoneyCell(ws.Cell(row, 9), r.Cost.Currency);
-            if (row % 2 == 0) ws.Range(row, 1, row, 9).Style.Fill.BackgroundColor = AccentFill;
+            // Monthly Cost left blank here; the table calculated-column formula fills it (incl. future rows).
             row++;
         }
         int lastDataRow = row - 1;
 
-        // Totals block anchored at fixed rows (100-103) referenced by the Summary sheet.
-        const int subtotalRow = 100, contingencyRow = 101, totalRow = 102, annualRow = 103;
-        ws.Cell(subtotalRow, 1).Value = "Monthly subtotal";
-        ws.Cell(subtotalRow, 1).Style.Font.Bold = true;
-        ws.Cell(subtotalRow, 2).FormulaA1 = $"=SUM(I{firstDataRow}:I{lastDataRow})";
-        MoneyCell(ws.Cell(subtotalRow, 2), r.Cost.Currency);
+        // ---- Build the editable Excel Table (ListObject) over header + data rows ----
+        var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(CostTableName);
+        table.Theme = XLTableTheme.TableStyleLight9;
+        // Monthly Cost = Quantity * Unit Price as a TABLE CALCULATED COLUMN.
+        // Setting the formula on the data rows makes ClosedXML emit <calculatedColumnFormula>, which is
+        // what tells Excel to auto-fill the formula for any newly added/inserted table row.
+        foreach (var dataRow in table.DataRange.Rows())
+            dataRow.Cell(colMonthly).FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+
+        // Totals row: SUBTOTAL(109, CostModel[Monthly Cost]) auto-includes new rows.
+        table.ShowTotalsRow = true;
+        table.Field("Category").TotalsRowLabel = "Monthly subtotal";
+        table.Field("Monthly Cost").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        int totalsRow = table.TotalsRow().RowNumber();
+        var subtotalCell = ws.Cell(totalsRow, colMonthly);
+        MoneyCell(subtotalCell, r.Cost.Currency);
+        ws.Cell(totalsRow, 1).Style.Font.Bold = true;
+
+        // Format + highlight the editable input columns so reviewers know what to change.
+        var qtyData = ws.Range(firstDataRow, colQty, lastDataRow, colQty);
+        var priceData = ws.Range(firstDataRow, colUnitPrice, lastDataRow, colUnitPrice);
+        qtyData.Style.NumberFormat.Format = "#,##0.######";
+        foreach (var c in priceData.Cells()) MoneyCell(c, r.Cost.Currency, "#,##0.000000");
+        foreach (var rng in new[] { qtyData, priceData })
+        {
+            rng.Style.Fill.BackgroundColor = InputFill;
+            rng.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            rng.Style.Border.OutsideBorderColor = InputBorder;
+        }
+        // Mark the Monthly Cost column (derived) italic and money-formatted.
+        var monthlyData = ws.Range(firstDataRow, colMonthly, lastDataRow, colMonthly);
+        monthlyData.Style.Font.Italic = true;
+        foreach (var c in monthlyData.Cells()) MoneyCell(c, r.Cost.Currency);
+
+        // ---- Derived totals below the table, exposed as workbook defined names ----
+        int contingencyRow = totalsRow + 2;
+        int totalRowNo = contingencyRow + 1;
+        int annualRow = totalRowNo + 1;
 
         ws.Cell(contingencyRow, 1).Value = $"Contingency ({r.Cost.ContingencyPercent}%)";
         ws.Cell(contingencyRow, 1).Style.Font.Bold = true;
-        ws.Cell(contingencyRow, 2).FormulaA1 = $"=B{subtotalRow}*{r.Cost.ContingencyPercent / 100m}";
-        MoneyCell(ws.Cell(contingencyRow, 2), r.Cost.Currency);
+        var contingencyCell = ws.Cell(contingencyRow, 2);
+        contingencyCell.FormulaA1 = $"={CostTableName}[[#Totals],[Monthly Cost]]*{r.Cost.ContingencyPercent / 100m}";
+        MoneyCell(contingencyCell, r.Cost.Currency);
 
-        ws.Cell(totalRow, 1).Value = "Monthly total (incl. contingency)";
-        ws.Cell(totalRow, 1).Style.Font.Bold = true;
-        ws.Cell(totalRow, 2).FormulaA1 = $"=B{subtotalRow}+B{contingencyRow}";
-        MoneyCell(ws.Cell(totalRow, 2), r.Cost.Currency);
-        ws.Range(totalRow, 1, totalRow, 2).Style.Fill.BackgroundColor = TotalFill;
+        ws.Cell(totalRowNo, 1).Value = "Monthly total (incl. contingency)";
+        ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
+        var totalCell = ws.Cell(totalRowNo, 2);
+        totalCell.FormulaA1 = $"={CostTableName}[[#Totals],[Monthly Cost]]+B{contingencyRow}";
+        MoneyCell(totalCell, r.Cost.Currency);
+        ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
 
         ws.Cell(annualRow, 1).Value = "Annual total (incl. contingency)";
         ws.Cell(annualRow, 1).Style.Font.Bold = true;
-        ws.Cell(annualRow, 2).FormulaA1 = $"=B{totalRow}*12";
-        MoneyCell(ws.Cell(annualRow, 2), r.Cost.Currency);
+        var annualCell = ws.Cell(annualRow, 2);
+        annualCell.FormulaA1 = $"=B{totalRowNo}*12";
+        MoneyCell(annualCell, r.Cost.Currency);
         ws.Range(annualRow, 1, annualRow, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        // Defined names (workbook scope) so the Summary sheet references survive table growth.
+        wb.DefinedNames.Add(NameSubtotal, subtotalCell.AsRange());
+        wb.DefinedNames.Add(NameContingency, contingencyCell.AsRange());
+        wb.DefinedNames.Add(NameMonthlyTotal, totalCell.AsRange());
+        wb.DefinedNames.Add(NameAnnualTotal, annualCell.AsRange());
 
         // Notes
         int noteRow = annualRow + 2;
@@ -162,11 +242,19 @@ public sealed class ExcelReportGenerator
             noteRow++;
             ws.Cell(noteRow, 1).Value = "• " + note;
         }
+        noteRow++;
+        ws.Cell(noteRow, 1).Value =
+            "• How to add a line item: select the last data row, press Tab/Enter to spill into the next row, " +
+            "then type your Category/Service plus a Quantity and Unit Price. Monthly Cost and the Monthly subtotal update automatically.";
+        ws.Cell(noteRow, 1).Style.Font.Italic = true;
 
-        ws.Columns(1, 9).AdjustToContents();
-        ws.Column(5).Width = Math.Min(ws.Column(5).Width, 45);
-        ws.SheetView.FreezeRows(1);
-        ws.Range(1, 1, lastDataRow, 9).SetAutoFilter();
+        // NOTE: do NOT call AdjustToContents() on this sheet. Auto-sizing forces ClosedXML to render
+        // every cell value, which makes its calc engine evaluate the table totals-row SUBTOTAL formula.
+        // ClosedXML (0.104) overflows the stack evaluating SUBTOTAL over a table column, so we set
+        // explicit, readable column widths instead. Excel still computes the formula correctly on open.
+        double[] widths = { 16, 22, 14, 16, 45, 12, 14, 16, 16 };
+        for (int i = 0; i < widths.Length; i++) ws.Column(i + 1).Width = widths[i];
+        ws.SheetView.FreezeRows(headerRow);
         return ws;
     }
 
