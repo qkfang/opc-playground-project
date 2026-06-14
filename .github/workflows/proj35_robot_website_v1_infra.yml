@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "robotweb20260614"
+        default: "proj35"
       swaLocation:
         description: "Static Web App region"
         required: true

@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "proj14_lego_shop"
+        default: "proj14"
       location:
         description: "Region for App Service plan and web app"
         required: true

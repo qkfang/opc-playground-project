@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming (matches infra)"
         required: true
-        default: "proj14_lego_shop"
+        default: "proj14"
       appPath:
         description: "App source directory to build and deploy"
         required: true

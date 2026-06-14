@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "proj6_legopuzzle"
+        default: "proj6"
       location:
         description: "Region for App Service and Cosmos DB"
         required: true

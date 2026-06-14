@@ -15,8 +15,8 @@ env:
   RESOURCE_GROUP: rg-playground-01
   FUNC_DIR: proj8_lego_site/apps/backend
   FRONTEND_DIR: proj8_lego_site/apps/frontend
-  FUNC_PREFIX: lego20260606-func
-  SWA_PREFIX: lego20260606-swa
+  FUNC_PREFIX: proj8-func
+  SWA_PREFIX: proj8-swa
 
 jobs:
   deploy-backend:
