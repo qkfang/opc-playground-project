@@ -1,0 +1,12 @@
+{
+  "name": "cogsworth-robotics-website-v2",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Cogsworth Robotics 2.0 - simple robot website v2 (proj36). Pure static site, no build step.",
+  "type": "module",
+  "scripts": {
+    "smoke": "node scripts/smoke.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test": "node scripts/smoke.mjs"
+  }
+}

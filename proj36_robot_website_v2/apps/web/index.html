@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cogsworth Robotics 2.0 — Friendly robots for home, lab &amp; sky</title>
+  <meta name="description" content="Cogsworth Robotics 2.0 builds friendly, helpful robots for home, lab, outdoors and the sky. Meet Helpa, Labbie, Rover-X and the new Aero drone — build your bot and see the price live." />
+  <meta name="theme-color" content="#5b7cfa" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#home">Skip to content</a>
+
+  <!-- scroll progress -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- ============ HEADER / NAV ============ -->
+  <header class="site-header" id="top">
+    <div class="container nav-wrap">
+      <a class="brand" href="#home" aria-label="Cogsworth Robotics 2.0 home">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-bot"></span>
+        </span>
+        <span class="brand-name">Cogsworth<span class="brand-accent">Robotics</span></span>
+        <span class="brand-badge">2.0</span>
+      </a>
+
+      <div class="nav-tools">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" aria-pressed="false" title="Toggle theme">
+          <span class="theme-icon theme-icon-moon" aria-hidden="true">🌙</span>
+          <span class="theme-icon theme-icon-sun" aria-hidden="true">☀️</span>
+        </button>
+
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+        </button>
+      </div>
+
+      <nav class="primary-nav" id="primaryNav" aria-label="Primary">
+        <ul>
+          <li><a href="#home" class="nav-link">Home</a></li>
+          <li><a href="#robots" class="nav-link">Robots</a></li>
+          <li><a href="#build" class="nav-link">Build</a></li>
+          <li><a href="#features" class="nav-link">Features</a></li>
+          <li><a href="#specs" class="nav-link">Specs</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+          <li><a href="#contact" class="nav-link nav-cta">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Version 2.0 — now with Aero</p>
+          <h1 class="hero-title">Friendly robots for <span class="grad-text">home, lab &amp; sky</span></h1>
+          <p class="hero-sub">
+            Cogsworth Robotics 2.0 designs safe, smart companions that work right out of the box.
+            No code, no fuss — pick a bot, add what you need, and watch the price update live.
+          </p>
+          <div class="hero-actions">
+            <a href="#build" class="btn btn-primary">Build your bot</a>
+            <a href="#robots" class="btn btn-ghost">Meet the line-up</a>
+          </div>
+          <ul class="hero-badges" aria-label="Highlights">
+            <li><strong data-count="4">4</strong><span>ready-to-go models</span></li>
+            <li><strong data-count="22" data-suffix="h">22h</strong><span>max battery</span></li>
+            <li><strong data-count="5" data-suffix=" min">5 min</strong><span>easy setup</span></li>
+            <li><strong data-count="30" data-suffix="-day">30-day</strong><span>happiness guarantee</span></li>
+          </ul>
+        </div>
+
+        <!-- Pure-CSS animated robot mascot (v2 upgrade) -->
+        <div class="hero-bot-stage reveal" aria-hidden="true">
+          <div class="bot">
+            <div class="bot-antenna"><span class="bot-antenna-dot"></span></div>
+            <div class="bot-head">
+              <div class="bot-visor">
+                <span class="bot-scan"></span>
+                <div class="bot-eyes">
+                  <span class="bot-eye"></span>
+                  <span class="bot-eye"></span>
+                </div>
+              </div>
+              <div class="bot-mouth"></div>
+            </div>
+            <div class="bot-body">
+              <span class="bot-light"></span>
+              <span class="bot-light"></span>
+              <span class="bot-light"></span>
+            </div>
+            <div class="bot-shadow"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- ============ ROBOTS SHOWCASE ============ -->
+    <section class="section" id="robots">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">The line-up</p>
+          <h2>Meet the bots</h2>
+          <p class="section-lead">Four friendly robots, each built for a different job &mdash; all sharing the same safe, simple Cogsworth core. New in 2.0: <strong>Aero</strong>, our featherweight flyer.</p>
+        </header>
+
+        <div class="filter-bar reveal" role="group" aria-label="Filter robots by use">
+          <button class="chip is-active" type="button" data-filter="all" aria-pressed="true">All</button>
+          <button class="chip" type="button" data-filter="home" aria-pressed="false">Home</button>
+          <button class="chip" type="button" data-filter="lab" aria-pressed="false">Lab</button>
+          <button class="chip" type="button" data-filter="outdoor" aria-pressed="false">Outdoor</button>
+          <button class="chip" type="button" data-filter="air" aria-pressed="false">Air</button>
+        </div>
+
+        <div class="card-grid" id="robotGrid">
+          <article class="robot-card reveal" data-category="home">
+            <div class="robot-avatar avatar-helpa" aria-hidden="true">
+              <span class="ra-eye"></span><span class="ra-eye"></span>
+            </div>
+            <h3>Helpa</h3>
+            <p class="robot-role">Home helper</p>
+            <p class="robot-desc">Tidies, reminds, and keeps an eye on things while you're out. Your everyday sidekick.</p>
+            <ul class="robot-stats">
+              <li><span>Battery</span><strong>18h</strong></li>
+              <li><span>Range</span><strong>Home Wi-Fi</strong></li>
+              <li><span>Weight</span><strong>3.2 kg</strong></li>
+            </ul>
+            <span class="robot-tag tag-home">Home</span>
+          </article>
+
+          <article class="robot-card reveal" data-category="lab">
+            <div class="robot-avatar avatar-labbie" aria-hidden="true">
+              <span class="ra-eye"></span><span class="ra-eye"></span>
+            </div>
+            <h3>Labbie</h3>
+            <p class="robot-role">Lab assistant</p>
+            <p class="robot-desc">Precise handling and tireless logging for the workbench. Steady hands, perfect notes.</p>
+            <ul class="robot-stats">
+              <li><span>Battery</span><strong>12h</strong></li>
+              <li><span>Range</span><strong>Bench-side</strong></li>
+              <li><span>Weight</span><strong>5.1 kg</strong></li>
+            </ul>
+            <span class="robot-tag tag-lab">Lab</span>
+          </article>
+
+          <article class="robot-card reveal" data-category="outdoor">
+            <div class="robot-avatar avatar-rover" aria-hidden="true">
+              <span class="ra-eye"></span><span class="ra-eye"></span>
+            </div>
+            <h3>Rover-X</h3>
+            <p class="robot-role">Outdoor explorer</p>
+            <p class="robot-desc">All-terrain wheels and weather-sealed sensors for the garden, yard, and beyond.</p>
+            <ul class="robot-stats">
+              <li><span>Battery</span><strong>9h</strong></li>
+              <li><span>Range</span><strong>120 m</strong></li>
+              <li><span>Weight</span><strong>7.4 kg</strong></li>
+            </ul>
+            <span class="robot-tag tag-outdoor">Outdoor</span>
+          </article>
+
+          <article class="robot-card robot-card-new reveal" data-category="air">
+            <div class="robot-avatar avatar-aero" aria-hidden="true">
+              <span class="ra-eye"></span><span class="ra-eye"></span>
+              <span class="ra-rotor ra-rotor-l"></span>
+              <span class="ra-rotor ra-rotor-r"></span>
+            </div>
+            <h3>Aero <span class="new-pill">NEW</span></h3>
+            <p class="robot-role">Sky scout</p>
+            <p class="robot-desc">A featherweight flyer that maps from above &mdash; surveys, photos, and quick eyes on the roof.</p>
+            <ul class="robot-stats">
+              <li><span>Battery</span><strong>22h*</strong></li>
+              <li><span>Range</span><strong>500 m</strong></li>
+              <li><span>Weight</span><strong>0.9 kg</strong></li>
+            </ul>
+            <span class="robot-tag tag-air">Air</span>
+          </article>
+        </div>
+        <p class="grid-empty" id="gridEmpty" hidden>No robots match that filter.</p>
+        <p class="footnote">*Aero battery figure is standby/hover-assist time; active flight is shorter.</p>
+      </div>
+    </section>
+
+    <!-- ============ BUILD YOUR BOT (configurator) ============ -->
+    <section class="section section-alt" id="build">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">New in 2.0</p>
+          <h2>Build your bot</h2>
+          <p class="section-lead">Pick a model, add the extras you want, and see your price &amp; battery update instantly. Demo only &mdash; nothing leaves your browser.</p>
+        </header>
+
+        <div class="builder reveal">
+          <form class="builder-form" id="builderForm" novalidate>
+            <fieldset class="builder-group">
+              <legend>1. Choose a model</legend>
+              <div class="model-options" id="modelOptions">
+                <label class="model-option">
+                  <input type="radio" name="model" value="helpa" data-price="899" data-battery="18" checked />
+                  <span class="model-card"><strong>Helpa</strong><span>Home helper &middot; 18h &middot; $899</span></span>
+                </label>
+                <label class="model-option">
+                  <input type="radio" name="model" value="labbie" data-price="1299" data-battery="12" />
+                  <span class="model-card"><strong>Labbie</strong><span>Lab assistant &middot; 12h &middot; $1,299</span></span>
+                </label>
+                <label class="model-option">
+                  <input type="radio" name="model" value="rover" data-price="1099" data-battery="9" />
+                  <span class="model-card"><strong>Rover-X</strong><span>Outdoor explorer &middot; 9h &middot; $1,099</span></span>
+                </label>
+                <label class="model-option">
+                  <input type="radio" name="model" value="aero" data-price="1499" data-battery="22" />
+                  <span class="model-card"><strong>Aero</strong><span>Sky scout &middot; 22h* &middot; $1,499</span></span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="builder-group">
+              <legend>2. Add extras</legend>
+              <div class="addon-options">
+                <label class="addon-option">
+                  <input type="checkbox" name="addon" value="battery" data-price="120" data-battery="6" />
+                  <span class="addon-card"><strong>Extended battery</strong><span>+6h runtime &middot; +$120</span></span>
+                </label>
+                <label class="addon-option">
+                  <input type="checkbox" name="addon" value="voice" data-price="80" data-battery="0" />
+                  <span class="addon-card"><strong>Voice pack</strong><span>Hands-free control &middot; +$80</span></span>
+                </label>
+                <label class="addon-option">
+                  <input type="checkbox" name="addon" value="care" data-price="60" data-battery="0" />
+                  <span class="addon-card"><strong>Care plan (1yr)</strong><span>Priority support &middot; +$60</span></span>
+                </label>
+              </div>
+            </fieldset>
+          </form>
+
+          <aside class="builder-summary" id="builderSummary" aria-live="polite">
+            <h3>Your build</h3>
+            <p class="summary-model">Model: <strong id="sumModel">Helpa</strong></p>
+            <ul class="summary-lines" id="summaryLines"></ul>
+            <div class="summary-row"><span>Est. battery</span><strong id="sumBattery">18h</strong></div>
+            <div class="summary-row summary-total"><span>Est. price</span><strong id="sumPrice">$899</strong></div>
+            <a href="#contact" class="btn btn-primary btn-block">Request this build</a>
+            <p class="form-note">Indicative pricing for the demo &mdash; no payment taken.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="section" id="features">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Why Cogsworth</p>
+          <h2>Built to be easy</h2>
+          <p class="section-lead">Every bot ships with the same thoughtful basics &mdash; so it just works.</p>
+        </header>
+
+        <div class="feature-grid">
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">&#128737;&#65039;</div>
+            <h3>Safe by design</h3>
+            <p>Soft-stop sensors and rounded edges. Built to be gentle around people and pets.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">&#128267;</div>
+            <h3>All-day battery</h3>
+            <p>Up to 22 hours on a charge, with auto-return to the dock when it's running low.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">&#127897;&#65039;</div>
+            <h3>Voice ready</h3>
+            <p>Talk naturally. Wake it with a word and ask for what you need, hands-free.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">&#9889;</div>
+            <h3>Easy setup</h3>
+            <p>From box to busy in about five minutes. No tools, no code, no manual marathon.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">&#129517;</div>
+            <h3>Smart sensors</h3>
+            <p>Maps the room, dodges obstacles, and remembers your space the more it roams.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">&#128260;</div>
+            <h3>OTA updates</h3>
+            <p>New tricks arrive over the air. Your bot gets smarter while it charges overnight.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section section-alt" id="how">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Three simple steps</p>
+          <h2>How it works</h2>
+          <p class="section-lead">No engineering degree required. Really.</p>
+        </header>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step-num">1</span>
+            <h3>Unbox</h3>
+            <p>Lift it out, peel the tab, and press the single power button. That's the hard part done.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">2</span>
+            <h3>Pair</h3>
+            <p>Open the app, tap your bot, and join your Wi-Fi. It introduces itself and learns your home.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">3</span>
+            <h3>Go</h3>
+            <p>Give it a job or just say hello. Your new helper is ready to roll &mdash; no setup wizardry needed.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ SPECS ============ -->
+    <section class="section" id="specs">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">By the numbers</p>
+          <h2>Compare the line-up</h2>
+          <p class="section-lead">A quick side-by-side of what each bot brings &mdash; now including Aero.</p>
+        </header>
+
+        <div class="table-wrap reveal">
+          <table class="specs-table">
+            <caption class="visually-hidden">Specifications for Helpa, Labbie, Rover-X, and Aero</caption>
+            <thead>
+              <tr>
+                <th scope="col">Spec</th>
+                <th scope="col">Helpa</th>
+                <th scope="col">Labbie</th>
+                <th scope="col">Rover-X</th>
+                <th scope="col">Aero</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Best for</th><td>Home</td><td>Lab</td><td>Outdoors</td><td>Air</td></tr>
+              <tr><th scope="row">Battery life</th><td>18h</td><td>12h</td><td>9h</td><td>22h*</td></tr>
+              <tr><th scope="row">Sensors</th><td>Lidar + cam</td><td>Precision arm + cam</td><td>GPS + weather</td><td>4K cam + baro</td></tr>
+              <tr><th scope="row">Range</th><td>Home Wi-Fi</td><td>Bench-side</td><td>120 m</td><td>500 m</td></tr>
+              <tr><th scope="row">Weight</th><td>3.2 kg</td><td>5.1 kg</td><td>7.4 kg</td><td>0.9 kg</td></tr>
+              <tr><th scope="row">Water resistance</th><td>Splash</td><td>Splash</td><td>IP65</td><td>Splash</td></tr>
+              <tr><th scope="row">Top speed</th><td>1.2 m/s</td><td>0.6 m/s</td><td>2.5 m/s</td><td>12 m/s</td></tr>
+              <tr><th scope="row">Starting price</th><td>$899</td><td>$1,299</td><td>$1,099</td><td>$1,499</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TESTIMONIALS ============ -->
+    <section class="section section-alt" id="reviews">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Loved by early adopters</p>
+          <h2>What people say</h2>
+          <p class="section-lead">A few words from the Cogsworth 2.0 beta crew.</p>
+        </header>
+
+        <div class="quote-grid">
+          <figure class="quote-card reveal">
+            <div class="quote-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <blockquote>"Helpa folded into our routine in a day. The kids named it, the dog tolerates it, and the house is tidier."</blockquote>
+            <figcaption><span class="quote-avatar" aria-hidden="true">M</span> Mara &middot; Home user</figcaption>
+          </figure>
+          <figure class="quote-card reveal">
+            <div class="quote-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <blockquote>"Labbie logs every run without complaint. It's like an extra lab partner who never needs coffee."</blockquote>
+            <figcaption><span class="quote-avatar" aria-hidden="true">D</span> Dr. Okafor &middot; Research lab</figcaption>
+          </figure>
+          <figure class="quote-card reveal">
+            <div class="quote-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <blockquote>"Aero mapped our roof in minutes. The build-your-bot pricing made it a no-brainer to add the battery pack."</blockquote>
+            <figcaption><span class="quote-avatar" aria-hidden="true">J</span> Jonas &middot; Field surveyor</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="section" id="faq">
+      <div class="container container-narrow">
+        <header class="section-head reveal">
+          <p class="eyebrow">Good to know</p>
+          <h2>Frequently asked</h2>
+          <p class="section-lead">The quick answers. Still curious? Drop us a line below.</p>
+        </header>
+
+        <div class="faq-list reveal" id="faqList">
+          <div class="faq-item">
+            <h3 class="faq-q">
+              <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-a1" id="faq-q1">
+                <span>Do I need to know how to code?</span>
+                <span class="faq-mark" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <div class="faq-a" id="faq-a1" role="region" aria-labelledby="faq-q1" hidden>
+              <p>Not at all. Every Cogsworth bot is unbox-pair-go. The app walks you through setup in about five minutes &mdash; no terminal, no scripts.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">
+              <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-a2" id="faq-q2">
+                <span>Is Aero hard to fly?</span>
+                <span class="faq-mark" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <div class="faq-a" id="faq-a2" role="region" aria-labelledby="faq-q2" hidden>
+              <p>Aero flies itself. Tap a spot on the map and it plans a safe path, holds position in wind, and returns home automatically on low battery.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">
+              <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-a3" id="faq-q3">
+                <span>What's new in version 2.0?</span>
+                <span class="faq-mark" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <div class="faq-a" id="faq-a3" role="region" aria-labelledby="faq-q3" hidden>
+              <p>Aero joins the line-up, there's a dark/light theme, an interactive build-your-bot pricer, robot filtering, and a faster, more polished page across the board.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">
+              <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-a4" id="faq-q4">
+                <span>What about privacy?</span>
+                <span class="faq-mark" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <div class="faq-a" id="faq-a4" role="region" aria-labelledby="faq-q4" hidden>
+              <p>The configurator and contact form are demo-only and never send your data anywhere &mdash; everything stays in your browser. Real Cogsworth bots process sensing on-device by default.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <h3 class="faq-q">
+              <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-a5" id="faq-q5">
+                <span>Is there a guarantee?</span>
+                <span class="faq-mark" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <div class="faq-a" id="faq-a5" role="region" aria-labelledby="faq-q5" hidden>
+              <p>Yes &mdash; every bot comes with a 30-day happiness guarantee and real human support. Add the Care plan for a year of priority help.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT / CTA ============ -->
+    <section class="section section-alt" id="contact">
+      <div class="container contact-grid">
+        <div class="contact-copy reveal">
+          <p class="eyebrow">Say hello</p>
+          <h2>Bring a Cogsworth home</h2>
+          <p class="section-lead">
+            Want a demo, a quote, or just have a question? Drop us a line and a friendly human
+            (not a bot &mdash; promise) will get back to you.
+          </p>
+          <ul class="contact-points">
+            <li>Free home, lab, or field demo</li>
+            <li>30-day happiness guarantee</li>
+            <li>Real support, real people</li>
+          </ul>
+        </div>
+
+        <form class="contact-form reveal" id="contactForm" novalidate>
+          <div class="field">
+            <label for="cf-name">Name</label>
+            <input type="text" id="cf-name" name="name" autocomplete="name" required />
+            <span class="field-error" data-error-for="cf-name"></span>
+          </div>
+          <div class="field">
+            <label for="cf-email">Email</label>
+            <input type="email" id="cf-email" name="email" autocomplete="email" required />
+            <span class="field-error" data-error-for="cf-email"></span>
+          </div>
+          <div class="field">
+            <label for="cf-message">Message</label>
+            <textarea id="cf-message" name="message" rows="4" required></textarea>
+            <span class="field-error" data-error-for="cf-message"></span>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Send message</button>
+          <p class="form-success" id="formSuccess" role="status" hidden>
+            Thanks! Your message is on its way &mdash; we'll be in touch soon.
+          </p>
+          <p class="form-note">This is a demo form &mdash; no data leaves your browser.</p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="container footer-wrap">
+      <div class="footer-brand">
+        <span class="brand-mark small" aria-hidden="true"><span class="brand-bot"></span></span>
+        <span class="brand-name">Cogsworth<span class="brand-accent">Robotics</span></span>
+        <span class="brand-badge">2.0</span>
+      </div>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="#home">Home</a>
+        <a href="#robots">Robots</a>
+        <a href="#build">Build</a>
+        <a href="#specs">Specs</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <p class="footer-fine">&copy; <span id="year">2026</span> Cogsworth Robotics 2.0. A friendly demo site.</p>
+    </div>
+  </footer>
+
+  <!-- back to top -->
+  <button class="to-top" id="toTop" type="button" aria-label="Back to top" hidden>
+    <span aria-hidden="true">&uarr;</span>
+  </button>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>
