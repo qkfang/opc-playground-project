@@ -13,7 +13,7 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-playground-01
-  PROJECT_DIR: 20260606_lego_site
+  PROJECT_DIR: proj8_lego_site
 
 jobs:
   deploy-infra:
@@ -42,8 +42,8 @@ jobs:
               --only-show-errors \
               --output json > deploy.json || {
                 echo "Bicep deployment failed; checking for already-provisioned LEGO resources in rg-playground-01"
-                SWA=$(az staticwebapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'lego20260606-swa')].name | [0]" -o tsv)
-                FN=$(az functionapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'lego20260606-func')].name | [0]" -o tsv)
+                SWA=$(az staticwebapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'proj8-swa')].name | [0]" -o tsv)
+                FN=$(az functionapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'proj8-func')].name | [0]" -o tsv)
                 if [ -n "$SWA" ] && [ -n "$FN" ]; then
                   SWA_HOST=$(az staticwebapp show -g "$RESOURCE_GROUP" -n "$SWA" --query defaultHostname -o tsv)
                   FN_HOST=$(az functionapp show -g "$RESOURCE_GROUP" -n "$FN" --query defaultHostName -o tsv)

@@ -40,7 +40,7 @@ jobs:
               --query "[?starts_with(name,'${{ inputs.baseName }}-swa-')].name | [0]" -o tsv)
             if [ -z "$SWA" ]; then
               echo "No Static Web App found for baseName=${{ inputs.baseName }} in $RESOURCE_GROUP"
-              echo "Run 20260614_rocket_game_infra first."; exit 1
+              echo "Run proj34_rocket_game_infra first."; exit 1
             fi
             TOKEN=$(az staticwebapp secrets list --name "$SWA" \
               --resource-group "$RESOURCE_GROUP" --query properties.apiKey -o tsv)
