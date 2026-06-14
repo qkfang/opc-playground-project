@@ -47,23 +47,11 @@ jobs:
                 if [ -n "$SWA" ] && [ -n "$FN" ]; then
                   SWA_HOST=$(az staticwebapp show -g "$RESOURCE_GROUP" -n "$SWA" --query defaultHostname -o tsv)
                   FN_HOST=$(az functionapp show -g "$RESOURCE_GROUP" -n "$FN" --query defaultHostName -o tsv)
-                  python - <<'PY'
-                  import json
-                  import os
-
-                  data = {
-                    "properties": {
-                      "outputs": {
-                        "staticWebAppName": {"value": os.environ["SWA"]},
-                        "staticWebAppHostname": {"value": os.environ["SWA_HOST"]},
-                        "functionAppName": {"value": os.environ["FN"]},
-                        "functionAppHostname": {"value": os.environ["FN_HOST"]}
-                      }
-                    }
-                  }
-                  with open('deploy.json', 'w', encoding='utf-8') as f:
-                      json.dump(data, f)
-                  PY
+                  jq -n \
+                    --arg swa "$SWA" --arg swaHost "$SWA_HOST" \
+                    --arg fn "$FN" --arg fnHost "$FN_HOST" \
+                    '{properties:{outputs:{staticWebAppName:{value:$swa},staticWebAppHostname:{value:$swaHost},functionAppName:{value:$fn},functionAppHostname:{value:$fnHost}}}}' \
+                    > deploy.json
                 else
                   exit 1
                 fi
