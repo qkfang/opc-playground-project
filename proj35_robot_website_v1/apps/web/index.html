@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cogsworth Robotics — Friendly robots for home &amp; lab</title>
+  <meta name="description" content="Cogsworth Robotics builds friendly, helpful robots for your home and lab. Meet Helpa, Labbie, and Rover-X — safe, smart, and ready out of the box." />
+  <meta name="theme-color" content="#5b7cfa" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#home">Skip to content</a>
+
+  <!-- ============ HEADER / NAV ============ -->
+  <header class="site-header" id="top">
+    <div class="container nav-wrap">
+      <a class="brand" href="#home" aria-label="Cogsworth Robotics home">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-bot"></span>
+        </span>
+        <span class="brand-name">Cogsworth<span class="brand-accent">Robotics</span></span>
+      </a>
+
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+
+      <nav class="primary-nav" id="primaryNav" aria-label="Primary">
+        <ul>
+          <li><a href="#home" class="nav-link">Home</a></li>
+          <li><a href="#robots" class="nav-link">Robots</a></li>
+          <li><a href="#features" class="nav-link">Features</a></li>
+          <li><a href="#how" class="nav-link">How it works</a></li>
+          <li><a href="#specs" class="nav-link">Specs</a></li>
+          <li><a href="#contact" class="nav-link nav-cta">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">Meet the next generation of helpers</p>
+          <h1 class="hero-title">Friendly robots for your <span class="grad-text">home &amp; lab</span></h1>
+          <p class="hero-sub">
+            Cogsworth Robotics designs safe, smart companions that work right out of the box.
+            No code, no fuss — just unbox, pair, and go.
+          </p>
+          <div class="hero-actions">
+            <a href="#robots" class="btn btn-primary">Meet the bots</a>
+            <a href="#contact" class="btn btn-ghost">Get in touch</a>
+          </div>
+          <ul class="hero-badges" aria-label="Highlights">
+            <li><strong>3</strong> ready-to-go models</li>
+            <li><strong>18h</strong> all-day battery</li>
+            <li><strong>5&nbsp;min</strong> easy setup</li>
+          </ul>
+        </div>
+
+        <!-- Pure-CSS animated robot mascot -->
+        <div class="hero-bot-stage reveal" aria-hidden="true">
+          <div class="bot">
+            <div class="bot-antenna"><span class="bot-antenna-dot"></span></div>
+            <div class="bot-head">
+              <div class="bot-eyes">
+                <span class="bot-eye"></span>
+                <span class="bot-eye"></span>
+              </div>
+              <div class="bot-mouth"></div>
+            </div>
+            <div class="bot-body">
+              <span class="bot-light"></span>
+              <span class="bot-light"></span>
+              <span class="bot-light"></span>
+            </div>
+            <div class="bot-shadow"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ROBOTS SHOWCASE ============ -->
+    <section class="section" id="robots">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">The line-up</p>
+          <h2>Meet the bots</h2>
+          <p class="section-lead">Three friendly robots, each built for a different job — all sharing the same safe, simple Cogsworth core.</p>
+        </header>
+
+        <div class="card-grid">
+          <article class="robot-card reveal">
+            <div class="robot-avatar avatar-helpa" aria-hidden="true">
+              <span class="ra-eye"></span><span class="ra-eye"></span>
+            </div>
+            <h3>Helpa</h3>
+            <p class="robot-role">Home helper</p>
+            <p class="robot-desc">Tidies, reminds, and keeps an eye on things while you're out. Your everyday sidekick.</p>
+            <ul class="robot-stats">
+              <li><span>Battery</span><strong>18h</strong></li>
+              <li><span>Range</span><strong>Home Wi-Fi</strong></li>
+              <li><span>Weight</span><strong>3.2 kg</strong></li>
+            </ul>
+          </article>
+
+          <article class="robot-card reveal">
+            <div class="robot-avatar avatar-labbie" aria-hidden="true">
+              <span class="ra-eye"></span><span class="ra-eye"></span>
+            </div>
+            <h3>Labbie</h3>
+            <p class="robot-role">Lab assistant</p>
+            <p class="robot-desc">Precise handling and tireless logging for the workbench. Steady hands, perfect notes.</p>
+            <ul class="robot-stats">
+              <li><span>Battery</span><strong>12h</strong></li>
+              <li><span>Range</span><strong>Bench-side</strong></li>
+              <li><span>Weight</span><strong>5.1 kg</strong></li>
+            </ul>
+          </article>
+
+          <article class="robot-card reveal">
+            <div class="robot-avatar avatar-rover" aria-hidden="true">
+              <span class="ra-eye"></span><span class="ra-eye"></span>
+            </div>
+            <h3>Rover-X</h3>
+            <p class="robot-role">Outdoor explorer</p>
+            <p class="robot-desc">All-terrain wheels and weather-sealed sensors for the garden, yard, and beyond.</p>
+            <ul class="robot-stats">
+              <li><span>Battery</span><strong>9h</strong></li>
+              <li><span>Range</span><strong>120 m</strong></li>
+              <li><span>Weight</span><strong>7.4 kg</strong></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="section section-alt" id="features">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Why Cogsworth</p>
+          <h2>Built to be easy</h2>
+          <p class="section-lead">Every bot ships with the same thoughtful basics — so it just works.</p>
+        </header>
+
+        <div class="feature-grid">
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">🛡️</div>
+            <h3>Safe by design</h3>
+            <p>Soft-stop sensors and rounded edges. Built to be gentle around people and pets.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">🔋</div>
+            <h3>All-day battery</h3>
+            <p>Up to 18 hours on a charge, with auto-return to the dock when it's running low.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">🎙️</div>
+            <h3>Voice ready</h3>
+            <p>Talk naturally. Wake it with a word and ask for what you need, hands-free.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">⚡</div>
+            <h3>Easy setup</h3>
+            <p>From box to busy in about five minutes. No tools, no code, no manual marathon.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">🧭</div>
+            <h3>Smart sensors</h3>
+            <p>Maps the room, dodges obstacles, and remembers your space the more it roams.</p>
+          </div>
+          <div class="feature reveal">
+            <div class="feature-icon" aria-hidden="true">🔄</div>
+            <h3>OTA updates</h3>
+            <p>New tricks arrive over the air. Your bot gets smarter while it charges overnight.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section" id="how">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">Three simple steps</p>
+          <h2>How it works</h2>
+          <p class="section-lead">No engineering degree required. Really.</p>
+        </header>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step-num">1</span>
+            <h3>Unbox</h3>
+            <p>Lift it out, peel the tab, and press the single power button. That's the hard part done.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">2</span>
+            <h3>Pair</h3>
+            <p>Open the app, tap your bot, and join your Wi-Fi. It introduces itself and learns your home.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">3</span>
+            <h3>Go</h3>
+            <p>Give it a job or just say hello. Your new helper is ready to roll — no setup wizardry needed.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ SPECS ============ -->
+    <section class="section section-alt" id="specs">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow">By the numbers</p>
+          <h2>Compare the line-up</h2>
+          <p class="section-lead">A quick side-by-side of what each bot brings.</p>
+        </header>
+
+        <div class="table-wrap reveal">
+          <table class="specs-table">
+            <caption class="visually-hidden">Specifications for Helpa, Labbie, and Rover-X</caption>
+            <thead>
+              <tr>
+                <th scope="col">Spec</th>
+                <th scope="col">Helpa</th>
+                <th scope="col">Labbie</th>
+                <th scope="col">Rover-X</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Best for</th><td>Home</td><td>Lab</td><td>Outdoors</td></tr>
+              <tr><th scope="row">Battery life</th><td>18h</td><td>12h</td><td>9h</td></tr>
+              <tr><th scope="row">Sensors</th><td>Lidar + cam</td><td>Precision arm + cam</td><td>GPS + weather</td></tr>
+              <tr><th scope="row">Range</th><td>Home Wi-Fi</td><td>Bench-side</td><td>120 m</td></tr>
+              <tr><th scope="row">Weight</th><td>3.2 kg</td><td>5.1 kg</td><td>7.4 kg</td></tr>
+              <tr><th scope="row">Water resistance</th><td>Splash</td><td>Splash</td><td>IP65</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT / CTA ============ -->
+    <section class="section" id="contact">
+      <div class="container contact-grid">
+        <div class="contact-copy reveal">
+          <p class="eyebrow">Say hello</p>
+          <h2>Bring a Cogsworth home</h2>
+          <p class="section-lead">
+            Want a demo, a quote, or just have a question? Drop us a line and a friendly human
+            (not a bot — promise) will get back to you.
+          </p>
+          <ul class="contact-points">
+            <li>✅ Free home or lab demo</li>
+            <li>✅ 30-day happiness guarantee</li>
+            <li>✅ Real support, real people</li>
+          </ul>
+        </div>
+
+        <form class="contact-form reveal" id="contactForm" novalidate>
+          <div class="field">
+            <label for="cf-name">Name</label>
+            <input type="text" id="cf-name" name="name" autocomplete="name" required />
+            <span class="field-error" data-error-for="cf-name"></span>
+          </div>
+          <div class="field">
+            <label for="cf-email">Email</label>
+            <input type="email" id="cf-email" name="email" autocomplete="email" required />
+            <span class="field-error" data-error-for="cf-email"></span>
+          </div>
+          <div class="field">
+            <label for="cf-message">Message</label>
+            <textarea id="cf-message" name="message" rows="4" required></textarea>
+            <span class="field-error" data-error-for="cf-message"></span>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Send message</button>
+          <p class="form-success" id="formSuccess" role="status" hidden>
+            🎉 Thanks! Your message is on its way — we'll be in touch soon.
+          </p>
+          <p class="form-note">This is a demo form — no data leaves your browser.</p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="container footer-wrap">
+      <div class="footer-brand">
+        <span class="brand-mark small" aria-hidden="true"><span class="brand-bot"></span></span>
+        <span class="brand-name">Cogsworth<span class="brand-accent">Robotics</span></span>
+      </div>
+      <nav class="footer-nav" aria-label="Footer">
+        <a href="#home">Home</a>
+        <a href="#robots">Robots</a>
+        <a href="#features">Features</a>
+        <a href="#specs">Specs</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <p class="footer-fine">© <span id="year">2026</span> Cogsworth Robotics. A friendly demo site.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>
