@@ -32,4 +32,12 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Ship the bundled sample SOW with the published artifact. The Web SDK auto-copies
+         wwwroot but NOT a top-level Data/ folder, so without this the "Run sample brief"
+         endpoint (Program.cs reads ContentRootPath/Data/sample-statement-of-work.md) 404s
+         on a published / RunFromPackage deploy even though it works under `dotnet run`. -->
+    <Content Include="Data\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
