@@ -34,6 +34,16 @@ jobs:
         with:
           inlineScript: |
             set -euo pipefail
+            # proj10 is deploy-only (no bicep). Provision the Static Web App on first run.
+            if ! az staticwebapp show --name "$SWA_NAME" --resource-group "$RESOURCE_GROUP" --only-show-errors >/dev/null 2>&1; then
+              echo "Static Web App $SWA_NAME not found; creating it in $RESOURCE_GROUP (eastasia, Free)"
+              az staticwebapp create \
+                --name "$SWA_NAME" \
+                --resource-group "$RESOURCE_GROUP" \
+                --location eastasia \
+                --sku Free \
+                --only-show-errors
+            fi
             TOKEN=$(az staticwebapp secrets list \
               --name "$SWA_NAME" \
               --resource-group "$RESOURCE_GROUP" \
