@@ -1,4 +1,4 @@
-name: 20260613_lego_shop_infra
+name: proj14_lego_shop_infra
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "legoshop20260613"
+        default: "proj14_lego_shop"
       location:
         description: "Region for App Service plan and web app"
         required: true
@@ -17,7 +17,7 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-playground-01
-  PROJECT_DIR: 20260613_lego_shop
+  PROJECT_DIR: proj14_lego_shop
 
 jobs:
   deploy-infra:
@@ -56,4 +56,4 @@ jobs:
           echo "- Resource group: $RESOURCE_GROUP" >> "$GITHUB_STEP_SUMMARY"
           echo "- App Service: ${{ steps.bicep.outputs.webAppName }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- URL: ${{ steps.bicep.outputs.webAppUrl }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Next: run 20260613_lego_shop_deploy to ship the app." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Next: run proj14_lego_shop_deploy to ship the app." >> "$GITHUB_STEP_SUMMARY"

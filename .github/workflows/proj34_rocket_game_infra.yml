@@ -1,4 +1,4 @@
-name: 20260614_rocket_game_infra
+name: proj34_rocket_game_infra
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "rocketgame20260614"
+        default: "proj34_rocket_game"
       swaLocation:
         description: "Static Web App region"
         required: true
@@ -37,7 +37,7 @@ jobs:
             set -euo pipefail
             az deployment group create \
               --resource-group "$RESOURCE_GROUP" \
-              --template-file 20260614_rocket_game/bicep/main.bicep \
+              --template-file proj34_rocket_game/bicep/main.bicep \
               --parameters baseName='${{ inputs.baseName }}' swaLocation='${{ inputs.swaLocation }}' \
               --query "properties.outputs" -o json
 

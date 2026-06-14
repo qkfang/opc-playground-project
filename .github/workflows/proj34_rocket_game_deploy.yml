@@ -1,4 +1,4 @@
-name: 20260614_rocket_game_deploy
+name: proj34_rocket_game_deploy
 
 on:
   workflow_dispatch:
@@ -6,11 +6,11 @@ on:
       baseName:
         description: "Base name used in resource naming (matches infra)"
         required: true
-        default: "rocketgame20260614"
+        default: "proj34_rocket_game"
       appPath:
         description: "Static app source directory (no build step)"
         required: true
-        default: "20260614_rocket_game/apps/web"
+        default: "proj34_rocket_game/apps/web"
 
 permissions:
   contents: read

@@ -1,4 +1,4 @@
-name: 20260613_lego_shop_deploy
+name: proj14_lego_shop_deploy
 
 on:
   workflow_dispatch:
@@ -6,11 +6,11 @@ on:
       baseName:
         description: "Base name used in resource naming (matches infra)"
         required: true
-        default: "legoshop20260613"
+        default: "proj14_lego_shop"
       appPath:
         description: "App source directory to build and deploy"
         required: true
-        default: "20260613_lego_shop/apps/web"
+        default: "proj14_lego_shop/apps/web"
 
 permissions:
   contents: read

@@ -1,4 +1,4 @@
-name: 20260606_lego_site_infra
+name: proj8_lego_site_infra
 
 on:
   workflow_dispatch:

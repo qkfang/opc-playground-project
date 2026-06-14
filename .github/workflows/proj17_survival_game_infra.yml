@@ -1,4 +1,4 @@
-name: 20260613_survival_game_infra
+name: proj17_survival_game_infra
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "survival20260613"
+        default: "proj17_survival_game"
       swaLocation:
         description: "Region for the Static Web App"
         required: true
@@ -17,7 +17,7 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-playground-01
-  PROJECT_DIR: 20260613_survival_game
+  PROJECT_DIR: proj17_survival_game
 
 jobs:
   deploy-infra:
@@ -56,4 +56,4 @@ jobs:
           echo "- Resource group: $RESOURCE_GROUP" >> "$GITHUB_STEP_SUMMARY"
           echo "- Static Web App: ${{ steps.deploy.outputs.staticWebAppName }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- URL: ${{ steps.deploy.outputs.staticWebAppUrl }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Next: run 20260613_survival_game_deploy to ship the static build." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Next: run proj17_survival_game_deploy to ship the static build." >> "$GITHUB_STEP_SUMMARY"

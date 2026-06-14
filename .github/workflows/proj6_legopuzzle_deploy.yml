@@ -1,4 +1,4 @@
-name: legopuzzle_deploy
+name: proj6_legopuzzle_deploy
 
 on:
   workflow_dispatch:
@@ -6,15 +6,15 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "legopuzzle"
+        default: "proj6_legopuzzle"
       backendPath:
         description: "Backend API source directory to package and deploy"
         required: true
-        default: "legopuzzle/apps/backend"
+        default: "proj6_legopuzzle/apps/backend"
       frontendPath:
         description: "Frontend source directory to build and deploy to SWA"
         required: true
-        default: "legopuzzle/apps/frontend"
+        default: "proj6_legopuzzle/apps/frontend"
       deployBackend:
         description: "Deploy backend API to App Service"
         type: boolean
@@ -119,7 +119,7 @@ jobs:
       - name: Deploy frontend to Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.PROJ6_LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN }}
           action: upload
           app_location: ${{ inputs.frontendPath }}/dist
           skip_app_build: true

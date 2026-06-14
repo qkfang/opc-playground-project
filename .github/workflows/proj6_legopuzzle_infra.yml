@@ -1,4 +1,4 @@
-name: legopuzzle_infra
+name: proj6_legopuzzle_infra
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       baseName:
         description: "Base name used in resource naming"
         required: true
-        default: "legopuzzle"
+        default: "proj6_legopuzzle"
       location:
         description: "Region for App Service and Cosmos DB"
         required: true
@@ -21,7 +21,7 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-playground-01
-  PROJECT_DIR: legopuzzle
+  PROJECT_DIR: proj6_legopuzzle
 
 jobs:
   deploy-infra:

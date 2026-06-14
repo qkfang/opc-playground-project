@@ -1,4 +1,4 @@
-name: 20260606_lego_site_deploy
+name: proj8_lego_site_deploy
 
 on:
   workflow_dispatch:
@@ -13,8 +13,8 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-playground-01
-  FUNC_DIR: 20260606_lego_site/apps/backend
-  FRONTEND_DIR: 20260606_lego_site/apps/frontend
+  FUNC_DIR: proj8_lego_site/apps/backend
+  FRONTEND_DIR: proj8_lego_site/apps/frontend
   FUNC_PREFIX: lego20260606-func
   SWA_PREFIX: lego20260606-swa
 
@@ -85,7 +85,7 @@ jobs:
             set -euo pipefail
             az functionapp deployment source config-zip \
               -g "$RESOURCE_GROUP" -n "${{ steps.discover.outputs.funcName }}" \
-              --src 20260606_lego_site/apps/backend-package.zip --only-show-errors
+              --src proj8_lego_site/apps/backend-package.zip --only-show-errors
 
   deploy-frontend:
     needs: [deploy-backend]
@@ -126,7 +126,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ steps.cfg.outputs.token }}
           action: upload
-          app_location: "20260606_lego_site/apps/frontend/out"
+          app_location: "proj8_lego_site/apps/frontend/out"
           skip_app_build: true
           skip_api_build: true
           output_location: ""
