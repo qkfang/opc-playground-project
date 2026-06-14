@@ -35,16 +35,16 @@ jobs:
       apiBaseUrl: ${{ steps.discover.outputs.apiBaseUrl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Discover App Service
         id: discover
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail
@@ -70,7 +70,7 @@ jobs:
           zip -r backend-package.zip package.json package-lock.json src public node_modules
 
       - name: Configure backend runtime settings
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail
@@ -85,7 +85,7 @@ jobs:
               --settings WEBSITE_RUN_FROM_PACKAGE=0 SCM_DO_BUILD_DURING_DEPLOYMENT=true PORT=8080
 
       - name: Deploy backend package
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail
@@ -121,21 +121,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
 
       - name: Azure login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Resolve SWA deployment token
         id: swa
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail

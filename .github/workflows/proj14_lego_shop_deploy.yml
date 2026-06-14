@@ -26,10 +26,10 @@ jobs:
       appUrl: ${{ steps.discover.outputs.appUrl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -58,13 +58,13 @@ jobs:
           unzip -l "$GITHUB_WORKSPACE/app-package.zip" | head -n 30
 
       - name: Azure login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Discover App Service
         id: discover
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail
@@ -79,7 +79,7 @@ jobs:
             echo "App Service: $WEB_APP ; URL: https://$HOST"
 
       - name: Configure runtime settings (prebuilt standalone)
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail
@@ -101,7 +101,7 @@ jobs:
               --only-show-errors >/dev/null
 
       - name: Deploy package (zip)
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail

@@ -15,22 +15,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: ${{ env.APP_DIR }}/package-lock.json
 
       - name: Azure CLI Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Resolve SWA deployment token
         id: swa
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail

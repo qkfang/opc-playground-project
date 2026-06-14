@@ -23,15 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy Bicep (Static Web App)
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail
@@ -42,7 +42,7 @@ jobs:
               --query "properties.outputs" -o json
 
       - name: Show resulting SWA
-        uses: azure/cli@v2
+        uses: azure/cli@v3
         with:
           inlineScript: |
             set -euo pipefail
