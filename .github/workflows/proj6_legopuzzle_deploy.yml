@@ -94,7 +94,26 @@ jobs:
               --name "${{ steps.discover.outputs.webAppName }}" \
               --src-path "$(dirname "${{ inputs.backendPath }}")/backend-package.zip" \
               --type zip \
+              --track-status false \
               --timeout 1800000
+
+      - name: Smoke check backend API
+        run: |
+          set -euo pipefail
+          URL="${{ steps.discover.outputs.apiBaseUrl }}"
+          echo "Waiting for backend to warm up at $URL ..."
+          ok=0
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+            echo "attempt $i: $URL -> $code"
+            if [ "$code" -ge 200 ] && [ "$code" -lt 500 ]; then ok=1; break; fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then
+            echo "Backend did not respond with a non-5xx status in time"
+            exit 1
+          fi
+          echo "Backend is responding."
 
   deploy-frontend:
     needs: [deploy-backend]
@@ -109,6 +128,27 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Resolve SWA deployment token
+        id: swa
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            SWA=$(az staticwebapp list -g "$RESOURCE_GROUP" --query "[?starts_with(name,'${{ inputs.baseName }}-swa')].name | [0]" -o tsv)
+            if [ -z "$SWA" ]; then
+              echo "No Static Web App found for baseName=${{ inputs.baseName }} in $RESOURCE_GROUP"
+              exit 1
+            fi
+            TOKEN=$(az staticwebapp secrets list --name "$SWA" --resource-group "$RESOURCE_GROUP" --query "properties.apiKey" -o tsv)
+            echo "::add-mask::$TOKEN"
+            echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+            echo "swaName=$SWA" >> "$GITHUB_OUTPUT"
+
       - name: Build frontend
         run: |
           set -euo pipefail
@@ -119,7 +159,7 @@ jobs:
       - name: Deploy frontend to Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.PROJ6_LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN }}
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
           action: upload
           app_location: ${{ inputs.frontendPath }}/dist
           skip_app_build: true
@@ -133,4 +173,4 @@ jobs:
             echo "- Backend App Service: ${{ needs.deploy-backend.outputs.webAppName }}" >> "$GITHUB_STEP_SUMMARY"
             echo "- API base URL: ${{ needs.deploy-backend.outputs.apiBaseUrl }}" >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "- Frontend deployed with LEGOPUZZLE_SWA_DEPLOYMENT_TOKEN" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend deployed to ${{ steps.swa.outputs.swaName }} (token resolved from Azure)" >> "$GITHUB_STEP_SUMMARY"

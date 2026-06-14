@@ -110,6 +110,7 @@ jobs:
               --name "${{ steps.discover.outputs.webAppName }}" \
               --src-path "$GITHUB_WORKSPACE/app-package.zip" \
               --type zip \
+              --track-status false \
               --timeout 1800000
 
       - name: Smoke check live site
