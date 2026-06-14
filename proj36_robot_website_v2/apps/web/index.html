@@ -47,6 +47,7 @@
           <li><a href="#features" class="nav-link">Features</a></li>
           <li><a href="#specs" class="nav-link">Specs</a></li>
           <li><a href="#faq" class="nav-link">FAQ</a></li>
+          <li><a href="#feedback" class="nav-link">Feedback</a></li>
           <li><a href="#contact" class="nav-link nav-cta">Contact</a></li>
         </ul>
       </nav>
@@ -498,6 +499,67 @@
         </form>
       </div>
     </section>
+
+    <!-- ============ FEEDBACK (API + in-memory DB) ============ -->
+    <section class="section" id="feedback">
+      <div class="container">
+        <div class="section-head reveal">
+          <p class="eyebrow">We're listening</p>
+          <h2>Share your feedback</h2>
+          <p class="section-lead">
+            Tell us what you think of Cogsworth Robotics 2.0. Unlike the contact form, this one
+            actually goes somewhere &mdash; it's saved by our feedback API to a live in-memory store
+            and shown below in real time.
+          </p>
+        </div>
+
+        <div class="feedback-grid">
+          <form class="feedback-form reveal" id="feedbackForm" novalidate>
+            <div class="field">
+              <label for="fb-name">Name</label>
+              <input type="text" id="fb-name" name="name" autocomplete="name" required />
+              <span class="field-error" data-error-for="fb-name"></span>
+            </div>
+            <div class="field">
+              <label for="fb-email">Email</label>
+              <input type="email" id="fb-email" name="email" autocomplete="email" required />
+              <span class="field-error" data-error-for="fb-email"></span>
+            </div>
+            <div class="field">
+              <label for="fb-rating">Rating</label>
+              <select id="fb-rating" name="rating">
+                <option value="">No rating</option>
+                <option value="5">★★★★★ &mdash; Loved it</option>
+                <option value="4">★★★★ &mdash; Great</option>
+                <option value="3">★★★ &mdash; Okay</option>
+                <option value="2">★★ &mdash; Meh</option>
+                <option value="1">★ &mdash; Needs work</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="fb-message">Your feedback</label>
+              <textarea id="fb-message" name="message" rows="4" required></textarea>
+              <span class="field-error" data-error-for="fb-message"></span>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="fb-submit">Send feedback</button>
+            <p class="form-success" id="feedbackSuccess" role="status" aria-live="polite" hidden></p>
+            <p class="form-error-banner" id="feedbackError" role="alert" aria-live="assertive" hidden></p>
+            <p class="form-note">Saved via <code>POST /api/feedback</code> to an in-memory database.</p>
+          </form>
+
+          <aside class="feedback-list-wrap reveal" aria-label="Recent feedback">
+            <div class="feedback-list-head">
+              <h3>Recent feedback</h3>
+              <span class="feedback-count" id="feedbackCount" aria-live="polite">0</span>
+            </div>
+            <ul class="feedback-list" id="feedbackList">
+              <li class="feedback-empty" id="feedbackEmpty">No feedback yet &mdash; be the first to leave some!</li>
+            </ul>
+            <p class="form-note">Loaded from <code>GET /api/feedback</code>. Resets when the API restarts.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- ============ FOOTER ============ -->
@@ -514,6 +576,7 @@
         <a href="#build">Build</a>
         <a href="#specs">Specs</a>
         <a href="#faq">FAQ</a>
+        <a href="#feedback">Feedback</a>
         <a href="#contact">Contact</a>
       </nav>
       <p class="footer-fine">&copy; <span id="year">2026</span> Cogsworth Robotics 2.0. A friendly demo site.</p>

@@ -71,3 +71,41 @@ proj36_robot_website_v2/
 - 4 robot cards + filter chips work; configurator updates live price/battery; FAQ accordion
   expands/collapses accessibly; counters animate; contact form validates + shows success.
 - Responsive (mobile hamburger + single-column reflow, no horizontal overflow); zero console errors.
+
+---
+
+## Feature update (2026-06-14): Feedback form + API + in-memory DB
+
+Requested follow-up: *"add a feedback form and save results to API and to an in-memory db"*.
+This adds the site's **first real backend** while staying on the same Azure Static Web App
+(SWA managed Azure Functions — no separate hosting, still Free tier).
+
+### What was added
+- **New `apps/api` Azure Functions app (Node v4 programming model, `@azure/functions` v4):**
+  - `POST /api/feedback` — validates `{ name, email, rating?, message }`, saves to an
+    **in-memory store**, returns `201` with the created entry (email masked) + running total.
+    Returns `400` with per-field errors on invalid input.
+  - `GET /api/feedback?limit=N` — returns stored feedback **newest-first** (emails masked) + count.
+  - `GET /api/health` — liveness + current store size.
+  - **In-memory "DB"**: a module-level array in `src/store.js` (process-local; resets when the
+    Functions host restarts — by design, no external DB). Validation, id generation, rating
+    clamping (1–5), and email masking live there and are unit-tested (`node --test`, 6/6).
+- **Frontend `#feedback` section** (in `apps/web/index.html` + `js/main.js` + `styles.css`):
+  - Form (Name / Email / Rating select / Your feedback) that **POSTs JSON to `/api/feedback`**
+    via `fetch`, shows inline success, clears on success, and surfaces server-side field errors.
+  - **Live "Recent feedback" list** populated from `GET /api/feedback` on load and after each
+    submit (newest first, star rating, masked email, timestamp, count badge).
+  - Client-side validation mirrors the API; **graceful degradation** if `fetch`/API is unavailable.
+  - Nav + footer get a **Feedback** link; theme-aware styling; accessible (`aria-live`, labelled fields).
+
+### Deployment impact
+- `proj36_robot_website_v2_deploy.yml` now passes `api_location: proj36_robot_website_v2/apps/api`
+  to `Azure/static-web-apps-deploy@v1` (managed Functions build) and adds a live API smoke step
+  (POST then GET `/api/feedback`). Infra workflow + SWA resource are unchanged (managed Functions
+  are included with SWA Free). bicep header comment updated to reflect the API + in-memory store.
+
+### Acceptance (feedback feature)
+- `GET /api/health` → 200; `POST /api/feedback` valid → 201 (masked email + total);
+  invalid → 400 with field errors; `GET /api/feedback` → 200, newest-first, masked emails.
+- Browser: submitting the form saves and immediately shows the entry in the live list; empty
+  submit shows field errors and does **not** call the API; zero console errors.

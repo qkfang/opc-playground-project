@@ -352,4 +352,187 @@
       window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
     });
   }
+
+  /* ---- Feedback form: POST to /api/feedback + live list from GET /api/feedback ---- */
+  (function feedbackModule() {
+    var fb = doc.getElementById("feedbackForm");
+    var listEl = doc.getElementById("feedbackList");
+    var countEl = doc.getElementById("feedbackCount");
+    var emptyEl = doc.getElementById("feedbackEmpty");
+    var successEl = doc.getElementById("feedbackSuccess");
+    var errorEl = doc.getElementById("feedbackError");
+    if (!fb) return;
+
+    var API = "/api/feedback";
+    var nameI = doc.getElementById("fb-name");
+    var emailI = doc.getElementById("fb-email");
+    var ratingI = doc.getElementById("fb-rating");
+    var msgI = doc.getElementById("fb-message");
+    var submitBtn = doc.getElementById("fb-submit");
+    var hasFetch = typeof window.fetch === "function";
+
+    function setError(input, message) {
+      if (!input) return;
+      var field = input.parentNode;
+      var slot = field ? field.querySelector("[data-error-for='" + input.id + "']") : null;
+      if (message) {
+        if (field) field.classList.add("has-error");
+        if (slot) slot.textContent = message;
+        input.setAttribute("aria-invalid", "true");
+      } else {
+        if (field) field.classList.remove("has-error");
+        if (slot) slot.textContent = "";
+        input.removeAttribute("aria-invalid");
+      }
+    }
+
+    function clearErrors() {
+      setError(nameI, "");
+      setError(emailI, "");
+      setError(msgI, "");
+      if (errorEl) errorEl.hidden = true;
+    }
+
+    function emailLooksValid(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function stars(rating) {
+      var n = parseInt(rating, 10);
+      if (!n || n < 1 || n > 5) return "";
+      var out = "";
+      for (var i = 0; i < 5; i++) out += i < n ? "\u2605" : "\u2606";
+      return out;
+    }
+
+    function fmtDate(iso) {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      try {
+        return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+          " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+      } catch (e) { return iso; }
+    }
+
+    function renderList(items, count) {
+      if (countEl) countEl.textContent = String(typeof count === "number" ? count : (items ? items.length : 0));
+      if (!listEl) return;
+      // remove existing rendered rows (keep nothing; rebuild fresh)
+      listEl.innerHTML = "";
+      if (!items || items.length === 0) {
+        var li = doc.createElement("li");
+        li.className = "feedback-empty";
+        li.id = "feedbackEmpty";
+        li.textContent = "No feedback yet \u2014 be the first to leave some!";
+        listEl.appendChild(li);
+        return;
+      }
+      var html = "";
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        var s = stars(it.rating);
+        html +=
+          '<li class="feedback-item">' +
+            '<div class="feedback-item-top">' +
+              '<span class="feedback-name">' + esc(it.name) + "</span>" +
+              (s ? '<span class="feedback-stars" aria-label="' + it.rating + ' out of 5">' + s + "</span>" : "") +
+            "</div>" +
+            '<p class="feedback-msg">' + esc(it.message) + "</p>" +
+            '<div class="feedback-meta">' + esc(it.email) + " \u00b7 " + esc(fmtDate(it.createdAt)) + "</div>" +
+          "</li>";
+      }
+      listEl.innerHTML = html;
+    }
+
+    function loadList() {
+      if (!hasFetch) return;
+      window.fetch(API + "?limit=20", { headers: { Accept: "application/json" } })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+          if (data && data.items) renderList(data.items, data.count);
+        })
+        .catch(function () { /* API not available locally without func host - leave placeholder */ });
+    }
+
+    function clientValidate() {
+      clearErrors();
+      var ok = true;
+      if (!nameI.value.trim()) { setError(nameI, "Please enter your name."); ok = false; }
+      if (!emailI.value.trim()) { setError(emailI, "Please enter your email."); ok = false; }
+      else if (!emailLooksValid(emailI.value.trim())) { setError(emailI, "Please enter a valid email."); ok = false; }
+      if (!msgI.value.trim()) { setError(msgI, "Please enter some feedback."); ok = false; }
+      return ok;
+    }
+
+    function showSuccess(text) {
+      if (successEl) { successEl.textContent = text; successEl.hidden = false; if (successEl.focus) successEl.focus(); }
+    }
+    function showError(text) {
+      if (errorEl) { errorEl.textContent = text; errorEl.hidden = false; }
+    }
+
+    fb.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (successEl) successEl.hidden = true;
+      if (errorEl) errorEl.hidden = true;
+      if (!clientValidate()) {
+        var firstBad = fb.querySelector(".has-error input, .has-error textarea");
+        if (firstBad && firstBad.focus) firstBad.focus();
+        return;
+      }
+
+      var payload = {
+        name: nameI.value.trim(),
+        email: emailI.value.trim(),
+        rating: ratingI && ratingI.value ? ratingI.value : null,
+        message: msgI.value.trim()
+      };
+
+      if (!hasFetch) {
+        // Graceful degradation: no fetch -> acknowledge without network.
+        showSuccess("Thanks for the feedback!");
+        fb.reset();
+        return;
+      }
+
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Sending\u2026"; }
+
+      window.fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          return res.json().then(function (body) { return { status: res.status, body: body }; })
+            .catch(function () { return { status: res.status, body: null }; });
+        })
+        .then(function (r) {
+          if (r.status >= 200 && r.status < 300 && r.body && r.body.ok) {
+            showSuccess((r.body.message || "Thanks for the feedback!") + " Saved \u2014 see it below.");
+            fb.reset();
+            loadList();
+          } else if (r.body && r.body.fields) {
+            if (r.body.fields.name) setError(nameI, r.body.fields.name);
+            if (r.body.fields.email) setError(emailI, r.body.fields.email);
+            if (r.body.fields.message) setError(msgI, r.body.fields.message);
+          } else {
+            showError("Sorry \u2014 couldn't save your feedback. Please try again.");
+          }
+        })
+        .catch(function () {
+          showError("Network error \u2014 the feedback API isn't reachable right now.");
+        })
+        .then(function () {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Send feedback"; }
+        });
+    });
+
+    loadList();
+  })();
 })();

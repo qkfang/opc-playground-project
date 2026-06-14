@@ -1,6 +1,9 @@
 // Infra for proj36_robot_website_v2 (Cogsworth Robotics 2.0 website)
-// 100% client-side static site (HTML/CSS/vanilla JS, NO build step, no backend/API/DB),
-// so it deploys to a single Azure Static Web App (Free tier) in rg-playground-01.
+// Static front-end (HTML/CSS/vanilla JS, no build step) PLUS a small managed
+// Azure Functions API (Node v4) for the feedback form, persisting to an
+// in-memory store. Both ship to a single Azure Static Web App (Free tier) in
+// rg-playground-01 — SWA serves the static assets and the /api/* Functions.
+// (No external DB: feedback lives in the Functions host process memory.)
 targetScope = 'resourceGroup'
 
 @description('Base name used to derive resource names (must be project_id).')

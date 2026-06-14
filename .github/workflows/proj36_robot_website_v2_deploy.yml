@@ -11,6 +11,10 @@ on:
         description: "Static app source directory (no build step)"
         required: true
         default: "proj36_robot_website_v2/apps/web"
+      apiPath:
+        description: "Azure Functions API source directory (managed functions)"
+        required: true
+        default: "proj36_robot_website_v2/apps/api"
 
 permissions:
   contents: read
@@ -52,15 +56,15 @@ jobs:
             echo "appUrl=https://$HOST" >> "$GITHUB_OUTPUT"
             echo "Static Web App: $SWA ; URL: https://$HOST"
 
-      - name: Deploy to Azure Static Web Apps (no build - pure static)
+      - name: Deploy to Azure Static Web Apps (static front-end + managed Functions API)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
           action: upload
           app_location: ${{ inputs.appPath }}
+          api_location: ${{ inputs.apiPath }}
           output_location: ""
           skip_app_build: true
-          skip_api_build: true
 
       - name: Smoke check live site
         run: |
@@ -84,6 +88,36 @@ jobs:
           echo "--- title check ---"; curl -s "$URL/" | grep -io "<title>[^<]*</title>" | head -n 1 || true
           echo "--- styles.css ---"; curl -s -o /dev/null -w "styles.css %{http_code}\n" "$URL/styles.css"
           echo "--- js/main.js ---"; curl -s -o /dev/null -w "main.js %{http_code}\n" "$URL/js/main.js"
+
+      - name: Smoke check feedback API (POST + GET /api/feedback)
+        run: |
+          set -euo pipefail
+          URL="${{ steps.swa.outputs.appUrl }}"
+          echo "Waiting for /api/health ..."
+          ok=0
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/health" || echo "000")
+            echo "attempt $i: /api/health -> $code"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then
+            echo "Managed Functions API did not become healthy in time"
+            curl -s -i "$URL/api/health" | head -n 20 || true
+            exit 1
+          fi
+          echo "--- POST /api/feedback ---"
+          post=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$URL/api/feedback" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"Deploy Smoke","email":"smoke@example.com","rating":5,"message":"automated deploy smoke"}')
+          echo "POST -> $post"
+          [ "$post" = "201" ] || { echo "Expected 201 from POST"; exit 1; }
+          echo "--- GET /api/feedback ---"
+          body=$(curl -s "$URL/api/feedback")
+          echo "$body" | head -c 400; echo
+          echo "$body" | grep -q '"ok":true' || { echo "GET did not return ok:true"; exit 1; }
+          echo "$body" | grep -q 'automated deploy smoke' || { echo "Saved entry not found in GET"; exit 1; }
+          echo "Feedback API live OK (POST 201 + GET reflects saved entry)."
 
       - name: Summary
         run: |
