@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Intelligence &amp; Research POC</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="logo">◆</span>
+            <div>
+                <div class="brand-title">Intelligence &amp; Research</div>
+                <div class="brand-sub">Microsoft Foundry agents POC · proj40</div>
+            </div>
+        </div>
+        <div class="engine-badge" id="engineBadge" title="Active pipeline engine">…</div>
+    </header>
+    <main>
+        @RenderBody()
+    </main>
+    <footer class="footer">
+        <span>proj40 · Intake → Insights → Sources → Research → Report email</span>
+        <span>Mock/demo data — not for production decisions.</span>
+    </footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

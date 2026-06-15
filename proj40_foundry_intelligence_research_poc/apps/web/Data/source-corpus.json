@@ -1,0 +1,114 @@
+{
+  "internal": [
+    {
+      "keys": ["Nordwind Energy", "Nordwind", "battery", "grid", "energy storage"],
+      "sourceName": "CRM — Account 360 (internal)",
+      "title": "Nordwind Energy AG — existing account record",
+      "snippet": "Tier-1 prospect in DACH energy vertical. Prior NDA signed 2025-11. One previous proof-of-value on wind forecasting (closed-lost on price). Relationship owner: DACH energy team. Propensity score 0.71.",
+      "url": "https://crm.contoso.com/accounts/nordwind-energy",
+      "dated": "2026-05-30",
+      "relevance": "High"
+    },
+    {
+      "keys": ["Nordwind Energy", "battery", "EPEX", "Nord Pool", "trading"],
+      "sourceName": "Delivery knowledge base (internal)",
+      "title": "Reference architecture: real-time energy-market optimisation on Azure",
+      "snippet": "Internal pattern combining Event Hubs + Stream Analytics + Azure ML for day-ahead bidding; deployed for two European utilities. Includes EU data-residency landing zone and PI historian connector.",
+      "url": "https://kb.contoso.com/patterns/energy-market-optimisation",
+      "dated": "2026-03-12",
+      "relevance": "High"
+    },
+    {
+      "keys": ["Meridian Retail", "Meridian", "customer data", "CDP", "loyalty", "personalisation"],
+      "sourceName": "CRM — Account 360 (internal)",
+      "title": "Meridian Retail Group — existing account record",
+      "snippet": "Existing Synapse + Power BI customer (managed by our data practice). No active CDP opportunity. Two stakeholders known. Renewal of analytics support due Q4. Cross-sell flag: customer data platform.",
+      "url": "https://crm.contoso.com/accounts/meridian-retail",
+      "dated": "2026-06-01",
+      "relevance": "High"
+    },
+    {
+      "keys": ["Meridian Retail", "consent", "GDPR", "privacy", "personalisation"],
+      "sourceName": "Compliance playbook (internal)",
+      "title": "UK GDPR consent & preference patterns for retail personalisation",
+      "snippet": "Internal guidance on centralised consent capture, lawful basis for profiling, and data-minimisation for cross-channel identity resolution. Includes a reusable consent-ledger design.",
+      "url": "https://kb.contoso.com/compliance/uk-gdpr-retail",
+      "dated": "2026-02-20",
+      "relevance": "Medium"
+    },
+    {
+      "keys": ["AuroraPay", "Aurora", "payments", "PCI", "resilience", "multi-region"],
+      "sourceName": "CRM — Account 360 (internal)",
+      "title": "AuroraPay — prospect record",
+      "snippet": "New inbound (fintech/payments, ANZ). NDA in place. No prior engagements. Flagged strategic: payments resilience is a current practice focus. No competing vendor identified yet.",
+      "url": "https://crm.contoso.com/accounts/aurorapay",
+      "dated": "2026-06-14",
+      "relevance": "High"
+    },
+    {
+      "keys": ["AuroraPay", "payments", "PCI", "multi-region", "resilience", "SRE"],
+      "sourceName": "Delivery knowledge base (internal)",
+      "title": "Reference architecture: PCI-DSS multi-region payments on Azure",
+      "snippet": "Active-active payments pattern with cross-region SQL failover groups, circuit breakers, SLO-based alerting, and a tested DR runbook. Two ANZ payments clients in production. Maps directly to common SEV-1 root causes.",
+      "url": "https://kb.contoso.com/patterns/pci-multiregion-payments",
+      "dated": "2026-04-08",
+      "relevance": "High"
+    }
+  ],
+  "external": [
+    {
+      "keys": ["Nordwind Energy", "Nordwind", "battery", "energy storage", "renewable"],
+      "sourceName": "Industry news wire (external)",
+      "title": "Nordwind Energy announces 900 MWh battery expansion across DACH & Nordics",
+      "snippet": "Press release: the IPP confirmed a EUR 1.3bn revenue base and a 24-month plan to deploy grid-scale storage, citing arbitrage and balancing revenues as core to the investment thesis.",
+      "url": "https://news.example.com/nordwind-battery-expansion",
+      "dated": "2026-05-18",
+      "relevance": "High"
+    },
+    {
+      "keys": ["battery", "EPEX", "Nord Pool", "arbitrage", "energy storage"],
+      "sourceName": "Market intelligence (external)",
+      "title": "European battery arbitrage spreads widened 22% YoY",
+      "snippet": "Analyst note: intraday price volatility on EPEX and Nord Pool is increasing the value of automated bidding; operators relying on manual day-ahead bids are estimated to capture 10-18% less revenue.",
+      "url": "https://research.example.com/eu-battery-arbitrage-2026",
+      "dated": "2026-04-29",
+      "relevance": "High"
+    },
+    {
+      "keys": ["Meridian Retail", "retail", "personalisation", "loyalty", "customer data"],
+      "sourceName": "Industry news wire (external)",
+      "title": "Meridian Retail Group reports flat like-for-like sales, doubles down on digital",
+      "snippet": "Trading update: GBP 3.1bn revenue, management commentary highlights investment in 'customer data and personalisation' as a FY27 priority to lift repeat purchase rates.",
+      "url": "https://news.example.com/meridian-retail-trading-update",
+      "dated": "2026-05-05",
+      "relevance": "High"
+    },
+    {
+      "keys": ["retail", "CDP", "customer data platform", "personalisation", "identity resolution"],
+      "sourceName": "Analyst market guide (external)",
+      "title": "Market guide: composable CDPs and identity resolution in retail",
+      "snippet": "Guidance: warehouse-native / composable CDP approaches are displacing monolithic suites; identity resolution and consent management are the top two adoption blockers cited by retailers.",
+      "url": "https://research.example.com/cdp-market-guide-2026",
+      "dated": "2026-03-22",
+      "relevance": "Medium"
+    },
+    {
+      "keys": ["AuroraPay", "Aurora", "payments", "fintech", "outage"],
+      "sourceName": "Tech press (external)",
+      "title": "ANZ payments provider AuroraPay hit by multi-hour authorisation outage",
+      "snippet": "Report: merchants experienced elevated declines during a regional failover incident; AuroraPay said it is reviewing resilience and accelerating multi-region plans ahead of a Singapore launch.",
+      "url": "https://news.example.com/aurorapay-outage",
+      "dated": "2026-06-12",
+      "relevance": "High"
+    },
+    {
+      "keys": ["payments", "PCI", "PCI-DSS", "multi-region", "resilience"],
+      "sourceName": "Standards & regulator brief (external)",
+      "title": "PCI-DSS v4 emphasises continuity and tested DR for Level 1 processors",
+      "snippet": "Briefing: Level 1 processors must evidence resilience, tested disaster recovery, and continuous monitoring; auditors increasingly expect SLO-based alerting and documented cross-region failover.",
+      "url": "https://research.example.com/pci-dss-v4-continuity",
+      "dated": "2026-01-30",
+      "relevance": "Medium"
+    }
+  ]
+}
