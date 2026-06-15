@@ -1,0 +1,37 @@
+@{
+    var engineMode = (string?)ViewData["EngineMode"] ?? "offline";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Intake &amp; Origination POC</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="logo">📥</span>
+            <div>
+                <div class="brand-title">Intake &amp; Origination Agents</div>
+                <div class="brand-sub">Microsoft Foundry POC · proj39</div>
+            </div>
+        </div>
+        <div class="engine-pill engine-@engineMode" title="Reasoning engine in use">
+            <span class="dot"></span> @(engineMode == "foundry" ? "Foundry agent" : "Offline engine")
+        </div>
+    </header>
+
+    <main class="container">
+        @RenderBody()
+    </main>
+
+    <footer class="footer">
+        <span>proj39 · Mocked inbound email → Lead/Account/Opportunity → triage → research → report. Demo data only.</span>
+        <a href="/openapi/v1.json" target="_blank" rel="noopener">OpenAPI</a>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

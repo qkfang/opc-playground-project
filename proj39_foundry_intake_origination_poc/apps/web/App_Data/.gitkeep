@@ -1,0 +1,1 @@
+# Keeps the App_Data folder in git. Local origination case JSON files are written here at runtime and are gitignored.

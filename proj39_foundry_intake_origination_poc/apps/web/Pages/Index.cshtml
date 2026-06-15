@@ -1,0 +1,65 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Inbox";
+}
+
+<section class="intro">
+    <h1>Intake &amp; Origination — agent pipeline</h1>
+    <p>
+        Pick a mocked inbound email to trigger the pipeline. Foundry prompt agents (with a deterministic
+        offline fallback) <strong>extract</strong> Lead / Account / Opportunity records, <strong>triage</strong>
+        and classify the lead, <strong>research</strong> the prospect and capture inbound demand signals, then
+        generate an <strong>origination study</strong>.
+    </p>
+</section>
+
+<div class="workspace">
+    <!-- 1) Mock inbox -->
+    <aside class="panel inbox">
+        <div class="panel-head">
+            <h2>📨 Mock inbox</h2>
+            <button id="composeBtn" class="btn-link" type="button">+ Compose</button>
+        </div>
+        <ul id="emailList" class="email-list"><li class="muted">Loading…</li></ul>
+    </aside>
+
+    <!-- 2) Selected email + trigger -->
+    <section class="panel reader">
+        <div id="emailReader" class="reader-body">
+            <div class="empty-state">
+                <div class="empty-emoji">👈</div>
+                <p>Select an email from the mock inbox to begin.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3) Pipeline results -->
+    <section class="panel results">
+        <div class="panel-head"><h2>🔎 Pipeline result</h2></div>
+        <div id="pipeline" class="pipeline">
+            <p class="muted">Run the pipeline on an email to see the structured records, triage, research, and report here.</p>
+        </div>
+    </section>
+</div>
+
+<!-- Compose modal -->
+<div id="composeModal" class="modal hidden">
+    <div class="modal-card">
+        <h3>Compose a custom inbound email</h3>
+        <label>From name <input id="cFromName" type="text" placeholder="Jane Smith" /></label>
+        <label>From email <input id="cFrom" type="email" placeholder="jane@acme.com" /></label>
+        <label>Subject <input id="cSubject" type="text" placeholder="Enquiry about your platform" /></label>
+        <label>Body
+            <textarea id="cBody" rows="8" placeholder="Paste or write an inbound email body…"></textarea>
+        </label>
+        <div class="modal-actions">
+            <button id="composeCancel" class="btn-secondary" type="button">Cancel</button>
+            <button id="composeRun" class="btn" type="button">Add &amp; run pipeline</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/app.js" asp-append-version="true"></script>
+}
