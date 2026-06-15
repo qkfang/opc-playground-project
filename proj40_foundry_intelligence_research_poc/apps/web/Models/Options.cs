@@ -32,6 +32,13 @@ public sealed class StorageOptions
     /// <summary>"local" (App_Data JSON) | "blob" (Azure Storage, future).</summary>
     public string Mode { get; set; } = "local";
 
+    /// <summary>
+    /// Writable folder for local JSON cases. On Linux App Service with WEBSITE_RUN_FROM_PACKAGE=1 the
+    /// content root (/home/site/wwwroot) is read-only, so persistence must target a writable path such
+    /// as /home/site/data. When unset the service resolves HOME/site/data, then falls back to App_Data.
+    /// </summary>
+    public string? LocalDataFolder { get; set; }
+
     /// <summary>Blob connection string / account URL when Mode = blob (managed identity preferred).</summary>
     public string? BlobEndpoint { get; set; }
 

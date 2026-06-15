@@ -94,6 +94,11 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           value: 'local'
         }
         {
+          // Writable path on Linux App Service (content root is read-only under WEBSITE_RUN_FROM_PACKAGE=1).
+          name: 'Storage__LocalDataFolder'
+          value: '/home/site/data'
+        }
+        {
           name: 'Storage__BlobEndpoint'
           value: 'https://${storageAccountName}.blob.${environment().suffixes.storage}'
         }

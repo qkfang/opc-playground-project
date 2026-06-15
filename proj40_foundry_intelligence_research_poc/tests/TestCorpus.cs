@@ -15,6 +15,13 @@ internal static class TestCorpus
 
     public static MockEmailStore Emails() => new(FakeEnv(), NullLogger<MockEmailStore>.Instance);
 
+    /// <summary>Build a ResearchCaseService with explicit storage options and content root (for persistence tests).</summary>
+    public static ResearchCaseService Cases(Proj40.IntelligenceResearch.Web.Models.StorageOptions storage, string? contentRoot = null)
+    {
+        var env = new FakeWebHostEnvironment(contentRoot ?? ResolveWebContentRoot());
+        return new ResearchCaseService(env, storage, NullLogger<ResearchCaseService>.Instance);
+    }
+
     private static IWebHostEnvironment FakeEnv() => new FakeWebHostEnvironment(ResolveWebContentRoot());
 
     /// <summary>Find apps/web relative to the test output dir, walking up to the project root.</summary>
