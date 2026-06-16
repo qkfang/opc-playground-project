@@ -26,6 +26,10 @@ on:
         description: "Restore a soft-deleted Foundry/AI Services account with the same name if needed (true/false)"
         required: true
         default: "false"
+      restoreDeletedKeyVault:
+        description: "Restore a soft-deleted Key Vault with the same name if needed (true/false)"
+        required: true
+        default: "false"
 
 permissions:
   contents: read
@@ -54,7 +58,7 @@ jobs:
               --resource-group "$RESOURCE_GROUP" \
               --template-file proj40_intake_origination_foundry_poc/bicep/main.bicep \
               --parameters proj40_intake_origination_foundry_poc/bicep/main.bicepparam \
-              --parameters baseName='${{ inputs.baseName }}' location='${{ inputs.location }}' foundryEnabled=${{ inputs.foundryEnabled }} restoreDeletedFoundryAccount=${{ inputs.restoreDeletedFoundryAccount }} \
+              --parameters baseName='${{ inputs.baseName }}' location='${{ inputs.location }}' foundryEnabled=${{ inputs.foundryEnabled }} restoreDeletedFoundryAccount=${{ inputs.restoreDeletedFoundryAccount }} restoreDeletedKeyVault=${{ inputs.restoreDeletedKeyVault }} \
               || echo "what-if returned non-zero (often informational); continuing to deploy."
 
       - name: Deploy Bicep
@@ -68,7 +72,7 @@ jobs:
               --resource-group "$RESOURCE_GROUP" \
               --template-file proj40_intake_origination_foundry_poc/bicep/main.bicep \
               --parameters proj40_intake_origination_foundry_poc/bicep/main.bicepparam \
-              --parameters baseName='${{ inputs.baseName }}' location='${{ inputs.location }}' foundryEnabled=${{ inputs.foundryEnabled }} restoreDeletedFoundryAccount=${{ inputs.restoreDeletedFoundryAccount }} \
+              --parameters baseName='${{ inputs.baseName }}' location='${{ inputs.location }}' foundryEnabled=${{ inputs.foundryEnabled }} restoreDeletedFoundryAccount=${{ inputs.restoreDeletedFoundryAccount }} restoreDeletedKeyVault=${{ inputs.restoreDeletedKeyVault }} \
               --query "properties.outputs" -o json | tee outputs.json
 
       - name: Show outputs

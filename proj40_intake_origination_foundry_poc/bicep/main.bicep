@@ -23,6 +23,9 @@ param foundryEnabled bool = true
 @description('Restore a soft-deleted Foundry/AI Services account with the same deterministic name if one exists.')
 param restoreDeletedFoundryAccount bool = false
 
+@description('Restore a soft-deleted Key Vault with the same deterministic name if one exists.')
+param restoreDeletedKeyVault bool = false
+
 @description('Model deployment name for the prompt agents')
 param modelDeploymentName string = 'gpt-4o'
 
@@ -77,6 +80,7 @@ module keyvault './modules/keyvault.bicep' = {
   params: {
     location: location
     keyVaultName: keyVaultName
+    restoreSoftDeletedKeyVault: restoreDeletedKeyVault
   }
 }
 
