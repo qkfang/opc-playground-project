@@ -1,0 +1,112 @@
+@page
+@model Proj41.Underwriting.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Sentinel Underwriting — Submission Desk";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div id="app">
+    <aside class="rail">
+        <div class="brand">
+            <div class="brand-mark">SU</div>
+            <div class="brand-text">
+                <div class="brand-name">Sentinel</div>
+                <div class="brand-sub">Underwriting Desk</div>
+            </div>
+        </div>
+        <nav class="nav">
+            <button class="nav-item active" data-view="desk"><span class="ic">📥</span> Submission Desk</button>
+            <button class="nav-item" data-view="records"><span class="ic">🗂️</span> Risk Records</button>
+            <button class="nav-item" data-view="triage"><span class="ic">⚖️</span> Appetite &amp; Triage</button>
+            <button class="nav-item" data-view="research"><span class="ic">🔎</span> Exposure Research</button>
+            <button class="nav-item" data-view="study"><span class="ic">📄</span> Underwriting Study</button>
+        </nav>
+        <div class="rail-foot">
+            <span id="engineBadge" class="engine-badge">● engine…</span>
+            <div class="rail-note">proj41 · Foundry prompt-agents</div>
+        </div>
+    </aside>
+
+    <main class="stage">
+        <header class="topbar">
+            <div>
+                <h1 id="viewTitle">Submission Desk</h1>
+                <p id="viewSubtitle" class="muted">Broker submissions triaged through the multi-agent underwriting pipeline.</p>
+            </div>
+            <div class="pipeline" id="pipeline" aria-label="pipeline stages">
+                <span class="stage-pill" data-stage="1">1 · Intake</span>
+                <span class="arrow">→</span>
+                <span class="stage-pill" data-stage="2">2 · Triage</span>
+                <span class="arrow">→</span>
+                <span class="stage-pill" data-stage="3">3 · Research</span>
+                <span class="arrow">→</span>
+                <span class="stage-pill" data-stage="4">4 · Study</span>
+            </div>
+        </header>
+
+        <!-- DESK ----------------------------------------------------------->
+        <section class="view" id="view-desk">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-head"><h2>Broker mailbox</h2><span class="pill" id="inboxCount">0</span></div>
+                    <div id="inbox" class="inbox"></div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><h2>Submission trigger</h2></div>
+                    <div id="selectedPreview" class="preview muted">Select a submission to run it through the underwriting pipeline, or paste a new one below.</div>
+                    <button id="runSelected" class="btn primary hidden">▶ Run underwriting pipeline</button>
+                    <div class="divider"></div>
+                    <label class="lbl">From</label>
+                    <input id="fldFrom" class="inp" placeholder="broker@brokerage.com" />
+                    <label class="lbl">Subject</label>
+                    <input id="fldSubject" class="inp" placeholder="New business submission - ..." />
+                    <label class="lbl">Submission body</label>
+                    <textarea id="fldBody" class="inp area" placeholder="Paste a broker submission..."></textarea>
+                    <button id="runAdhoc" class="btn primary block">Run pipeline</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-head">
+                    <h2>Submission queue</h2>
+                    <div class="head-actions">
+                        <button id="runDemo" class="btn ghost">⚡ Run full inbox</button>
+                        <button id="resetCases" class="btn ghost danger">Reset</button>
+                    </div>
+                </div>
+                <div id="queue" class="queue"></div>
+            </div>
+        </section>
+
+        <!-- RECORDS -------------------------------------------------------->
+        <section class="view hidden" id="view-records">
+            <div id="recordsBody"></div>
+        </section>
+
+        <!-- TRIAGE --------------------------------------------------------->
+        <section class="view hidden" id="view-triage">
+            <div id="triageBody"></div>
+        </section>
+
+        <!-- RESEARCH ------------------------------------------------------->
+        <section class="view hidden" id="view-research">
+            <div id="researchBody"></div>
+        </section>
+
+        <!-- STUDY ---------------------------------------------------------->
+        <section class="view hidden" id="view-study">
+            <div id="studyBody"></div>
+        </section>
+    </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="~/js/app.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+@page
+@model Proj41.Underwriting.Web.Pages.ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+<div style="max-width:680px;margin:64px auto;font-family:system-ui">
+    <h1>Something went wrong</h1>
+    <p>An unexpected error occurred while processing your request.</p>
+    @if (Model.ShowRequestId)
+    {
+        <p><strong>Request ID:</strong> <code>@Model.RequestId</code></p>
+    }
+    <p><a href="/">Return to the Submission Desk</a></p>
+</div>

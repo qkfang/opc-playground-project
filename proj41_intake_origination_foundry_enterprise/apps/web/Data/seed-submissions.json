@@ -1,0 +1,65 @@
+[
+  {
+    "id": "sub-atlas",
+    "from": "james.okafor@summit-risk.com",
+    "fromName": "James Okafor",
+    "subject": "New Business Submission: Property + BI for Atlas Steel Fabrication Inc",
+    "body": "Hi underwriting team,\n\nPlease find a new business submission for our client, Atlas Steel Fabrication Inc, a metal fabrication manufacturer established 2004 with 320 employees across 3 locations in Houston, Texas. Total insurable value is approximately $85M. They are seeking commercial property cover including business interruption with a $50M limit and a $100k deductible, effective 01/08/2026. They are currently insured with Travelers but are open to moving. Loss history is clean for the last 3 years.\n\nBrokerage: Summit Risk Partners (regional). Appointed with you since 2019.\n\nRegards,\nJames Okafor\nAccount Executive, Summit Risk Partners",
+    "channel": "email",
+    "attachments": ["atlas-sov.xlsx", "atlas-loss-runs.pdf"]
+  },
+  {
+    "id": "sub-meridian-cyber",
+    "from": "priya.shah@aon.com",
+    "fromName": "Priya Shah",
+    "subject": "Cyber submission - Meridian Health Systems (urgent, expiring)",
+    "body": "Hello,\n\nWe have a cyber & privacy liability submission for Meridian Health Systems, a healthcare provider with 2,400 employees operating 11 clinics across the United States. They handle protected health information and process card payments. Requesting a $10M cyber limit, effective ASAP as the current policy is expiring. They have MFA and EDR deployed. Annual revenue around $480M.\n\nThis is being marketed - incumbent is Chubb. Please advise appetite quickly.\n\nThanks,\nPriya Shah, Vice President, Aon",
+    "channel": "broker-portal",
+    "attachments": ["meridian-cyber-app.pdf"]
+  },
+  {
+    "id": "sub-brightwave",
+    "from": "tom.reilly@brightwave-insurance.com",
+    "fromName": "Tom Reilly",
+    "subject": "GL quote for BrightWave Hospitality Group",
+    "body": "Hi team,\n\nLooking for a general liability quote for BrightWave Hospitality Group, a restaurants and hospitality operator with about 140 staff across 6 locations in Florida. Established 2016. Requesting a $5M general liability limit effective 15/09/2026. No major losses reported.\n\nBrokerage: BrightWave Insurance Services (independent).\n\nCheers,\nTom Reilly",
+    "channel": "email",
+    "attachments": []
+  },
+  {
+    "id": "sub-nimbus-pl",
+    "from": "sara.lopez@gallagher.com",
+    "fromName": "Sara Lopez",
+    "subject": "Professional liability - Nimbus Analytics (tech startup)",
+    "body": "Hi,\n\nProfessional liability / E&O submission for Nimbus Analytics Ltd, a SaaS / technology company founded 2024 with 45 employees in Sydney, Australia. They provide data analytics software to enterprise clients and want $3M E&O cover, effective 01/10/2026. Annual revenue ~$6M. First commercial policy.\n\nBrokerage: Gallagher.\n\nRegards,\nSara Lopez, Account Manager",
+    "channel": "email",
+    "attachments": ["nimbus-proposal-form.pdf"]
+  },
+  {
+    "id": "sub-harbor-marine",
+    "from": "operations@harborline-logistics.com",
+    "fromName": "Harborline Logistics",
+    "subject": "Marine cargo + property for Harborline Logistics",
+    "body": "Hello underwriting,\n\nWe are requesting marine cargo and warehouse property coverage for Harborline Logistics, a logistics and distribution company with 780 employees and 9 warehouse locations including coastal sites in New Orleans, Louisiana. Total insurable value across the schedule is about $140M. Requesting a combined limit of $30M effective 01/11/2026. We have been trading for 22 years. Some prior cargo losses.\n\nPlease confirm appetite.\n\nHarborline Logistics Risk Team",
+    "channel": "email",
+    "attachments": ["harborline-sov.xlsx"]
+  },
+  {
+    "id": "sub-fireworks-decline",
+    "from": "broker@redstar-agency.com",
+    "fromName": "Redstar Agency",
+    "subject": "Property cover for Big Bang Fireworks Manufacturing",
+    "body": "Hi,\n\nNew submission for Big Bang Fireworks Manufacturing, a fireworks manufacturer with 60 employees in rural Nevada. Established 2011. Seeking $20M property cover effective next month. Please quote.\n\nRedstar Agency",
+    "channel": "email",
+    "attachments": []
+  },
+  {
+    "id": "sub-spam",
+    "from": "deals@best-seo-leads.biz",
+    "fromName": "SEO Leads",
+    "subject": "Boost your insurance agency rankings + buy followers!!!",
+    "body": "Special offer!!! We provide SEO services and marketing services for insurance brokers. Buy followers, crypto giveaway, guaranteed leads! Unsubscribe anytime.",
+    "channel": "email",
+    "attachments": []
+  }
+]
