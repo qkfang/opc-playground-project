@@ -7,6 +7,9 @@ param foundryServicesName string
 @description('Foundry project name')
 param foundryProjectName string
 
+@description('Restore a soft-deleted AI Services account with the same name when present.')
+param restoreDeletedFoundryAccount bool = false
+
 @description('Model deployment name used by the intake/origination prompt agents')
 param modelDeploymentName string = 'gpt-4o'
 
@@ -31,6 +34,7 @@ resource foundrySvc 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = 
   }
   kind: 'AIServices'
   properties: {
+    restore: restoreDeletedFoundryAccount
     allowProjectManagement: true
     customSubDomainName: foundryServicesName
     publicNetworkAccess: 'Enabled'

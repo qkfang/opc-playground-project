@@ -20,6 +20,9 @@ param appServiceSku string = 'S1'
 @description('Enable the live Foundry agent path. When false the app uses its deterministic offline pipeline.')
 param foundryEnabled bool = true
 
+@description('Restore a soft-deleted Foundry/AI Services account with the same deterministic name if one exists.')
+param restoreDeletedFoundryAccount bool = false
+
 @description('Model deployment name for the prompt agents')
 param modelDeploymentName string = 'gpt-4o'
 
@@ -83,6 +86,7 @@ module foundry './modules/foundry.bicep' = {
     location: location
     foundryServicesName: foundryServicesName
     foundryProjectName: foundryProjectName
+    restoreDeletedFoundryAccount: restoreDeletedFoundryAccount
     modelDeploymentName: modelDeploymentName
     modelName: modelName
     modelVersion: modelVersion
