@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "13300694670306738770"
+    }
+  },
+  "parameters": {
+    "baseName": {
+      "type": "string",
+      "defaultValue": "proj38",
+      "metadata": {
+        "description": "Base name used to derive resource names (matches project_id)."
+      }
+    },
+    "swaLocation": {
+      "type": "string",
+      "defaultValue": "eastasia",
+      "metadata": {
+        "description": "Region for the Static Web App (limited region availability)."
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "Free",
+      "allowedValues": [
+        "Free",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "SKU for the Static Web App."
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[take(uniqueString(resourceGroup().id, parameters('baseName')), 6)]",
+    "swaName": "[format('{0}-swa-{1}', parameters('baseName'), variables('uniqueSuffix'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('swaName')]",
+      "location": "[parameters('swaLocation')]",
+      "sku": {
+        "name": "[parameters('sku')]",
+        "tier": "[parameters('sku')]"
+      },
+      "properties": {
+        "allowConfigFileUpdates": true
+      }
+    }
+  ],
+  "outputs": {
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[variables('swaName')]"
+    },
+    "defaultHostname": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/staticSites', variables('swaName')), '2023-12-01').defaultHostname]"
+    },
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', variables('swaName')), '2023-12-01').defaultHostname)]"
+    }
+  }
+}
