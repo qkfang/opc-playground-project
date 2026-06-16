@@ -182,6 +182,37 @@ public sealed class AgentTrace
     public DateTimeOffset At { get; set; } = DateTimeOffset.UtcNow;
 }
 
+// ----------------------------------------------------------- Diagnostics ---
+
+/// <summary>
+/// Result of actively probing the engine. Distinguishes the four operating modes the
+/// captain asked the health surface to make explicit (without leaking secrets):
+///   <c>live</c>     — Foundry agent path is configured AND a real round-trip succeeded.
+///   <c>fallback</c> — Foundry is configured but the live probe failed; runs use offline per-stage.
+///   <c>error</c>    — Foundry is configured but initialisation itself failed.
+///   <c>offline</c>  — Foundry is not configured (offline pipeline is the only path by design).
+/// </summary>
+public sealed class EngineDiagnostics
+{
+    /// <summary>live | fallback | error | offline</summary>
+    public string FoundryMode { get; set; } = "offline";
+    /// <summary>True only when a real Foundry agent round-trip succeeded.</summary>
+    public bool FoundryLive { get; set; }
+    /// <summary>Whether Foundry is configured (Enabled + endpoint present).</summary>
+    public bool FoundryConfigured { get; set; }
+    /// <summary>Whether the Foundry master switch is on.</summary>
+    public bool FoundryEnabled { get; set; }
+    /// <summary>Host portion of the configured project endpoint (no path/secrets), or null.</summary>
+    public string? EndpointHost { get; set; }
+    /// <summary>Configured model deployment name (not a secret).</summary>
+    public string? ModelDeployment { get; set; }
+    /// <summary>Probe round-trip latency in ms when a probe ran.</summary>
+    public int? ProbeMs { get; set; }
+    /// <summary>Short, secret-free detail (e.g. exception type) explaining fallback/error.</summary>
+    public string? Detail { get; set; }
+    public DateTimeOffset CheckedUtc { get; set; } = DateTimeOffset.UtcNow;
+}
+
 // ------------------------------------------------------------------- Case ---
 
 public sealed class SubmissionCase

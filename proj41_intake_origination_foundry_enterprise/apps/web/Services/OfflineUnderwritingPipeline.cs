@@ -57,6 +57,17 @@ public sealed partial class OfflineUnderwritingPipeline : IUnderwritingPipeline
         return Task.FromResult(c);
     }
 
+    /// <summary>The offline pipeline is, by definition, not the live Foundry path.</summary>
+    public Task<EngineDiagnostics> ProbeAsync(CancellationToken ct = default) =>
+        Task.FromResult(new EngineDiagnostics
+        {
+            FoundryMode = "offline",
+            FoundryLive = false,
+            FoundryConfigured = false,
+            FoundryEnabled = false,
+            Detail = "Foundry not configured; deterministic offline engine is active by design."
+        });
+
     // ---- Internal per-stage accessors so the Foundry pipeline can fall back stage-by-stage. ----
     internal ExtractedRecords ExtractStage(SubmissionEmail email) => ExtractRecords(email);
     internal AppetiteDecision TriageStage(ExtractedRecords r) => Triage(r);

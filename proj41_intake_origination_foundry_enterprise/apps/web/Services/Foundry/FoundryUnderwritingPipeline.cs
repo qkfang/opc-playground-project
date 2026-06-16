@@ -124,9 +124,90 @@ public sealed class FoundryUnderwritingPipeline : IUnderwritingPipeline
             sw.Stop();
             _logger.LogWarning(ex, "Foundry stage '{Stage}' failed; using offline result for this stage.", stage);
             var fb = offlineFallback();
-            trace.Add(new AgentTrace { Stage = stage, Agent = "offline-fallback", Engine = "offline", DurationMs = (int)Math.Max(1, sw.ElapsedMilliseconds), Summary = $"Foundry '{stage}' failed ({ex.GetType().Name}); offline result used." });
+            // Surface a short, secret-free reason (e.g. the JSON path that failed) to aid live diagnosis.
+            var reason = ex.Message.Length > 160 ? ex.Message[..160] : ex.Message;
+            trace.Add(new AgentTrace { Stage = stage, Agent = "offline-fallback", Engine = "offline", DurationMs = (int)Math.Max(1, sw.ElapsedMilliseconds), Summary = $"Foundry '{stage}' failed ({ex.GetType().Name}: {reason}); offline result used." });
             return fb;
         }
+    }
+
+    // ---------------- Live diagnostics probe ----------------
+
+    /// <summary>
+    /// Performs a real minimal Foundry agent round-trip to prove the live path works end to end
+    /// (managed-identity token -> project endpoint -> model deployment -> response). Never throws;
+    /// returns a secret-free <see cref="EngineDiagnostics"/> the health endpoint can surface.
+    /// </summary>
+    public async Task<EngineDiagnostics> ProbeAsync(CancellationToken ct = default)
+    {
+        var diag = new EngineDiagnostics
+        {
+            FoundryEnabled = _options.Enabled,
+            FoundryConfigured = _options.IsConfigured,
+            EndpointHost = EndpointHost(_options.ProjectEndpoint),
+            ModelDeployment = _options.ModelDeployment
+        };
+
+        if (!_options.IsConfigured)
+        {
+            diag.FoundryMode = "offline";
+            diag.Detail = _options.Enabled
+                ? "Foundry enabled but ProjectEndpoint is not set."
+                : "Foundry disabled (Foundry__Enabled=false).";
+            return diag;
+        }
+
+        AIAgent agent;
+        try
+        {
+            agent = CreateAgent();
+        }
+        catch (Exception ex)
+        {
+            diag.FoundryMode = "error";
+            diag.Detail = $"Agent init failed: {ex.GetType().Name}.";
+            _logger.LogError(ex, "Foundry probe: agent initialisation failed.");
+            return diag;
+        }
+
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            // Minimal, cheap, deterministic round-trip. Proves auth + endpoint + deployment are live.
+            using var probeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            probeCts.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(_options.TimeoutSeconds, 5, 60)));
+            var response = await agent.RunAsync(
+                "Reply with exactly the word: READY", cancellationToken: probeCts.Token);
+            sw.Stop();
+            var text = (response.Text ?? string.Empty).Trim();
+            diag.ProbeMs = (int)Math.Max(1, sw.ElapsedMilliseconds);
+            if (text.Length == 0)
+            {
+                diag.FoundryMode = "fallback";
+                diag.Detail = "Live agent returned an empty response.";
+            }
+            else
+            {
+                diag.FoundryMode = "live";
+                diag.FoundryLive = true;
+                diag.Detail = "Live Foundry agent round-trip succeeded.";
+            }
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            diag.ProbeMs = (int)Math.Max(1, sw.ElapsedMilliseconds);
+            diag.FoundryMode = "fallback";
+            diag.Detail = $"Live agent call failed: {ex.GetType().Name}.";
+            _logger.LogWarning(ex, "Foundry probe: live agent round-trip failed.");
+        }
+        return diag;
+    }
+
+    private static string? EndpointHost(string? endpoint)
+    {
+        if (string.IsNullOrWhiteSpace(endpoint)) return null;
+        return Uri.TryCreate(endpoint, UriKind.Absolute, out var u) ? u.Host : null;
     }
 
     private AIAgent CreateAgent()
@@ -139,8 +220,11 @@ public sealed class FoundryUnderwritingPipeline : IUnderwritingPipeline
                 "broker submission emails and produce structured records (producer/insured/risk submission), an " +
                 "appetite & triage decision, exposure/demand-signal research, and an executive underwriting risk " +
                 "study. Always respond with ONLY a single valid JSON object matching the requested schema — no " +
-                "markdown, no prose, no code fences. Be realistic and conservative; never invent verifiable facts " +
-                "(treat exposure signals as analyst hypotheses) and use null when a value is unknown.",
+                "markdown, no prose, no code fences. Numbers MUST be raw JSON numbers with no currency symbols, " +
+                "no thousands separators and no units (write 10000000, never \"$10M\" or \"10,000,000\"); convert " +
+                "magnitudes to absolute values. Dates MUST be ISO-8601 strings (YYYY-MM-DD). Use JSON null (not \"\" " +
+                "or \"unknown\") when a value is unknown. Be realistic and conservative; never invent verifiable " +
+                "facts (treat exposure signals as analyst hypotheses).",
             name: "sentinel-underwriting-agent");
     }
 
@@ -149,7 +233,10 @@ public sealed class FoundryUnderwritingPipeline : IUnderwritingPipeline
         var response = await agent.RunAsync(prompt, cancellationToken: ct);
         var json = ExtractJsonObject(response.Text ?? string.Empty);
         if (string.IsNullOrWhiteSpace(json)) return default;
-        return JsonSerializer.Deserialize<T>(json, JsonOpts);
+        // Deserialize with tolerant converters: LLMs emit numbers as strings, with currency symbols,
+        // units ("$10M", "1.2M"), thousands separators, or free-form dates. Strict binding would throw
+        // JsonException and force the offline fallback even though the live agent answered correctly.
+        return JsonSerializer.Deserialize<T>(json, LenientJson.Options);
     }
 
     private static string? ExtractJsonObject(string text)
@@ -188,7 +275,8 @@ public sealed class FoundryUnderwritingPipeline : IUnderwritingPipeline
           "routingQueue": string, "assignedDesk": string,
           "declined": bool, "referralTriggers": string[], "riskFlags": string[], "rationale": string
         }
-        Higher riskScore = more scrutiny needed.
+        riskScore and fitScore are INTEGERS on a 0..100 scale (e.g. 73), NOT 0..10 and NOT 0..1.
+        Higher riskScore = more scrutiny needed; higher fitScore = more attractive account.
 
         RECORDS: {{JsonSerializer.Serialize(rec, JsonOpts)}}
         """;
@@ -204,6 +292,7 @@ public sealed class FoundryUnderwritingPipeline : IUnderwritingPipeline
           "signals": [ { "category": "CatastropheExposure|LossHistory|IndustryHazard|FinancialStress|Regulatory|Growth", "headline": string, "detail": string, "sentiment": "Positive|Neutral|Adverse", "impact": "Low|Medium|High" } ],
           "recommendedQuestions": string[]
         }
+        intentScore is an INTEGER on a 0..100 scale (e.g. 82), NOT 0..10 and NOT 0..1.
 
         RECORDS: {{JsonSerializer.Serialize(rec, JsonOpts)}}
         TRIAGE: {{JsonSerializer.Serialize(triage, JsonOpts)}}

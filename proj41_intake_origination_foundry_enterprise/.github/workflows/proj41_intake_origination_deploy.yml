@@ -12,6 +12,10 @@ on:
         description: "Base name used in resource naming (must match infra)"
         required: true
         default: "proj41"
+      assertFoundryLive:
+        description: "Fail the deploy unless the live Foundry agent path is verified (true/false)"
+        required: true
+        default: "true"
 
 permissions:
   contents: read
@@ -75,18 +79,48 @@ jobs:
               --src-path "${{ github.workspace }}/app.zip" \
               --type zip
 
-      - name: Smoke test (health endpoint)
+      - name: Ensure live Foundry is enabled
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            # The app must run the live Foundry path in this environment (offline is fallback only).
+            az webapp config appsettings set \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.web.outputs.webApp }}" \
+              --settings Foundry__Enabled=true \
+              -o none
+            echo "Foundry__Enabled=true asserted on ${{ steps.web.outputs.webApp }}."
+
+      - name: Smoke test (health + live Foundry probe)
         uses: azure/cli@v2
         with:
           inlineScript: |
             set -euo pipefail
             HOST=$(az webapp show -g "$RESOURCE_GROUP" --name "${{ steps.web.outputs.webApp }}" --query defaultHostName -o tsv)
             echo "Waiting for app to warm up at https://$HOST ..."
+            OK=""
             for i in $(seq 1 20); do
               CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" "https://$HOST/api/health" || true)
               if [ "$CODE" = "200" ]; then
-                echo "Health OK:"; cat /tmp/health.json; echo ""; exit 0
+                echo "Health OK:"; cat /tmp/health.json; echo ""; OK=1; break
               fi
               echo "Attempt $i: HTTP $CODE; retrying in 10s..."; sleep 10
             done
-            echo "Health check did not return 200 in time."; exit 1
+            if [ -z "$OK" ]; then echo "Health check did not return 200 in time."; exit 1; fi
+
+            if [ "${{ inputs.assertFoundryLive }}" != "true" ]; then
+              echo "assertFoundryLive=false; skipping live Foundry verification."; exit 0
+            fi
+
+            echo "Verifying the live Foundry agent path via /api/health/foundry ..."
+            for i in $(seq 1 12); do
+              curl -s -o /tmp/foundry.json -w "" "https://$HOST/api/health/foundry" || true
+              MODE=$(python3 -c "import json,sys;print(json.load(open('/tmp/foundry.json')).get('foundryMode',''))" 2>/dev/null || echo "")
+              echo "Attempt $i: foundryMode=$MODE"; cat /tmp/foundry.json; echo ""
+              if [ "$MODE" = "live" ]; then
+                echo "Live Foundry verified."; exit 0
+              fi
+              sleep 10
+            done
+            echo "Live Foundry was not verified (foundryMode != live). Failing deploy."; exit 1

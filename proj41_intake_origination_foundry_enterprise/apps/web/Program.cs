@@ -59,11 +59,41 @@ api.MapGet("/health", (IUnderwritingPipeline pipeline) => Results.Ok(new
     status = "healthy",
     engine = pipeline.Name,
     foundryConfigured = foundryOptions.IsConfigured,
+    foundryEnabled = foundryOptions.Enabled,
+    // Static (no network) mode hint. Use /api/health/foundry for an active live probe.
+    foundryMode = foundryOptions.IsConfigured ? "configured" : (foundryOptions.Enabled ? "misconfigured" : "offline"),
+    modelDeployment = foundryOptions.IsConfigured ? foundryOptions.ModelDeployment : null,
     service = "Sentinel Underwriting — Submission Desk",
     time = DateTimeOffset.UtcNow
 }))
 .WithName("GetHealth")
-.WithDescription("Liveness/readiness probe and active engine mode.");
+.WithDescription("Liveness/readiness probe and active engine mode (static; no Foundry network call).");
+
+// Active Foundry readiness probe: performs a REAL minimal agent round-trip and reports whether the
+// live path is working (live | fallback | error | offline). Secret-free. Use this to verify the
+// deployed app is genuinely using Foundry and not silently running the offline fallback.
+api.MapGet("/health/foundry", async (IUnderwritingPipeline pipeline, CancellationToken ct) =>
+{
+    var diag = await pipeline.ProbeAsync(ct);
+    // 200 when live or offline-by-design; 503 when configured-but-not-live so monitors can alert.
+    var ok = diag.FoundryMode is "live" or "offline";
+    return Results.Json(new
+    {
+        status = ok ? "ok" : "degraded",
+        engine = pipeline.Name,
+        foundryMode = diag.FoundryMode,
+        foundryLive = diag.FoundryLive,
+        foundryConfigured = diag.FoundryConfigured,
+        foundryEnabled = diag.FoundryEnabled,
+        endpointHost = diag.EndpointHost,
+        modelDeployment = diag.ModelDeployment,
+        probeMs = diag.ProbeMs,
+        detail = diag.Detail,
+        time = diag.CheckedUtc
+    }, statusCode: ok ? 200 : 503);
+})
+.WithName("GetFoundryHealth")
+.WithDescription("Active live-Foundry readiness probe (real agent round-trip); distinguishes live/fallback/error/offline.");
 
 api.MapGet("/inbox", (MailboxService mailbox) =>
     Results.Ok(mailbox.Inbox()))

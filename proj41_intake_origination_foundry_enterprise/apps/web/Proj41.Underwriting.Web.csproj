@@ -13,6 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Expose internal helpers (e.g. the lenient JSON converters) to the test project. -->
+    <InternalsVisibleTo Include="Proj41.Underwriting.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Microsoft Foundry / Microsoft Agent Framework (hosted, in-process prompt-agent pattern).
          AsAIAgent(...) on AIProjectClient creates an ephemeral Responses-API agent. -->
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
