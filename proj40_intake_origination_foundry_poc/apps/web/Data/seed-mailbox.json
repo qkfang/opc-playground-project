@@ -1,0 +1,65 @@
+[
+  {
+    "id": "strategic-bank",
+    "from": "priya.nair@globalbankcorp.com",
+    "fromName": "Priya Nair",
+    "subject": "RFP: Enterprise AI & data platform for fraud analytics",
+    "channel": "email",
+    "labels": ["rfp", "priority"],
+    "body": "Hi,\n\nI'm the Chief Data Officer at GlobalBank Corp, a multinational bank with 18,000 employees headquartered in Singapore. We're running an RFP this quarter to modernise our fraud analytics with an enterprise AI & ML platform. Budget approved (deal value around $1.2M). We're currently evaluating Databricks and Snowflake too.\n\nCan we book a discovery call urgently?\n\nBest regards,\nPriya Nair\nChief Data Officer\nCompany: GlobalBank Corp\nPhone: +65 6123 4567"
+  },
+  {
+    "id": "enterprise-health",
+    "from": "tom.reilly@meridian-health.com",
+    "fromName": "Tom Reilly",
+    "subject": "Exploring analytics modernisation for patient engagement",
+    "channel": "web-form",
+    "labels": ["inbound"],
+    "body": "Hello,\n\nI'm a Director of Engineering at Meridian Health, a healthcare provider with about 3,500 staff in the United Kingdom. We're exploring an advanced analytics suite for patient engagement and clinical data, and would like to understand pricing.\n\nTimeline is this year, though we're early stage and still researching options.\n\nThanks,\nTom Reilly\nDirector of Engineering, Meridian Health"
+  },
+  {
+    "id": "midmarket-retail",
+    "from": "sara.lopez@brightretail.com.au",
+    "fromName": "Sara Lopez",
+    "subject": "Demand forecasting pilot - growing retailer",
+    "channel": "email",
+    "labels": ["pilot"],
+    "body": "Hi team,\n\nSara here, IT Manager at BrightRetail, a growing mid-market retailer in Australia (around 600 employees). We'd like to pilot a demand forecasting and analytics solution to improve supply-chain visibility.\n\nWe have some budget allocated for a POC this quarter.\n\nCheers,\nSara Lopez\nCompany: BrightRetail Pty"
+  },
+  {
+    "id": "expansion-mfg",
+    "from": "james.okafor@contoso-manufacturing.com",
+    "fromName": "James Okafor",
+    "subject": "Renew + expand our current data platform contract",
+    "channel": "email",
+    "labels": ["renewal", "expansion"],
+    "body": "Hello,\n\nJames here, VP of Engineering at Contoso Manufacturing. We're an existing customer and want to renew and extend our contract, plus add predictive maintenance and a digital twin capability.\n\nWe're a global manufacturer with 12,000 employees. Let's get this moving this quarter - our account team knows us well.\n\nRegards,\nJames Okafor\nVP of Engineering, Contoso Manufacturing"
+  },
+  {
+    "id": "smb-startup",
+    "from": "founder@nimbus-ai.io",
+    "fromName": "Alex Chen",
+    "subject": "Quick question on agent platform pricing",
+    "channel": "email",
+    "labels": ["inbound"],
+    "body": "Hey,\n\nWe're a small AI startup (about 25 people) building on an agentic AI platform. Just researching options for now - no budget confirmed yet. Curious what your entry pricing looks like.\n\nThanks,\nAlex"
+  },
+  {
+    "id": "public-sector",
+    "from": "rebecca.shah@digital.gov-agency.org",
+    "fromName": "Rebecca Shah",
+    "subject": "Data governance & fraud analytics for citizen services",
+    "channel": "partner-referral",
+    "labels": ["referral"],
+    "body": "Good afternoon,\n\nI'm Head of Data at a government agency in Australia leading a citizen-services modernisation programme. We need a governed, auditable data platform with fraud and risk analytics, given tightening regulatory requirements.\n\nWe were referred by your partner. We'd like to evaluate this in the coming quarter; funding secured.\n\nKind regards,\nRebecca Shah\nHead of Data"
+  },
+  {
+    "id": "spam-disqualify",
+    "from": "deals@cheap-seo-now.biz",
+    "fromName": "SEO Deals",
+    "subject": "Boost your ranking - buy followers + SEO services!!!",
+    "channel": "email",
+    "labels": ["junk"],
+    "body": "Special offer!!! We provide SEO services and can buy followers for your brand. Limited-time crypto giveaway included! Unsubscribe anytime."
+  }
+]

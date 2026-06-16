@@ -1,0 +1,110 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Origination Console";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Northwind Revenue Origination Console — proj40</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A5%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+<div class="app">
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">NW</div>
+            <div>
+                <div class="brand-name">Northwind</div>
+                <div class="brand-sub">Revenue Origination</div>
+            </div>
+        </div>
+        <nav class="nav">
+            <button class="nav-item active" data-view="inbox"><span class="nav-ico">📥</span> Intake Inbox</button>
+            <button class="nav-item" data-view="records"><span class="nav-ico">🗂️</span> Extracted Records</button>
+            <button class="nav-item" data-view="triage"><span class="nav-ico">🎯</span> Triage &amp; Routing</button>
+            <button class="nav-item" data-view="research"><span class="nav-ico">🔎</span> Lead Research</button>
+            <button class="nav-item" data-view="report"><span class="nav-ico">📄</span> Origination Brief</button>
+        </nav>
+        <div class="sidebar-foot">
+            <div class="engine-pill" id="enginePill" title="Active agent engine">
+                <span class="dot" id="engineDot"></span><span id="engineLabel">…</span>
+            </div>
+            <div class="muted small">proj40 · Foundry prompt-agents</div>
+        </div>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <h1 id="viewTitle">Intake Inbox</h1>
+                <p class="muted" id="viewSubtitle">Inbound demand routed through the multi-agent origination pipeline.</p>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn ghost" id="btnRunDemo" title="Process every inbox email">▶ Run full inbox</button>
+                <button class="btn ghost" id="btnReset" title="Clear processed cases">↺ Reset</button>
+            </div>
+        </header>
+
+        <!-- Pipeline stepper -->
+        <div class="stepper" id="stepper">
+            <div class="step" data-step="extraction"><span class="step-no">1</span> Extraction</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="triage"><span class="step-no">2</span> Triage</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="research"><span class="step-no">3</span> Research</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="report"><span class="step-no">4</span> Report</div>
+        </div>
+
+        <section class="content">
+            <!-- INBOX VIEW -->
+            <div class="view" id="view-inbox">
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-head"><h2>Mock inbound mailbox</h2><span class="badge" id="inboxCount">0</span></div>
+                        <div class="list" id="inboxList"><div class="empty">Loading inbox…</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h2>Trigger console</h2></div>
+                        <p class="muted small">Select an email to run it through the pipeline, or paste your own inbound message.</p>
+                        <div id="emailPreview" class="email-preview"><div class="empty">No email selected.</div></div>
+                        <form id="adhocForm" class="adhoc">
+                            <div class="field"><label>From</label><input name="from" placeholder="jane.doe@enterprise.com" /></div>
+                            <div class="field"><label>Subject</label><input name="subject" placeholder="Evaluating your AI platform" /></div>
+                            <div class="field"><label>Body</label><textarea name="body" rows="4" placeholder="Paste an inbound enquiry…"></textarea></div>
+                            <button type="submit" class="btn primary">Run origination pipeline</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><h2>Recent cases</h2><span class="badge" id="caseCount">0</span></div>
+                    <div class="table-wrap"><table class="tbl" id="casesTable"><thead>
+                        <tr><th>Case</th><th>Company</th><th>Segment</th><th>Class</th><th>Priority</th><th>Score</th><th>ARR</th><th>Engine</th></tr>
+                    </thead><tbody><tr><td colspan="8" class="empty">No cases yet — process an email.</td></tr></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- RECORDS VIEW -->
+            <div class="view hidden" id="view-records"></div>
+            <!-- TRIAGE VIEW -->
+            <div class="view hidden" id="view-triage"></div>
+            <!-- RESEARCH VIEW -->
+            <div class="view hidden" id="view-research"></div>
+            <!-- REPORT VIEW -->
+            <div class="view hidden" id="view-report"></div>
+        </section>
+    </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="~/js/app.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Proj40.IntakeOrigination.Web</RootNamespace>
+    <AssemblyName>Proj40.IntakeOrigination.Web</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UserSecretsId>proj40-intake-origination-poc</UserSecretsId>
+    <!-- Microsoft.Agents.AI surfaces experimental APIs (MEAI001 etc.); suppress to keep build clean -->
+    <NoWarn>$(NoWarn);MEAI001;OPENAI001;AOAI001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Microsoft Foundry / Microsoft Agent Framework (hosted, in-process prompt-agent pattern).
+         AsAIAgent(...) on AIProjectClient creates an ephemeral Responses-API agent. -->
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Microsoft.Agents.AI.Foundry" Version="1.5.0" />
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.5.0" />
+
+    <!-- Telemetry -->
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+
+    <!-- OpenAPI document generation (Foundry OpenAPI tool pattern) -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ship the bundled sample inbox with the published artifact. The Web SDK auto-includes Data/*.json
+         as Content but does NOT copy a top-level Data/ folder to the output by default, so set the
+         copy metadata via Update (Include would duplicate the implicit item -> NETSDK1022). -->
+    <Content Update="Data\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
