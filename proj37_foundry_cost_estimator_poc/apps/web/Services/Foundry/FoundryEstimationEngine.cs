@@ -96,12 +96,7 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
         var client = new AIProjectClient(new Uri(_options.ProjectEndpoint!), new DefaultAzureCredential());
         return client.AsAIAgent(
             model: _options.ModelDeploymentName,
-            instructions:
-                "You are a senior Azure solutions architect and FinOps specialist. You read technical " +
-                "documents, infer scope, derive technical requirements, and design a cost-efficient Azure " +
-                "architecture. Always respond with ONLY a single valid JSON object matching the requested " +
-                "schema — no markdown, no prose, no code fences. Prefer managed PaaS services. Be realistic " +
-                "and conservative with sizing.",
+            instructions: AgentInstructions.SystemPersona,
             name: _options.AgentName);
     }
 

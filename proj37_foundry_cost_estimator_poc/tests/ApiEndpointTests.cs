@@ -78,10 +78,94 @@ public class ApiEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
 
+    [Fact]
+    public async Task Samples_list_returns_bundled_requirement_docs()
+    {
+        var client = _factory.CreateClient();
+        var items = await client.GetFromJsonAsync<List<SampleDto>>("/api/samples");
+        Assert.NotNull(items);
+        Assert.True(items!.Count >= 4, "expected at least 4 bundled sample docs");
+        Assert.All(items!, s => Assert.False(string.IsNullOrWhiteSpace(s.id)));
+        Assert.All(items!, s => Assert.False(string.IsNullOrWhiteSpace(s.title)));
+        // Titles must not leak the raw filename (friendly heading is used).
+        Assert.All(items!, s => Assert.DoesNotContain(".md", s.title));
+        // No "claims" terminology anywhere in the sample catalogue.
+        Assert.DoesNotContain(items!, s => s.title.Contains("claim", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Sample_content_returns_markdown_and_is_claims_free()
+    {
+        var client = _factory.CreateClient();
+        var items = await client.GetFromJsonAsync<List<SampleDto>>("/api/samples");
+        Assert.NotNull(items);
+        foreach (var s in items!)
+        {
+            var resp = await client.GetAsync($"/api/samples/{s.id}");
+            resp.EnsureSuccessStatusCode();
+            var md = await resp.Content.ReadAsStringAsync();
+            Assert.False(string.IsNullOrWhiteSpace(md));
+            Assert.DoesNotContain("claim", md, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public async Task Sample_content_rejects_path_traversal()
+    {
+        var client = _factory.CreateClient();
+        var resp = await client.GetAsync("/api/samples/..%2f..%2fappsettings");
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Sample_estimation_by_id_runs_named_project()
+    {
+        var client = _factory.CreateClient();
+        var run = await client.PostAsync("/api/estimations/sample?id=03-wingtip-retail-analytics-api", content: null);
+        run.EnsureSuccessStatusCode();
+        var job = await run.Content.ReadFromJsonAsync<JobDto>();
+        Assert.Equal("completed", job!.status);
+        // Project name comes from the document heading, not the file name.
+        Assert.Equal("Wingtip Retail Analytics API", job.scope!.projectName);
+        // This is a deliberately AI-free brief: no Foundry/AI line items.
+        Assert.DoesNotContain(job.cost!.lineItems!, l => l.service.Contains("Foundry"));
+    }
+
+    [Fact]
+    public async Task Agent_instructions_expose_three_steps()
+    {
+        var client = _factory.CreateClient();
+        var resp = await client.GetAsync("/api/agent-instructions");
+        resp.EnsureSuccessStatusCode();
+        var body = await resp.Content.ReadAsStringAsync();
+        Assert.Contains("scope", body);
+        Assert.Contains("requirements", body);
+        Assert.Contains("cost", body);
+        Assert.Contains("persona", body);
+    }
+
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/platform/scope")]
+    [InlineData("/platform/requirements")]
+    [InlineData("/platform/cost")]
+    [InlineData("/platform/steps")]
+    [InlineData("/estimations")]
+    public async Task Physical_pages_render(string url)
+    {
+        var client = _factory.CreateClient();
+        var resp = await client.GetAsync(url);
+        resp.EnsureSuccessStatusCode();
+        var html = await resp.Content.ReadAsStringAsync();
+        Assert.Contains("Azure Cost Estimator", html);
+        Assert.Contains("mainnav", html); // top nav present on every page
+    }
+
     // Minimal DTOs mirroring the JSON shape we assert on.
     private sealed record JobDto(string jobId, string status, ScopeDto? scope, CostDto? cost);
     private sealed record ScopeDto(string projectName);
     private sealed record CostDto(List<LineDto>? lineItems);
     private sealed record LineDto(string service, decimal monthlyCost);
     private sealed record ListDto(string jobId, string project);
+    private sealed record SampleDto(string id, string title, string fileName, int sizeBytes);
 }

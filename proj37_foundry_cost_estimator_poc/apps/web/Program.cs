@@ -23,6 +23,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
 builder.Services.AddSingleton<DocumentIngestionService>();
 builder.Services.AddSingleton<ExcelReportGenerator>();
 builder.Services.AddSingleton<OfflineEstimationEngine>();
+builder.Services.AddSingleton<SampleRequirementsService>();
 
 // Engine selection: live Foundry agent when configured, otherwise deterministic offline engine.
 // FoundryEstimationEngine already falls back to offline internally on any runtime failure.
@@ -79,6 +80,31 @@ api.MapGet("/health", () => Results.Ok(new
 .WithName("GetHealth")
 .WithDescription("Liveness/readiness probe and engine mode.");
 
+// Per-step agent instructions (shown in the UI popups so each agent-backed step is transparent).
+api.MapGet("/agent-instructions", () => Results.Ok(new
+{
+    persona = AgentInstructions.SystemPersona,
+    steps = AgentInstructions.All.Select(s => new { s.Key, s.Title, s.Agent, s.Goal, s.Instructions })
+}))
+.WithName("GetAgentInstructions")
+.WithDescription("Returns the per-step agent instructions for the Scope, Requirements, and Cost Model steps.");
+
+// Sample requirement documents shown on the Upload page (clickable + viewable in a modal).
+api.MapGet("/samples", (SampleRequirementsService samples) =>
+    Results.Ok(samples.List()))
+    .WithName("ListSamples")
+    .WithDescription("Lists the bundled sample requirement documents.");
+
+api.MapGet("/samples/{id}", (string id, SampleRequirementsService samples) =>
+{
+    var md = samples.Read(id);
+    return md is null
+        ? Results.NotFound(new { error = "Sample document not found", id })
+        : Results.Text(md, "text/markdown");
+})
+.WithName("GetSample")
+.WithDescription("Returns the raw markdown for one sample requirement document.");
+
 api.MapGet("/estimations", (EstimationJobService svc) =>
     Results.Ok(svc.List().Select(ToListItem)))
     .WithName("ListEstimations")
@@ -125,20 +151,35 @@ api.MapPost("/estimations", async (HttpRequest request, EstimationJobService svc
 .WithDescription("Uploads technical documents, runs the Foundry/offline estimation pipeline, and returns scope, requirements, and Azure cost estimate.")
 .DisableAntiforgery();
 
-// Convenience: run an estimation against the bundled sample document (no upload needed; great for demos/CI).
-api.MapPost("/estimations/sample", async (EstimationJobService svc, IWebHostEnvironment env, CancellationToken ct) =>
+// Convenience: run an estimation against a bundled sample document (no upload needed; great for demos/CI).
+// Optional ?id=<sample-id> runs one of the Data/requirements samples; otherwise the default SOW is used.
+api.MapPost("/estimations/sample", async (string? id, EstimationJobService svc, SampleRequirementsService samples, IWebHostEnvironment env, CancellationToken ct) =>
 {
-    var samplePath = Path.Combine(env.ContentRootPath, "Data", "sample-statement-of-work.md");
-    if (!File.Exists(samplePath))
-        return Results.NotFound(new { error = "Sample document not found on server." });
+    string samplePath;
+    string fileName;
+    if (!string.IsNullOrWhiteSpace(id))
+    {
+        var resolved = samples.ResolvePath(id);
+        if (resolved is null)
+            return Results.NotFound(new { error = "Sample document not found on server.", id });
+        samplePath = resolved;
+        fileName = Path.GetFileName(resolved);
+    }
+    else
+    {
+        samplePath = Path.Combine(env.ContentRootPath, "Data", "sample-statement-of-work.md");
+        fileName = "sample-statement-of-work.md";
+        if (!File.Exists(samplePath))
+            return Results.NotFound(new { error = "Sample document not found on server." });
+    }
 
     await using var fs = File.OpenRead(samplePath);
     var job = await svc.CreateAndRunAsync(
-        new[] { new EstimationJobService.UploadedFile("sample-statement-of-work.md", "text/markdown", fs) }, ct);
+        new[] { new EstimationJobService.UploadedFile(fileName, "text/markdown", fs) }, ct);
     return Results.Ok(job);
 })
 .WithName("CreateSampleEstimation")
-.WithDescription("Runs an estimation against the bundled sample statement of work. Useful for demos and smoke tests.");
+.WithDescription("Runs an estimation against a bundled sample requirement document (optional ?id selects one). Useful for demos and smoke tests.");
 
 app.Run();
 

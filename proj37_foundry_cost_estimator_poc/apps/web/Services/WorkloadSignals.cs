@@ -63,11 +63,13 @@ public sealed partial class WorkloadSignals
         var t = text.ToLowerInvariant();
 
         bool Has(params string[] words) => words.Any(w => t.Contains(w));
+        // Word-boundary match for short/ambiguous tokens (e.g. "ai" must not match "Tailwind"/"email").
+        bool HasWord(params string[] words) => words.Any(w => Regex.IsMatch(t, $@"\b{Regex.Escape(w)}\b"));
 
         // Capability detection
-        s.HasApi = Has("api", "rest", "endpoint", "openapi", "swagger", "microservice", "integration");
-        s.HasAi = Has("ai", "llm", "gpt", "openai", "foundry", "agent", "model", "prompt", "rag", "embedding", "generative");
-        s.HasFileSearch = Has("document", "ingest", "file search", "vector", "rag", "knowledge base", "grounding", "pdf", "docx", "upload");
+        s.HasApi = Has("rest", "endpoint", "openapi", "swagger", "microservice", "integration") || HasWord("api");
+        s.HasAi = Has("llm", "gpt", "openai", "foundry", "prompt", "embedding", "generative", "large language model", "language model") || HasWord("ai", "agent", "rag");
+        s.HasFileSearch = Has("file search", "vector", "knowledge base", "grounding", "retrieval-augmented", "retrieval augmented", "document understanding", "file upload") || HasWord("rag");
         s.HasRelationalDb = Has("sql", "relational", "postgres", "mysql", "transaction", "database table", "ef core", "entity framework");
         s.HasNoSql = Has("cosmos", "nosql", "mongo", "document database", "key-value", "key value");
         s.HasFunctions = Has("function", "serverless", "event-driven", "queue", "background job", "webhook", "trigger");

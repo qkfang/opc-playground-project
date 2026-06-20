@@ -109,14 +109,35 @@ public sealed partial class OfflineEstimationEngine : IEstimationEngine
 
     private static string GuessProjectName(EstimationResult job, string corpus)
     {
-        // Look for an explicit "Project:" / title line, else use the first document name.
+        var docNames = job.Documents
+            .Select(d => Path.GetFileNameWithoutExtension(d.FileName).Trim())
+            .Where(n => n.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        static string StripProjectLabel(string s) =>
+            Regex.Replace(s, @"(?i)^\s*project\s*[:\-]\s*", "").Trim();
+
+        // A heading is just the injected filename line if it matches a document name (with or without extension).
+        bool IsFileNameHeading(string h)
+        {
+            var bare = Path.GetFileNameWithoutExtension(h).Trim();
+            return docNames.Contains(h) || docNames.Contains(bare);
+        }
+
+        // Prefer an explicit "Project:" / title line.
         var m = ProjectLineRegex().Match(corpus);
         if (m.Success && m.Groups[1].Value.Trim().Length > 2)
-            return Truncate(m.Groups[1].Value.Trim(), 80);
+            return Truncate(StripProjectLabel(m.Groups[1].Value), 80);
 
-        var firstHeading = HeadingRegex().Match(corpus);
-        if (firstHeading.Success)
-            return Truncate(firstHeading.Groups[1].Value.Trim(), 80);
+        // Else the first markdown heading that is not just the injected filename line.
+        foreach (Match h in HeadingRegex().Matches(corpus))
+        {
+            var raw = h.Groups[1].Value.Trim();
+            if (IsFileNameHeading(raw)) continue;
+            var heading = StripProjectLabel(raw);
+            if (heading.Length > 2)
+                return Truncate(heading, 80);
+        }
 
         var first = job.Documents.FirstOrDefault();
         return first is null ? "Untitled POC" : Path.GetFileNameWithoutExtension(first.FileName);

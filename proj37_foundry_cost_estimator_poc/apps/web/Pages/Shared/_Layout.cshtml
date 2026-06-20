@@ -1,0 +1,68 @@
+@{
+    var page = (ViewData["ActivePage"] as string) ?? "";
+    string Active(string key) => page == key ? "active" : "";
+    bool platformActive = page is "scope" or "requirements" or "cost" or "steps";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Azure Cost Estimator</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body data-page="@(page)">
+<header class="topbar">
+    <div class="brand">
+        <a class="brand-link" href="/">
+            <span class="logo">⛅</span>
+            <div>
+                <h1>Azure Cost Estimator</h1>
+                <p class="tagline">Foundry agents · documents → scope → requirements → cost → Excel</p>
+            </div>
+        </a>
+    </div>
+    <div id="engineBadge" class="badge badge-muted">engine: …</div>
+</header>
+
+<nav class="mainnav" aria-label="Primary">
+    <div class="nav-inner">
+        <a class="navlink @Active("upload")" href="/">1 · Upload</a>
+        <div class="nav-group @(platformActive ? "active" : "")">
+            <span class="nav-group-label">2 · Intelligence Platform</span>
+            <div class="nav-sub">
+                <a class="navlink sub @Active("scope")" href="/platform/scope">Scope</a>
+                <a class="navlink sub @Active("requirements")" href="/platform/requirements">Requirements</a>
+                <a class="navlink sub @Active("cost")" href="/platform/cost">Cost Model</a>
+                <a class="navlink sub @Active("steps")" href="/platform/steps">Agent Steps</a>
+            </div>
+        </div>
+        <a class="navlink @Active("estimations")" href="/estimations">3 · Recent Estimations</a>
+    </div>
+</nav>
+
+<main>
+    @RenderBody()
+</main>
+
+<footer>
+    <p>POC reference estimates only — not a binding quote. Validate against the Azure Pricing Calculator.
+       · <a href="/openapi/v1.json">OpenAPI</a> · <a href="/api/health">Health</a></p>
+</footer>
+
+<!-- Shared modal host (sample viewer + agent-instruction popups) -->
+<div id="modalRoot" class="modal-root" hidden>
+    <div class="modal-backdrop" data-close="1"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+            <h3 id="modalTitle">Title</h3>
+            <button type="button" class="modal-close" data-close="1" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script src="~/js/app.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

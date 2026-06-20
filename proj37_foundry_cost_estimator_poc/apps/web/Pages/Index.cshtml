@@ -1,82 +1,39 @@
 @page
 @model Proj37.CostEstimator.Web.Pages.IndexModel
 @{
-    ViewData["Title"] = "Azure Cost Estimator";
+    ViewData["Title"] = "Upload";
+    ViewData["ActivePage"] = "upload";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — Foundry POC</title>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-</head>
-<body>
-<header class="topbar">
-    <div class="brand">
-        <span class="logo">⛅</span>
-        <div>
-            <h1>Azure Cost Estimator</h1>
-            <p class="tagline">Foundry prompt agent · document ingestion → scope → requirements → Azure cost → Excel</p>
+
+<section class="card upload-card">
+    <h2>1 · Upload technical documents</h2>
+    <p class="hint">Supported: .md .txt .json .csv .docx and more. Or open one of the example briefs below and run it.</p>
+    <form id="uploadForm">
+        <label class="dropzone" id="dropzone">
+            <input type="file" id="fileInput" name="files" multiple
+                   accept=".md,.markdown,.txt,.json,.csv,.tsv,.log,.yaml,.yml,.xml,.html,.htm,.docx" />
+            <span id="dropLabel">Click to choose files or drag &amp; drop</span>
+        </label>
+        <div id="fileList" class="file-list"></div>
+        <div class="actions">
+            <button type="submit" id="estimateBtn" class="btn btn-primary">Estimate cost</button>
         </div>
+    </form>
+    <div id="status" class="status" hidden></div>
+</section>
+
+<section class="card samples-card">
+    <h2>Example requirement documents</h2>
+    <p class="hint">Click <strong>View</strong> to read a sample brief in a popup, or <strong>Use this</strong> to run the full estimation pipeline against it.</p>
+    <div id="sampleList" class="sample-list">Loading examples…</div>
+</section>
+
+<section class="card next-card" id="doneCard" hidden>
+    <h2>✓ Estimation ready</h2>
+    <p class="hint" id="doneSummary"></p>
+    <div class="actions">
+        <a class="btn btn-primary" href="/platform/scope">Open Intelligence Platform →</a>
+        <a class="btn btn-secondary" href="/estimations">View recent estimations</a>
+        <a id="doneDownload" class="btn btn-download" href="#">⬇ Download Excel</a>
     </div>
-    <div id="engineBadge" class="badge badge-muted">engine: …</div>
-</header>
-
-<main>
-    <section class="card upload-card">
-        <h2>1 · Upload technical documents</h2>
-        <p class="hint">Supported: .md .txt .json .csv .docx and more. Or run the bundled sample brief.</p>
-        <form id="uploadForm">
-            <label class="dropzone" id="dropzone">
-                <input type="file" id="fileInput" name="files" multiple
-                       accept=".md,.markdown,.txt,.json,.csv,.tsv,.log,.yaml,.yml,.xml,.html,.htm,.docx" />
-                <span id="dropLabel">Click to choose files or drag &amp; drop</span>
-            </label>
-            <div id="fileList" class="file-list"></div>
-            <div class="actions">
-                <button type="submit" id="estimateBtn" class="btn btn-primary">Estimate cost</button>
-                <button type="button" id="sampleBtn" class="btn btn-secondary">Run sample brief</button>
-            </div>
-        </form>
-        <div id="status" class="status" hidden></div>
-    </section>
-
-    <section class="card result-card" id="resultCard" hidden>
-        <div class="result-head">
-            <h2 id="resultProject">Result</h2>
-            <div class="result-actions">
-                <span id="resultEngine" class="badge"></span>
-                <a id="downloadBtn" class="btn btn-download" href="#">⬇ Download Excel</a>
-            </div>
-        </div>
-
-        <div class="totals" id="totals"></div>
-
-        <div class="tabs">
-            <button class="tab active" data-tab="scope">Scope</button>
-            <button class="tab" data-tab="requirements">Requirements</button>
-            <button class="tab" data-tab="cost">Cost model</button>
-            <button class="tab" data-tab="steps">Agent steps</button>
-        </div>
-
-        <div class="tab-panel active" id="tab-scope"></div>
-        <div class="tab-panel" id="tab-requirements"></div>
-        <div class="tab-panel" id="tab-cost"></div>
-        <div class="tab-panel" id="tab-steps"></div>
-    </section>
-
-    <section class="card history-card">
-        <h2>Recent estimations</h2>
-        <div id="history" class="history">Loading…</div>
-    </section>
-</main>
-
-<footer>
-    <p>POC reference estimates only — not a binding quote. Validate against the Azure Pricing Calculator.
-       · <a href="/openapi/v1.json">OpenAPI</a> · <a href="/api/health">Health</a></p>
-</footer>
-
-<script src="~/js/app.js" asp-append-version="true"></script>
-</body>
-</html>
+</section>

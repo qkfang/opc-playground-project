@@ -74,4 +74,27 @@ public class OfflineEstimationEngineTests
         Assert.True(job.Cost.MonthlyTotalWithContingency > job.Cost.MonthlyTotal);
         Assert.Equal(Math.Round(job.Cost.MonthlyTotal * 12m, 2), job.Cost.AnnualTotal);
     }
+
+    [Fact]
+    public async Task Project_name_comes_from_heading_not_filename()
+    {
+        // The engine injects "# <fileName>" into the corpus; the project name must skip that and
+        // use the document's own "# Project: ..." heading.
+        var text = "# Project: Wingtip Retail Analytics API\n\nA back-end analytics API for stores.";
+        var job = await new OfflineEstimationEngine().EstimateAsync(
+            JobFrom(text, file: "03-wingtip-retail-analytics-api.md"));
+        Assert.Equal("Wingtip Retail Analytics API", job.Scope.ProjectName);
+        Assert.DoesNotContain(".md", job.Scope.ProjectName);
+    }
+
+    [Fact]
+    public async Task Storage_keyword_does_not_falsely_trigger_ai()
+    {
+        // "storage" contains the substring "rag" — it must NOT be detected as an AI/RAG workload.
+        var job = await new OfflineEstimationEngine().EstimateAsync(
+            JobFrom("A data and integration API. Blob storage for archives. Relational SQL aggregates. No language features."));
+        Assert.DoesNotContain(job.Cost.LineItems, l => l.Service.Contains("Foundry"));
+        Assert.DoesNotContain(job.Cost.LineItems, l => l.Service.Contains("AI Search"));
+        Assert.DoesNotContain(job.Requirements, r => r.Category == "AI");
+    }
 }
