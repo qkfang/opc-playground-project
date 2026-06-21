@@ -27,9 +27,11 @@
 
 <nav class="mainnav" aria-label="Primary">
     <div class="nav-inner">
-        <a class="navlink @Active("upload")" href="/">1 · Upload</a>
-        <div class="nav-group @(platformActive ? "active" : "")">
-            <span class="nav-group-label">2 · Intelligence Platform</span>
+        <a class="navlink nav-module @Active("upload")" href="/">
+            <span class="nav-module-icon">📤</span> Upload
+        </a>
+        <div class="nav-group nav-module @(platformActive ? "active" : "")">
+            <span class="nav-module-label"><span class="nav-module-icon">🤖</span> Agentic Cost Estimation</span>
             <div class="nav-sub">
                 <a class="navlink sub @Active("scope")" href="/platform/scope">Scope</a>
                 <a class="navlink sub @Active("requirements")" href="/platform/requirements">Requirements</a>
@@ -37,7 +39,9 @@
                 <a class="navlink sub @Active("steps")" href="/platform/steps">Agent Steps</a>
             </div>
         </div>
-        <a class="navlink @Active("estimations")" href="/estimations">3 · Recent Estimations</a>
+        <a class="navlink nav-module @Active("estimations")" href="/estimations">
+            <span class="nav-module-icon">📊</span> Recent Estimations
+        </a>
     </div>
 </nav>
 

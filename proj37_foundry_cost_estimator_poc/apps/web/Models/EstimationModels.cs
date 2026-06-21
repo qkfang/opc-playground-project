@@ -72,12 +72,27 @@ public sealed class CostEstimate
     public string PricingBasis { get; set; } = "Pay-As-You-Go, list price (POC reference rates)";
     public List<CostLineItem> LineItems { get; set; } = new();
 
+    // ---- Production totals (the headline numbers; preserved for backward compatibility) ----
     public decimal MonthlyTotal => Math.Round(LineItems.Sum(i => i.MonthlyCost), 2);
     public decimal AnnualTotal => Math.Round(MonthlyTotal * 12m, 2);
 
     /// <summary>Contingency percentage applied on top of the raw total (risk buffer).</summary>
     public decimal ContingencyPercent { get; set; } = 20m;
     public decimal MonthlyTotalWithContingency => Math.Round(MonthlyTotal * (1 + ContingencyPercent / 100m), 2);
+
+    // ---- Environment-split totals (non-prod / prod / total) ----
+    // Non-prod models a scaled-down dev/test/POC footprint of the SAME architecture; total = non-prod + prod.
+    public decimal NonProdMonthlyTotal => Math.Round(LineItems.Sum(i => i.NonProdMonthlyCost), 2);
+    public decimal ProdMonthlyTotal => Math.Round(LineItems.Sum(i => i.ProdMonthlyCost), 2);
+    public decimal CombinedMonthlyTotal => Math.Round(NonProdMonthlyTotal + ProdMonthlyTotal, 2);
+
+    public decimal NonProdMonthlyWithContingency => Math.Round(NonProdMonthlyTotal * (1 + ContingencyPercent / 100m), 2);
+    public decimal ProdMonthlyWithContingency => Math.Round(ProdMonthlyTotal * (1 + ContingencyPercent / 100m), 2);
+    public decimal CombinedMonthlyWithContingency => Math.Round(CombinedMonthlyTotal * (1 + ContingencyPercent / 100m), 2);
+
+    public decimal NonProdAnnualTotal => Math.Round(NonProdMonthlyTotal * 12m, 2);
+    public decimal ProdAnnualTotal => Math.Round(ProdMonthlyTotal * 12m, 2);
+    public decimal CombinedAnnualTotal => Math.Round(CombinedMonthlyTotal * 12m, 2);
 
     public List<string> Notes { get; set; } = new();
 }
@@ -88,11 +103,36 @@ public sealed class CostLineItem
     public string Sku { get; set; } = "";                  // "P1v3"
     public string Meter { get; set; } = "";                // "vCPU-hours" / "GB-month"
     public string Assumption { get; set; } = "";           // "1 instance, 730 hrs/mo"
-    public decimal Quantity { get; set; }
+    public decimal Quantity { get; set; }                  // PRODUCTION monthly quantity for the meter
     public decimal UnitPrice { get; set; }                 // reference unit price
     public string Unit { get; set; } = "";                 // "per instance/mo"
-    public decimal MonthlyCost { get; set; }
+    public decimal MonthlyCost { get; set; }               // production monthly cost (Quantity * UnitPrice)
     public string Category { get; set; } = "";             // Compute | AI | Data | Networking | Security | Observability
+
+    /// <summary>
+    /// Non-production monthly quantity for the SAME meter (scaled-down dev/test/POC sizing). When an
+    /// engine does not set this explicitly it is derived from <see cref="Quantity"/> via a per-category
+    /// non-prod factor, so the non-prod view is always populated and internally consistent.
+    /// </summary>
+    public decimal NonProdQuantity { get; set; }
+
+    /// <summary>Production monthly cost = Quantity * UnitPrice (rounded). Mirrors <see cref="MonthlyCost"/>.</summary>
+    public decimal ProdMonthlyCost => Math.Round(Quantity * UnitPrice, 2);
+
+    /// <summary>Non-production monthly cost = NonProdQuantity * UnitPrice (rounded).</summary>
+    public decimal NonProdMonthlyCost => Math.Round(NonProdQuantity * UnitPrice, 2);
+
+    /// <summary>Combined monthly cost across environments (non-prod + prod).</summary>
+    public decimal TotalMonthlyCost => Math.Round(ProdMonthlyCost + NonProdMonthlyCost, 2);
+
+    /// <summary>
+    /// Microsoft Azure pricing reference for this meter (surfaced in the UI and the Excel workbook so each
+    /// cost line is auditable against first-party pricing). Grounded via Microsoft Learn pricing pages.
+    /// </summary>
+    public string? PricingReferenceUrl { get; set; }
+
+    /// <summary>Short human label for <see cref="PricingReferenceUrl"/> (e.g. "App Service pricing").</summary>
+    public string? PricingReferenceLabel { get; set; }
 }
 
 public sealed class AgentStepLog

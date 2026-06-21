@@ -75,4 +75,78 @@ public static class AzurePricingCatalog
 
     /// <summary>Azure Functions consumption — per million executions (after free grant).</summary>
     public const decimal FunctionsPerMillionExec = 0.20m;
+
+    // ---------------------------------------------------------------- Pricing reference links
+    //
+    // Each cost line surfaces a first-party Azure pricing reference so reviewers can audit the rate
+    // against Microsoft's published pricing. URLs are the canonical azure.microsoft.com/pricing/details
+    // pages that the Microsoft Learn cost-management docs themselves link to (verified via Microsoft
+    // Learn). They are deliberately service-level (not deep meter anchors) so they stay stable.
+
+    public sealed record PricingRef(string Label, string Url);
+
+    /// <summary>Generic fallback: the Azure Pricing Calculator + Retail Prices API.</summary>
+    public static readonly PricingRef PricingCalculator =
+        new("Azure Pricing Calculator", "https://azure.microsoft.com/pricing/calculator/");
+
+    /// <summary>
+    /// Service-name (substring, case-insensitive) -> first-party pricing reference. Ordered most-specific
+    /// first; <see cref="ResolvePricingReference"/> returns the first contains-match.
+    /// </summary>
+    private static readonly (string Match, PricingRef Ref)[] PricingReferences =
+    {
+        ("App Service",     new("App Service pricing",        "https://azure.microsoft.com/pricing/details/app-service/linux/")),
+        ("AI Search",       new("Azure AI Search pricing",     "https://azure.microsoft.com/pricing/details/search/")),
+        ("Cognitive Search",new("Azure AI Search pricing",     "https://azure.microsoft.com/pricing/details/search/")),
+        ("Foundry",         new("Azure OpenAI pricing",        "https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/")),
+        ("OpenAI",          new("Azure OpenAI pricing",        "https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/")),
+        ("SQL",             new("Azure SQL Database pricing",  "https://azure.microsoft.com/pricing/details/azure-sql-database/single/")),
+        ("Cosmos",          new("Azure Cosmos DB pricing",     "https://azure.microsoft.com/pricing/details/cosmos-db/autoscale-provisioned/")),
+        ("Functions",       new("Azure Functions pricing",     "https://azure.microsoft.com/pricing/details/functions/")),
+        ("Blob",            new("Blob Storage pricing",        "https://azure.microsoft.com/pricing/details/storage/blobs/")),
+        ("Storage",         new("Azure Storage pricing",       "https://azure.microsoft.com/pricing/details/storage/blobs/")),
+        ("Log Analytics",   new("Azure Monitor pricing",       "https://azure.microsoft.com/pricing/details/monitor/")),
+        ("App Insights",    new("Azure Monitor pricing",       "https://azure.microsoft.com/pricing/details/monitor/")),
+        ("Application Insights", new("Azure Monitor pricing",  "https://azure.microsoft.com/pricing/details/monitor/")),
+        ("Monitor",         new("Azure Monitor pricing",       "https://azure.microsoft.com/pricing/details/monitor/")),
+        ("Key Vault",       new("Key Vault pricing",           "https://azure.microsoft.com/pricing/details/key-vault/")),
+        ("Bandwidth",       new("Bandwidth pricing",           "https://azure.microsoft.com/pricing/details/bandwidth/")),
+        ("Egress",          new("Bandwidth pricing",           "https://azure.microsoft.com/pricing/details/bandwidth/")),
+    };
+
+    /// <summary>Best-effort first-party pricing reference for a service name; never null.</summary>
+    public static PricingRef ResolvePricingReference(string? service)
+    {
+        if (!string.IsNullOrWhiteSpace(service))
+        {
+            foreach (var (match, reference) in PricingReferences)
+            {
+                if (service.Contains(match, StringComparison.OrdinalIgnoreCase))
+                    return reference;
+            }
+        }
+        return PricingCalculator;
+    }
+
+    // ---------------------------------------------------------------- Non-prod sizing factors
+    //
+    // Non-production (dev/test/POC) runs the SAME architecture at a scaled-down footprint. We model that
+    // per category as a fraction of the production monthly quantity. Aligns with Microsoft's guidance that
+    // non-prod typically uses lower tiers / fewer instances (see App Service "Nonproduction workloads").
+    private static readonly IReadOnlyDictionary<string, decimal> NonProdFactorByCategory =
+        new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Compute"] = 0.50m,        // fewer / smaller instances
+            ["AI"] = 0.30m,             // far lower request volume in dev/test
+            ["Data"] = 0.40m,           // smaller DBs / less storage
+            ["Networking"] = 0.30m,     // little egress in non-prod
+            ["Security"] = 0.50m,       // similar baseline, slightly lower op volume
+            ["Observability"] = 0.40m,  // lower telemetry volume
+        };
+
+    public const decimal DefaultNonProdFactor = 0.40m;
+
+    /// <summary>Non-prod quantity multiplier for a cost category (0..1).</summary>
+    public static decimal NonProdFactor(string? category)
+        => category is not null && NonProdFactorByCategory.TryGetValue(category, out var f) ? f : DefaultNonProdFactor;
 }

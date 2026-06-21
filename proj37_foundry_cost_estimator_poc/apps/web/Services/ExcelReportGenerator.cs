@@ -45,11 +45,21 @@ public sealed class ExcelReportGenerator
     private const string NameAnnualTotal = "Proj37_AnnualTotal";
     private const string CostTableName = "CostModel";
 
+    // Env-split sheet defined names (Non-Prod / Prod / Total).
+    private const string NameNonProdMonthly = "Proj37_NonProdMonthly";
+    private const string NameProdMonthly = "Proj37_ProdMonthly";
+    private const string NameTotalMonthly = "Proj37_TotalMonthly";
+
     public byte[] Generate(EstimationResult r)
     {
         using var wb = new XLWorkbook();
         BuildSummarySheet(wb, r);
+        // Primary editable cost sheet (production sizing) — keeps the original "Cost Model" tab + defined names.
         var costSheet = BuildCostSheet(wb, r);
+        // Environment-split sheets with working formulas: Non-Prod, Prod, and a combined Total.
+        BuildEnvCostSheet(wb, r, EnvKind.NonProd);
+        BuildEnvCostSheet(wb, r, EnvKind.Prod);
+        BuildTotalCostSheet(wb, r);
         BuildRequirementsSheet(wb, r);
         BuildScopeSheet(wb, r);
         BuildDocumentsSheet(wb, r);
@@ -60,6 +70,8 @@ public sealed class ExcelReportGenerator
         wb.SaveAs(ms);
         return ms.ToArray();
     }
+
+    private enum EnvKind { NonProd, Prod }
 
     private static void BuildSummarySheet(XLWorkbook wb, EstimationResult r)
     {
@@ -112,6 +124,16 @@ public sealed class ExcelReportGenerator
         ws.Cell(row, 2).FormulaA1 = $"={NameAnnualTotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
         ws.Range($"A{row}:B{row}").Style.Fill.BackgroundColor = TotalFill; row += 2;
 
+        SectionHeader(ws, $"A{row}:B{row}", "Cost by environment (monthly, incl. contingency)");
+        row++;
+        ws.Cell(row, 1).Value = "Non-Prod monthly"; ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 2).FormulaA1 = $"={NameNonProdMonthly}*{1 + r.Cost.ContingencyPercent / 100m}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 1).Value = "Prod monthly"; ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 2).FormulaA1 = $"={NameProdMonthly}*{1 + r.Cost.ContingencyPercent / 100m}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 1).Value = "Total monthly (Non-Prod + Prod)"; ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 2).FormulaA1 = $"={NameTotalMonthly}*{1 + r.Cost.ContingencyPercent / 100m}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
+        ws.Range($"A{row}:B{row}").Style.Fill.BackgroundColor = TotalFill; row += 2;
+
         SectionHeader(ws, $"A{row}:B{row}", "Disclaimer");
         row++;
         ws.Cell(row, 1).Value = "Note";
@@ -138,8 +160,8 @@ public sealed class ExcelReportGenerator
         ws.Range("A2:I2").Style.Fill.BackgroundColor = AccentFill;
         ws.Row(2).Height = 42;
 
-        string[] headers = { "Category", "Service", "SKU / Tier", "Meter", "Assumption", "Quantity", "Unit Price", "Unit", "Monthly Cost" };
-        const int colQty = 6, colUnitPrice = 7, colMonthly = 9;
+        string[] headers = { "Category", "Service", "SKU / Tier", "Meter", "Assumption", "Quantity", "Unit Price", "Unit", "Monthly Cost", "Pricing Reference" };
+        const int colQty = 6, colUnitPrice = 7, colMonthly = 9, colPricingRef = 10;
         int headerRow = 4;
         for (int c = 0; c < headers.Length; c++)
         {
@@ -164,6 +186,8 @@ public sealed class ExcelReportGenerator
             ws.Cell(row, colUnitPrice).Value = li.UnitPrice;     // editable input
             ws.Cell(row, 8).Value = li.Unit;
             // Monthly Cost left blank here; the table calculated-column formula fills it (incl. future rows).
+            // Pricing reference — a first-party Azure pricing link so each line is auditable in the workbook.
+            WritePricingRef(ws.Cell(row, colPricingRef), li);
             row++;
         }
         int lastDataRow = row - 1;
@@ -252,10 +276,238 @@ public sealed class ExcelReportGenerator
         // every cell value, which makes its calc engine evaluate the table totals-row SUBTOTAL formula.
         // ClosedXML (0.104) overflows the stack evaluating SUBTOTAL over a table column, so we set
         // explicit, readable column widths instead. Excel still computes the formula correctly on open.
-        double[] widths = { 16, 22, 14, 16, 45, 12, 14, 16, 16 };
+        double[] widths = { 16, 22, 14, 16, 45, 12, 14, 16, 16, 22 };
         for (int i = 0; i < widths.Length; i++) ws.Column(i + 1).Width = widths[i];
         ws.SheetView.FreezeRows(headerRow);
         return ws;
+    }
+
+    // ---------------------------------------------------------------- Env-split cost sheets
+
+    /// <summary>
+    /// Builds a single-environment editable cost sheet (Non-Prod or Prod). Same editable-table pattern as
+    /// the primary Cost Model: Quantity * Unit Price calculated column, SUBTOTAL totals row, contingency
+    /// and monthly/annual totals. The chosen environment selects which quantity drives the math
+    /// (NonProdQuantity vs Quantity). Exposes a defined name for the env monthly subtotal so Summary tracks it.
+    /// </summary>
+    private void BuildEnvCostSheet(XLWorkbook wb, EstimationResult r, EnvKind env)
+    {
+        bool nonProd = env == EnvKind.NonProd;
+        string sheetName = nonProd ? "Non-Prod" : "Prod";
+        string tableName = nonProd ? "NonProdCost" : "ProdCost";
+        string definedName = nonProd ? NameNonProdMonthly : NameProdMonthly;
+
+        var ws = wb.Worksheets.Add(sheetName);
+        Title(ws, "A1:J1", $"{sheetName} environment — monthly cost");
+        ws.Cell("A2").Value = nonProd
+            ? "Scaled-down dev/test/POC footprint of the same architecture."
+            : "Full production sizing for the live workload.";
+        ws.Cell("A2").Style.Font.Italic = true;
+
+        string[] headers = { "Category", "Service", "SKU / Tier", "Meter", "Assumption", "Quantity", "Unit Price", "Unit", "Monthly Cost", "Pricing Reference" };
+        const int colQty = 6, colUnitPrice = 7, colMonthly = 9, colPricingRef = 10;
+        int headerRow = 4;
+        for (int c = 0; c < headers.Length; c++) { var cell = ws.Cell(headerRow, c + 1); cell.Value = headers[c]; HeaderStyle(cell); }
+
+        int row = headerRow + 1;
+        int firstDataRow = row;
+        var ordered = r.Cost.LineItems.OrderBy(l => l.Category).ThenBy(l => l.Service).ToList();
+        if (ordered.Count == 0) ordered.Add(new CostLineItem { Category = "", Service = "" });
+        foreach (var li in ordered)
+        {
+            ws.Cell(row, 1).Value = li.Category;
+            ws.Cell(row, 2).Value = li.Service;
+            ws.Cell(row, 3).Value = li.Sku;
+            ws.Cell(row, 4).Value = li.Meter;
+            ws.Cell(row, 5).Value = li.Assumption;
+            ws.Cell(row, colQty).Value = nonProd ? li.NonProdQuantity : li.Quantity;  // editable input
+            ws.Cell(row, colUnitPrice).Value = li.UnitPrice;                          // editable input
+            ws.Cell(row, 8).Value = li.Unit;
+            WritePricingRef(ws.Cell(row, colPricingRef), li);
+            row++;
+        }
+        int lastDataRow = row - 1;
+
+        var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(tableName);
+        table.Theme = nonProd ? XLTableTheme.TableStyleLight11 : XLTableTheme.TableStyleLight9;
+        foreach (var dataRow in table.DataRange.Rows())
+            dataRow.Cell(colMonthly).FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+
+        table.ShowTotalsRow = true;
+        table.Field("Category").TotalsRowLabel = "Monthly subtotal";
+        table.Field("Monthly Cost").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        int totalsRow = table.TotalsRow().RowNumber();
+        var subtotalCell = ws.Cell(totalsRow, colMonthly);
+        MoneyCell(subtotalCell, r.Cost.Currency);
+        ws.Cell(totalsRow, 1).Style.Font.Bold = true;
+
+        var qtyData = ws.Range(firstDataRow, colQty, lastDataRow, colQty);
+        var priceData = ws.Range(firstDataRow, colUnitPrice, lastDataRow, colUnitPrice);
+        qtyData.Style.NumberFormat.Format = "#,##0.######";
+        foreach (var c in priceData.Cells()) MoneyCell(c, r.Cost.Currency, "#,##0.000000");
+        foreach (var rng in new[] { qtyData, priceData })
+        {
+            rng.Style.Fill.BackgroundColor = InputFill;
+            rng.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            rng.Style.Border.OutsideBorderColor = InputBorder;
+        }
+        var monthlyData = ws.Range(firstDataRow, colMonthly, lastDataRow, colMonthly);
+        monthlyData.Style.Font.Italic = true;
+        foreach (var c in monthlyData.Cells()) MoneyCell(c, r.Cost.Currency);
+
+        int contingencyRow = totalsRow + 2;
+        int totalRowNo = contingencyRow + 1;
+        int annualRow = totalRowNo + 1;
+
+        ws.Cell(contingencyRow, 1).Value = $"Contingency ({r.Cost.ContingencyPercent}%)";
+        ws.Cell(contingencyRow, 1).Style.Font.Bold = true;
+        var contingencyCell = ws.Cell(contingencyRow, 2);
+        contingencyCell.FormulaA1 = $"={tableName}[[#Totals],[Monthly Cost]]*{r.Cost.ContingencyPercent / 100m}";
+        MoneyCell(contingencyCell, r.Cost.Currency);
+
+        ws.Cell(totalRowNo, 1).Value = "Monthly total (incl. contingency)";
+        ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
+        var totalCell = ws.Cell(totalRowNo, 2);
+        totalCell.FormulaA1 = $"={tableName}[[#Totals],[Monthly Cost]]+B{contingencyRow}";
+        MoneyCell(totalCell, r.Cost.Currency);
+        ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        ws.Cell(annualRow, 1).Value = "Annual total (incl. contingency)";
+        ws.Cell(annualRow, 1).Style.Font.Bold = true;
+        var annualCell = ws.Cell(annualRow, 2);
+        annualCell.FormulaA1 = $"=B{totalRowNo}*12";
+        MoneyCell(annualCell, r.Cost.Currency);
+        ws.Range(annualRow, 1, annualRow, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        // Defined name for the env monthly subtotal (used by Summary + Total sheet cross-references).
+        wb.DefinedNames.Add(definedName, subtotalCell.AsRange());
+
+        double[] widths = { 16, 22, 14, 16, 45, 12, 14, 16, 16, 22 };
+        for (int i = 0; i < widths.Length; i++) ws.Column(i + 1).Width = widths[i];
+        ws.SheetView.FreezeRows(headerRow);
+    }
+
+    /// <summary>
+    /// Builds the combined Total sheet: per line, Non-Prod and Prod quantities are editable inputs, and
+    /// the sheet computes Non-Prod = NonProdQty*UnitPrice, Prod = ProdQty*UnitPrice, and Total = Non-Prod +
+    /// Prod with live formulas. Three SUBTOTAL totals (Non-Prod / Prod / Total) auto-include inserted rows.
+    /// Exposes the combined monthly subtotal as a defined name for the Summary sheet.
+    /// </summary>
+    private void BuildTotalCostSheet(XLWorkbook wb, EstimationResult r)
+    {
+        const string tableName = "TotalCost";
+        var ws = wb.Worksheets.Add("Total");
+        Title(ws, "A1:J1", "Total cost of ownership — Non-Prod + Prod");
+        ws.Cell("A2").Value = "Edit either quantity column; Non-Prod, Prod and Total costs recalculate automatically.";
+        ws.Cell("A2").Style.Font.Italic = true;
+
+        // Columns: Category, Service, SKU, Unit Price, Unit, NonProd Qty, Prod Qty, NonProd Cost, Prod Cost, Total Cost, Pricing Reference
+        string[] headers = { "Category", "Service", "SKU / Tier", "Unit Price", "Unit", "NonProd Qty", "Prod Qty", "NonProd Cost", "Prod Cost", "Total Cost", "Pricing Reference" };
+        const int colUnitPrice = 4, colNpQty = 6, colPrQty = 7, colNpCost = 8, colPrCost = 9, colTotal = 10, colPricingRef = 11;
+        int headerRow = 4;
+        for (int c = 0; c < headers.Length; c++) { var cell = ws.Cell(headerRow, c + 1); cell.Value = headers[c]; HeaderStyle(cell); }
+
+        int row = headerRow + 1;
+        int firstDataRow = row;
+        var ordered = r.Cost.LineItems.OrderBy(l => l.Category).ThenBy(l => l.Service).ToList();
+        if (ordered.Count == 0) ordered.Add(new CostLineItem { Category = "", Service = "" });
+        foreach (var li in ordered)
+        {
+            ws.Cell(row, 1).Value = li.Category;
+            ws.Cell(row, 2).Value = li.Service;
+            ws.Cell(row, 3).Value = li.Sku;
+            ws.Cell(row, colUnitPrice).Value = li.UnitPrice;      // editable input
+            ws.Cell(row, 5).Value = li.Unit;
+            ws.Cell(row, colNpQty).Value = li.NonProdQuantity;    // editable input
+            ws.Cell(row, colPrQty).Value = li.Quantity;          // editable input
+            WritePricingRef(ws.Cell(row, colPricingRef), li);
+            row++;
+        }
+        int lastDataRow = row - 1;
+
+        var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(tableName);
+        table.Theme = XLTableTheme.TableStyleLight10;
+        // Calculated columns: costs derive from the editable qty + unit price columns.
+        foreach (var dataRow in table.DataRange.Rows())
+        {
+            dataRow.Cell(colNpCost).FormulaA1 = "=[@[NonProd Qty]]*[@[Unit Price]]";
+            dataRow.Cell(colPrCost).FormulaA1 = "=[@[Prod Qty]]*[@[Unit Price]]";
+            dataRow.Cell(colTotal).FormulaA1 = "=[@[NonProd Cost]]+[@[Prod Cost]]";
+        }
+
+        table.ShowTotalsRow = true;
+        table.Field("Category").TotalsRowLabel = "Monthly subtotal";
+        table.Field("NonProd Cost").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        table.Field("Prod Cost").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        table.Field("Total Cost").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        int totalsRow = table.TotalsRow().RowNumber();
+        ws.Cell(totalsRow, 1).Style.Font.Bold = true;
+        foreach (var cc in new[] { colNpCost, colPrCost, colTotal }) MoneyCell(ws.Cell(totalsRow, cc), r.Cost.Currency);
+        var totalSubtotalCell = ws.Cell(totalsRow, colTotal);
+
+        // Format + highlight editable inputs.
+        var npQtyData = ws.Range(firstDataRow, colNpQty, lastDataRow, colNpQty);
+        var prQtyData = ws.Range(firstDataRow, colPrQty, lastDataRow, colPrQty);
+        var priceData = ws.Range(firstDataRow, colUnitPrice, lastDataRow, colUnitPrice);
+        foreach (var rng in new[] { npQtyData, prQtyData }) rng.Style.NumberFormat.Format = "#,##0.######";
+        foreach (var c in priceData.Cells()) MoneyCell(c, r.Cost.Currency, "#,##0.000000");
+        foreach (var rng in new[] { npQtyData, prQtyData, priceData })
+        {
+            rng.Style.Fill.BackgroundColor = InputFill;
+            rng.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            rng.Style.Border.OutsideBorderColor = InputBorder;
+        }
+        foreach (var cc in new[] { colNpCost, colPrCost, colTotal })
+        {
+            var rng = ws.Range(firstDataRow, cc, lastDataRow, cc);
+            rng.Style.Font.Italic = true;
+            foreach (var c in rng.Cells()) MoneyCell(c, r.Cost.Currency);
+        }
+
+        // Contingency + grand totals referencing the Total column subtotal.
+        int contingencyRow = totalsRow + 2;
+        int totalRowNo = contingencyRow + 1;
+        int annualRow = totalRowNo + 1;
+
+        ws.Cell(contingencyRow, 1).Value = $"Contingency ({r.Cost.ContingencyPercent}%)";
+        ws.Cell(contingencyRow, 1).Style.Font.Bold = true;
+        var contingencyCell = ws.Cell(contingencyRow, 2);
+        contingencyCell.FormulaA1 = $"={tableName}[[#Totals],[Total Cost]]*{r.Cost.ContingencyPercent / 100m}";
+        MoneyCell(contingencyCell, r.Cost.Currency);
+
+        ws.Cell(totalRowNo, 1).Value = "Total monthly (incl. contingency)";
+        ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
+        var totalCell = ws.Cell(totalRowNo, 2);
+        totalCell.FormulaA1 = $"={tableName}[[#Totals],[Total Cost]]+B{contingencyRow}";
+        MoneyCell(totalCell, r.Cost.Currency);
+        ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        ws.Cell(annualRow, 1).Value = "Total annual (incl. contingency)";
+        ws.Cell(annualRow, 1).Style.Font.Bold = true;
+        var annualCell = ws.Cell(annualRow, 2);
+        annualCell.FormulaA1 = $"=B{totalRowNo}*12";
+        MoneyCell(annualCell, r.Cost.Currency);
+        ws.Range(annualRow, 1, annualRow, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        wb.DefinedNames.Add(NameTotalMonthly, totalSubtotalCell.AsRange());
+
+        double[] widths = { 16, 22, 14, 14, 14, 12, 12, 14, 14, 14, 22 };
+        for (int i = 0; i < widths.Length; i++) ws.Column(i + 1).Width = widths[i];
+        ws.SheetView.FreezeRows(headerRow);
+    }
+
+    /// <summary>Writes a first-party Azure pricing reference into a cell as a friendly hyperlink.</summary>
+    private static void WritePricingRef(IXLCell cell, CostLineItem li)
+    {
+        if (string.IsNullOrWhiteSpace(li.PricingReferenceUrl))
+        {
+            cell.Value = "—";
+            return;
+        }
+        cell.Value = string.IsNullOrWhiteSpace(li.PricingReferenceLabel) ? "Azure pricing" : li.PricingReferenceLabel;
+        cell.SetHyperlink(new XLHyperlink(li.PricingReferenceUrl));
+        cell.Style.Font.FontColor = XLColor.FromHtml("#1A73E8");
+        cell.Style.Font.Underline = XLFontUnderlineValues.Single;
     }
 
     private static void BuildRequirementsSheet(XLWorkbook wb, EstimationResult r)

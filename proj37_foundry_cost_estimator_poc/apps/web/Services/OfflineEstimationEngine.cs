@@ -205,17 +205,23 @@ public sealed partial class OfflineEstimationEngine : IEstimationEngine
             {
                 "Reference list prices (Pay-As-You-Go), Australia East, USD. NOT a binding quote.",
                 "Replace AzurePricingCatalog with the Azure Retail Prices API for production accuracy.",
+                "Each line item links to its first-party Azure pricing page for audit (shown in UI and Excel).",
+                "Non-prod view models a scaled-down dev/test footprint of the same architecture; Total = Non-prod + Prod.",
                 $"Estimate scale assumptions: {s.DescribeScale()}."
             }
         };
 
         CostLineItem Item(string svc, string sku, string meter, string assumption, decimal qty, decimal unit, string unitLabel, string cat)
         {
+            var reference = AzurePricingCatalog.ResolvePricingReference(svc);
             var li = new CostLineItem
             {
                 Service = svc, Sku = sku, Meter = meter, Assumption = assumption,
                 Quantity = qty, UnitPrice = unit, Unit = unitLabel, Category = cat,
-                MonthlyCost = Math.Round(qty * unit, 2)
+                MonthlyCost = Math.Round(qty * unit, 2),
+                NonProdQuantity = Math.Round(qty * AzurePricingCatalog.NonProdFactor(cat), 4),
+                PricingReferenceUrl = reference.Url,
+                PricingReferenceLabel = reference.Label
             };
             est.LineItems.Add(li);
             return li;

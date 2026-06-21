@@ -106,9 +106,17 @@ async function loadSamples() {
 async function viewSample(id, title) {
   openModal(title || 'Example brief', '<p class="muted">Loading…</p>');
   try {
-    const r = await fetch('/api/samples/' + encodeURIComponent(id));
-    if (!r.ok) { setModalBody('<p class="muted">Could not load this document.</p>'); return; }
-    const md = await r.text();
+    // Prefer server-rendered HTML (Markdig) so the popup shows nicely formatted content, not raw markdown.
+    const r = await fetch('/api/samples/' + encodeURIComponent(id) + '/html');
+    if (r.ok) {
+      const html = await r.text();
+      setModalBody(`<div class="doc-html">${html}</div>`);
+      return;
+    }
+    // Fallback: raw markdown as preformatted text.
+    const raw = await fetch('/api/samples/' + encodeURIComponent(id));
+    if (!raw.ok) { setModalBody('<p class="muted">Could not load this document.</p>'); return; }
+    const md = await raw.text();
     setModalBody(`<pre class="doc-md">${esc(md)}</pre>`);
   } catch {
     setModalBody('<p class="muted">Could not load this document.</p>');
@@ -232,63 +240,166 @@ function renderRequirements(reqs) {
       <td>${esc(q.requirement)}</td><td class="muted">${esc(q.rationale)}</td></tr>`).join('')}</tbody></table>`;
 }
 
-// Editable cost model: Qty cells are inputs; editing recalculates Monthly + totals live.
+// Editable cost model with non-prod / prod / total environment views. Qty cells are inputs; editing
+// recalculates Monthly + totals live. Pricing reference links make each line auditable.
 let COST_STATE = null;
+let COST_ENV = 'total';   // 'nonprod' | 'prod' | 'total'
+
+const ENV_LABEL = { nonprod: 'Non-Prod', prod: 'Prod', total: 'Total' };
+const ENV_NOTE = {
+  nonprod: 'Non-production (dev/test/POC) footprint — a scaled-down version of the same architecture.',
+  prod: 'Production footprint — full sizing for the live workload.',
+  total: 'Total cost of ownership — Non-Prod + Prod across all environments.'
+};
+
+function ensureLineDefaults(i) {
+  // Backfill env fields for older stored jobs that predate the non-prod model.
+  if (i.nonProdQuantity === undefined || i.nonProdQuantity === null) {
+    i.nonProdQuantity = Math.round(Number(i.quantity || 0) * 0.4 * 10000) / 10000;
+  }
+  i.prodMonthlyCost = Math.round(Number(i.quantity || 0) * Number(i.unitPrice || 0) * 100) / 100;
+  i.nonProdMonthlyCost = Math.round(Number(i.nonProdQuantity || 0) * Number(i.unitPrice || 0) * 100) / 100;
+  i.totalMonthlyCost = Math.round((i.prodMonthlyCost + i.nonProdMonthlyCost) * 100) / 100;
+}
+
+function priceRefLink(i) {
+  if (!i.pricingReferenceUrl) return '<span class="muted">—</span>';
+  const label = i.pricingReferenceLabel || 'Azure pricing';
+  return `<a class="price-ref" href="${esc(i.pricingReferenceUrl)}" target="_blank" rel="noopener noreferrer" title="${esc(i.pricingReferenceUrl)}">${esc(label)} ↗</a>`;
+}
 
 function renderCost(c) {
   COST_STATE = c;
+  (c.lineItems || []).forEach(ensureLineDefaults);
+  wireEnvToggle();
+  renderCostTable();
+}
+
+function wireEnvToggle() {
+  const toggle = $('#envToggle');
+  if (!toggle || toggle.dataset.wired) return;
+  $all('.env-btn', toggle).forEach(btn => btn.addEventListener('click', () => {
+    COST_ENV = btn.dataset.env;
+    $all('.env-btn', toggle).forEach(b => {
+      const on = b === btn;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    renderCostTable();
+  }));
+  toggle.dataset.wired = '1';
+}
+
+function renderCostTable() {
+  const c = COST_STATE;
+  if (!c) return;
   const items = c.lineItems || [];
+  const note = $('#envNote'); if (note) note.textContent = ENV_NOTE[COST_ENV] || '';
   if (!items.length) { $('#tab-cost').innerHTML = '<p class="muted">No cost items.</p>'; const t = $('#totals'); if (t) t.innerHTML = ''; return; }
   renderTotals(c);
-  $('#tab-cost').innerHTML = `
-    <table><thead><tr><th>Category</th><th>Service</th><th>SKU</th><th>Assumption</th>
-      <th class="num-col">Qty</th><th class="num-col">Unit price</th><th class="num-col">Monthly</th></tr></thead>
-    <tbody>${items.map((i, idx) => `<tr>
+
+  const head = (COST_ENV === 'total')
+    ? `<tr><th>Category</th><th>Service</th><th>SKU</th><th>Pricing ref</th>
+         <th class="num-col">Non-Prod Qty</th><th class="num-col">Prod Qty</th>
+         <th class="num-col">Non-Prod</th><th class="num-col">Prod</th><th class="num-col">Total</th></tr>`
+    : `<tr><th>Category</th><th>Service</th><th>SKU</th><th>Assumption</th><th>Pricing ref</th>
+         <th class="num-col">Qty</th><th class="num-col">Unit price</th><th class="num-col">Monthly</th></tr>`;
+
+  const rows = items.map((i, idx) => {
+    if (COST_ENV === 'total') {
+      return `<tr>
+        <td>${esc(i.category)}</td><td>${esc(i.service)}</td><td>${esc(i.sku)}</td>
+        <td>${priceRefLink(i)}</td>
+        <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="nonprod" value="${Number(i.nonProdQuantity)}" aria-label="Non-prod quantity for ${esc(i.service)}" /></td>
+        <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="prod" value="${Number(i.quantity)}" aria-label="Prod quantity for ${esc(i.service)}" /></td>
+        <td class="num-col" data-np="${idx}">${fmtMoney(i.nonProdMonthlyCost, c.currency)}</td>
+        <td class="num-col" data-pr="${idx}">${fmtMoney(i.prodMonthlyCost, c.currency)}</td>
+        <td class="num-col" data-tot="${idx}"><strong>${fmtMoney(i.totalMonthlyCost, c.currency)}</strong></td></tr>`;
+    }
+    const qty = COST_ENV === 'nonprod' ? Number(i.nonProdQuantity) : Number(i.quantity);
+    const monthly = COST_ENV === 'nonprod' ? i.nonProdMonthlyCost : i.prodMonthlyCost;
+    const field = COST_ENV === 'nonprod' ? 'nonprod' : 'prod';
+    return `<tr>
       <td>${esc(i.category)}</td><td>${esc(i.service)}</td><td>${esc(i.sku)}</td>
       <td class="muted">${esc(i.assumption)}</td>
-      <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" value="${Number(i.quantity)}" aria-label="Quantity for ${esc(i.service)}" /></td>
+      <td>${priceRefLink(i)}</td>
+      <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="${field}" value="${qty}" aria-label="Quantity for ${esc(i.service)}" /></td>
       <td class="num-col">${fmtMoney(i.unitPrice, c.currency)}</td>
-      <td class="num-col" data-monthly="${idx}">${fmtMoney(i.monthlyCost, c.currency)}</td></tr>`).join('')}
-    </tbody>
-    <tfoot><tr><th colspan="6" class="num-col">Monthly total (incl. <span id="contPct">${c.contingencyPercent}</span>% contingency)</th>
-      <th class="num-col" id="costFootTotal">${fmtMoney(c.monthlyTotalWithContingency, c.currency)}</th></tr></tfoot></table>
+      <td class="num-col" data-monthly="${idx}">${fmtMoney(monthly, c.currency)}</td></tr>`;
+  }).join('');
+
+  const footColspan = COST_ENV === 'total' ? 8 : 7;
+  const footTotal = envTotalWithContingency(c);
+  $('#tab-cost').innerHTML = `
+    <table><thead>${head}</thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><th colspan="${footColspan}" class="num-col">${ENV_LABEL[COST_ENV]} monthly total (incl. <span id="contPct">${c.contingencyPercent}</span>% contingency)</th>
+      <th class="num-col" id="costFootTotal">${fmtMoney(footTotal, c.currency)}</th></tr></tfoot></table>
     <p class="muted" style="margin-top:.7rem">${(c.notes || []).map(esc).join(' · ')}</p>`;
   $all('.qty-input').forEach(inp => inp.addEventListener('input', onQtyEdit));
 }
 
+function envRawTotal(c) {
+  const items = c.lineItems || [];
+  if (COST_ENV === 'nonprod') return items.reduce((s, i) => s + Number(i.nonProdMonthlyCost || 0), 0);
+  if (COST_ENV === 'prod') return items.reduce((s, i) => s + Number(i.prodMonthlyCost || 0), 0);
+  return items.reduce((s, i) => s + Number(i.totalMonthlyCost || 0), 0);
+}
+
+function envTotalWithContingency(c) {
+  const raw = envRawTotal(c);
+  const pct = Number(c.contingencyPercent || 0);
+  return Math.round(raw * (1 + pct / 100) * 100) / 100;
+}
+
 function onQtyEdit(e) {
   const idx = Number(e.target.dataset.row);
+  const field = e.target.dataset.field;
   const c = COST_STATE;
   if (!c || !c.lineItems[idx]) return;
-  const qty = Number(e.target.value);
+  const val = Number(e.target.value);
   const item = c.lineItems[idx];
-  item.quantity = isFinite(qty) ? qty : 0;
-  item.monthlyCost = Math.round(item.quantity * Number(item.unitPrice) * 100) / 100;
-  const cell = $(`[data-monthly="${idx}"]`);
-  if (cell) cell.textContent = fmtMoney(item.monthlyCost, c.currency);
+  const safe = isFinite(val) && val >= 0 ? val : 0;
+  if (field === 'nonprod') item.nonProdQuantity = safe; else item.quantity = safe;
+  ensureLineDefaults(item);
+  // Keep legacy field in sync for any code/store that still reads monthlyCost (= prod).
+  item.monthlyCost = item.prodMonthlyCost;
+  const npCell = $(`[data-np="${idx}"]`); if (npCell) npCell.textContent = fmtMoney(item.nonProdMonthlyCost, c.currency);
+  const prCell = $(`[data-pr="${idx}"]`); if (prCell) prCell.innerHTML = fmtMoney(item.prodMonthlyCost, c.currency);
+  const totCell = $(`[data-tot="${idx}"]`); if (totCell) totCell.innerHTML = `<strong>${fmtMoney(item.totalMonthlyCost, c.currency)}</strong>`;
+  const mCell = $(`[data-monthly="${idx}"]`);
+  if (mCell) mCell.textContent = fmtMoney(COST_ENV === 'nonprod' ? item.nonProdMonthlyCost : item.prodMonthlyCost, c.currency);
   recomputeTotals(c);
 }
 
 function recomputeTotals(c) {
-  const raw = (c.lineItems || []).reduce((sum, i) => sum + Number(i.monthlyCost || 0), 0);
+  // Maintain prod headline fields (used elsewhere: context line, history, download summary).
+  const prodRaw = (c.lineItems || []).reduce((sum, i) => sum + Number(i.prodMonthlyCost || 0), 0);
   const pct = Number(c.contingencyPercent || 0);
-  const withCont = Math.round(raw * (1 + pct / 100) * 100) / 100;
-  const annual = Math.round(raw * 12 * 100) / 100;
-  c.monthlyTotal = Math.round(raw * 100) / 100;
-  c.monthlyTotalWithContingency = withCont;
-  c.annualTotal = annual;
-  const foot = $('#costFootTotal'); if (foot) foot.textContent = fmtMoney(withCont, c.currency);
+  c.monthlyTotal = Math.round(prodRaw * 100) / 100;
+  c.monthlyTotalWithContingency = Math.round(prodRaw * (1 + pct / 100) * 100) / 100;
+  c.annualTotal = Math.round(prodRaw * 12 * 100) / 100;
+  const foot = $('#costFootTotal'); if (foot) foot.textContent = fmtMoney(envTotalWithContingency(c), c.currency);
   renderTotals(c);
 }
 
 function renderTotals(c) {
   const el = $('#totals');
   if (!el) return;
+  const items = c.lineItems || [];
+  const pct = Number(c.contingencyPercent || 0);
+  const npRaw = items.reduce((s, i) => s + Number(i.nonProdMonthlyCost || 0), 0);
+  const prRaw = items.reduce((s, i) => s + Number(i.prodMonthlyCost || 0), 0);
+  const totRaw = Math.round((npRaw + prRaw) * 100) / 100;
+  const withCont = (n) => Math.round(n * (1 + pct / 100) * 100) / 100;
+  // Highlight the box for the currently selected environment view.
+  const hi = (env) => COST_ENV === env ? ' hi' : '';
   el.innerHTML = `
-    <div class="total-box"><div class="num">${fmtMoney(c.monthlyTotal, c.currency)}</div><div class="lbl">Monthly (raw)</div></div>
-    <div class="total-box"><div class="num">${c.contingencyPercent || 0}%</div><div class="lbl">Contingency</div></div>
-    <div class="total-box hi"><div class="num">${fmtMoney(c.monthlyTotalWithContingency, c.currency)}</div><div class="lbl">Monthly total</div></div>
-    <div class="total-box hi"><div class="num">${fmtMoney(c.annualTotal, c.currency)}</div><div class="lbl">Annual (raw)</div></div>`;
+    <div class="total-box${hi('nonprod')}"><div class="num">${fmtMoney(withCont(npRaw), c.currency)}</div><div class="lbl">Non-Prod / mo</div></div>
+    <div class="total-box${hi('prod')}"><div class="num">${fmtMoney(withCont(prRaw), c.currency)}</div><div class="lbl">Prod / mo</div></div>
+    <div class="total-box${hi('total')}"><div class="num">${fmtMoney(withCont(totRaw), c.currency)}</div><div class="lbl">Total / mo</div></div>
+    <div class="total-box"><div class="num">${fmtMoney(withCont(totRaw) * 12, c.currency)}</div><div class="lbl">Total / yr</div></div>
+    <div class="total-box"><div class="num">${pct}%</div><div class="lbl">Contingency</div></div>`;
 }
 
 function renderSteps(steps) {

@@ -74,6 +74,43 @@ try {
     if (-not (Test-Path (Join-Path $extract 'xl\calcChain.xml'))) { throw "no calcChain (formulas missing)" }
   }
 
+  Check "Workbook has Non-Prod / Prod / Total environment sheets" {
+    $extract = Join-Path $env:TEMP "proj37-smoke-xlsx"
+    $wbXml = Get-Content (Join-Path $extract 'xl\workbook.xml') -Raw
+    foreach ($sheet in @('Non-Prod','Prod','Total')) {
+      if ($wbXml -notmatch [regex]::Escape($sheet)) { throw "missing env sheet: $sheet" }
+    }
+  }
+
+  Check "Workbook cost sheets carry Azure pricing hyperlinks" {
+    $extract = Join-Path $env:TEMP "proj37-smoke-xlsx"
+    $relsDir = Join-Path $extract 'xl\worksheets\_rels'
+    if (-not (Test-Path $relsDir)) { throw "no worksheet rels (no hyperlinks)" }
+    $hasAzure = $false
+    Get-ChildItem $relsDir -Filter *.rels | ForEach-Object {
+      if ((Get-Content $_.FullName -Raw) -match 'azure\.microsoft\.com/pricing') { $hasAzure = $true }
+    }
+    if (-not $hasAzure) { throw "no azure.microsoft.com pricing hyperlinks found" }
+  }
+
+  Check "Estimation exposes non-prod / prod / total cost rollups + pricing refs" {
+    $c = $script:job.cost
+    if ($c.nonProdMonthlyTotal -le 0) { throw "nonProdMonthlyTotal not positive" }
+    if ($c.prodMonthlyTotal -le 0) { throw "prodMonthlyTotal not positive" }
+    if ([math]::Round($c.combinedMonthlyTotal,2) -lt [math]::Round($c.prodMonthlyTotal,2)) { throw "combined < prod" }
+    $missingRef = ($c.lineItems | Where-Object { -not $_.pricingReferenceUrl }).Count
+    if ($missingRef -gt 0) { throw "$missingRef line item(s) missing a pricing reference" }
+  }
+
+  Check "Sample doc renders as HTML (Markdown library)" {
+    $samples = Invoke-RestMethod "$baseUrl/api/samples"
+    if ($samples.Count -lt 1) { throw "no samples" }
+    $id = $samples[0].id
+    $html = (Invoke-WebRequest "$baseUrl/api/samples/$id/html").Content
+    if ($html -notmatch '<h[1-3]') { throw "no rendered headings in sample HTML" }
+    if ($html -match '<script>') { throw "raw <script> leaked (XSS not disabled)" }
+  }
+
   Check "Unsupported-only upload returns 422" {
     $png = Join-Path $env:TEMP "proj37-smoke.png"
     [System.IO.File]::WriteAllBytes($png, [byte[]](1..16))

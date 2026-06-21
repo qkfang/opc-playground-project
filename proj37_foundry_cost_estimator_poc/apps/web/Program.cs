@@ -22,6 +22,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
 // ----- Core services -----
 builder.Services.AddSingleton<DocumentIngestionService>();
 builder.Services.AddSingleton<ExcelReportGenerator>();
+builder.Services.AddSingleton<MarkdownRenderer>();
 builder.Services.AddSingleton<OfflineEstimationEngine>();
 builder.Services.AddSingleton<SampleRequirementsService>();
 
@@ -104,6 +105,18 @@ api.MapGet("/samples/{id}", (string id, SampleRequirementsService samples) =>
 })
 .WithName("GetSample")
 .WithDescription("Returns the raw markdown for one sample requirement document.");
+
+// Rendered HTML variant — the Upload-page "View" popup renders sample markdown to safe HTML via Markdig.
+api.MapGet("/samples/{id}/html", (string id, SampleRequirementsService samples, MarkdownRenderer md) =>
+{
+    var raw = samples.Read(id);
+    if (raw is null)
+        return Results.NotFound(new { error = "Sample document not found", id });
+    var html = md.ToHtml(raw);
+    return Results.Text(html, "text/html");
+})
+.WithName("GetSampleHtml")
+.WithDescription("Returns the sample requirement document rendered to safe HTML (Markdig) for the in-app viewer.");
 
 api.MapGet("/estimations", (EstimationJobService svc) =>
     Results.Ok(svc.List().Select(ToListItem)))

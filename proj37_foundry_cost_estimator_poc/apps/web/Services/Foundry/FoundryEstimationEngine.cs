@@ -182,16 +182,20 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
           "category": "Compute|AI|Data|Networking|Security|Observability",
           "meter": string,              // e.g. "instance-month", "1K input tokens", "GB-month"
           "assumption": string,         // sizing rationale
-          "quantity": number,           // monthly quantity for the meter
+          "quantity": number,           // monthly PRODUCTION quantity for the meter
+          "nonProdQuantity": number,    // monthly NON-PROD (dev/test) quantity for the same meter (scaled-down)
           "unitPrice": number,          // your best-estimate USD reference unit price for the meter
-          "unit": string                // e.g. "per instance/mo", "per 1K tokens", "per GB/mo"
+          "unit": string,               // e.g. "per instance/mo", "per 1K tokens", "per GB/mo"
+          "pricingReferenceUrl": string,// first-party Azure pricing page for this service (azure.microsoft.com/pricing/details/...)
+          "pricingReferenceLabel": string // short label, e.g. "App Service pricing"
         } ],
           "contingencyPercent": number  // 15-30, risk buffer
         }
 
         Always include: compute (App Service), storage (Blob), observability (Log Analytics), security
         (Key Vault). Include Foundry/Azure OpenAI token line items if the workload uses AI, and Azure AI
-        Search if it uses document/file search.
+        Search if it uses document/file search. For pricingReferenceUrl, cite the official Microsoft Azure
+        pricing details page for that service so each line item is auditable.
 
         DOCUMENTS:
         {{corpus}}
@@ -211,6 +215,8 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
             {
                 "Service plan proposed by Microsoft Foundry prompt agent; unit prices are reference estimates.",
                 "Validate against the Azure Pricing Calculator / Retail Prices API before commitment.",
+                "Each line item links to its first-party Azure pricing page for audit (shown in UI and Excel).",
+                "Non-prod view models a scaled-down dev/test footprint of the same architecture; Total = Non-prod + Prod.",
                 $"Scale assumption: {scope.ExpectedScale}"
             }
         };
@@ -226,6 +232,16 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
             {
                 unit = catalogPrice;
             }
+            // Prefer the model's non-prod sizing when it provided a sensible value, else derive from the catalog factor.
+            var nonProdQty = sp.NonProdQuantity is { } npq && npq >= 0 && npq <= qty
+                ? Math.Round(npq, 4)
+                : Math.Round(qty * AzurePricingCatalog.NonProdFactor(sp.Category), 4);
+            // Prefer a model-supplied first-party pricing link, else resolve from the catalog.
+            var catalogRef = AzurePricingCatalog.ResolvePricingReference(sp.Service);
+            var refUrl = !string.IsNullOrWhiteSpace(sp.PricingReferenceUrl) && sp.PricingReferenceUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                ? sp.PricingReferenceUrl
+                : catalogRef.Url;
+            var refLabel = !string.IsNullOrWhiteSpace(sp.PricingReferenceLabel) ? sp.PricingReferenceLabel : catalogRef.Label;
             est.LineItems.Add(new CostLineItem
             {
                 Service = sp.Service,
@@ -236,14 +252,17 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
                 UnitPrice = unit,
                 Unit = sp.Unit,
                 Category = string.IsNullOrWhiteSpace(sp.Category) ? "Other" : sp.Category,
-                MonthlyCost = Math.Round(qty * unit, 2)
+                MonthlyCost = Math.Round(qty * unit, 2),
+                NonProdQuantity = nonProdQty,
+                PricingReferenceUrl = refUrl,
+                PricingReferenceLabel = refLabel
             });
         }
 
         if (est.LineItems.Count == 0)
         {
             est.Notes.Add("Foundry returned no service line items; supplementing with baseline storage/observability.");
-            est.LineItems.Add(new CostLineItem { Service = "Azure Blob Storage", Sku = "Hot LRS", Meter = "GB-month", Assumption = "Baseline artefact storage", Quantity = 20, UnitPrice = AzurePricingCatalog.BlobHotPerGbMonth, Unit = "per GB/mo", Category = "Data", MonthlyCost = Math.Round(20 * AzurePricingCatalog.BlobHotPerGbMonth, 2) });
+            est.LineItems.Add(new CostLineItem { Service = "Azure Blob Storage", Sku = "Hot LRS", Meter = "GB-month", Assumption = "Baseline artefact storage", Quantity = 20, UnitPrice = AzurePricingCatalog.BlobHotPerGbMonth, Unit = "per GB/mo", Category = "Data", MonthlyCost = Math.Round(20 * AzurePricingCatalog.BlobHotPerGbMonth, 2), NonProdQuantity = Math.Round(20 * AzurePricingCatalog.NonProdFactor("Data"), 4), PricingReferenceUrl = AzurePricingCatalog.ResolvePricingReference("Azure Blob Storage").Url, PricingReferenceLabel = AzurePricingCatalog.ResolvePricingReference("Azure Blob Storage").Label });
         }
 
         return est;
@@ -289,7 +308,10 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
         [JsonPropertyName("meter")] public string Meter { get; set; } = "";
         [JsonPropertyName("assumption")] public string Assumption { get; set; } = "";
         [JsonPropertyName("quantity")] public decimal Quantity { get; set; }
+        [JsonPropertyName("nonProdQuantity")] public decimal? NonProdQuantity { get; set; }
         [JsonPropertyName("unitPrice")] public decimal UnitPrice { get; set; }
         [JsonPropertyName("unit")] public string Unit { get; set; } = "";
+        [JsonPropertyName("pricingReferenceUrl")] public string? PricingReferenceUrl { get; set; }
+        [JsonPropertyName("pricingReferenceLabel")] public string? PricingReferenceLabel { get; set; }
     }
 }
