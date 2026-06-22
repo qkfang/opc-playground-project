@@ -1,0 +1,18 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+<section class="chat-shell">
+    <div class="messages">
+        <div class="welcome">
+            <h2>Something went wrong</h2>
+            <p>An unexpected error occurred. Please try again.</p>
+            @if (Model.ShowRequestId)
+            {
+                <p><strong>Request ID:</strong> <code>@Model.RequestId</code></p>
+            }
+            <div class="suggestions"><a class="chip" href="/">Back to chat</a></div>
+        </div>
+    </div>
+</section>

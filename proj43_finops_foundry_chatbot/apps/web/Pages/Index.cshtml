@@ -1,0 +1,24 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Chat";
+}
+
+<section class="chat-shell">
+    <div id="messages" class="messages" aria-live="polite">
+        <div class="welcome">
+            <h2>Ask about your cloud spend 💬</h2>
+            <p>I can break down spend, spot anomalies, check commitment coverage, and find savings — grounded in your governed Microsoft Fabric data.</p>
+            <div id="suggestions" class="suggestions"></div>
+        </div>
+    </div>
+
+    <form id="composer" class="composer" autocomplete="off">
+        <input id="prompt" name="prompt" type="text" placeholder="e.g. What did we spend last month?" aria-label="Ask a FinOps question" />
+        <button id="send" type="submit">Send</button>
+    </form>
+</section>
+
+@section Scripts {
+    <script src="~/js/chat.js" asp-append-version="true"></script>
+}

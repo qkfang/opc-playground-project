@@ -1,0 +1,42 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · FinOps Copilot</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app">
+        <header class="topbar">
+            <div class="brand">
+                <span class="logo">💸</span>
+                <div class="brand-text">
+                    <h1>FinOps Copilot</h1>
+                    <p class="tagline">Conversational cloud cost intelligence · Microsoft Foundry + Fabric</p>
+                </div>
+            </div>
+            <div class="status">
+                <span id="engineBadge" class="badge badge-muted" title="Active reasoning engine">engine: …</span>
+                <span id="dataBadge" class="badge badge-soft" title="Data freshness">data: …</span>
+            </div>
+        </header>
+
+        <main>
+            @RenderBody()
+        </main>
+
+        <footer>
+            <span>POC — figures are directional, grounded in governed Fabric data (offline sample when Foundry is not configured).</span>
+            <span class="links">
+                <a href="/api/health">health</a> ·
+                <a href="/openapi/v1.json">OpenAPI</a>
+            </span>
+        </footer>
+    </div>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
