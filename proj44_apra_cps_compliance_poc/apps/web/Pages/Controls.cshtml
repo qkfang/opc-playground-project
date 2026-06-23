@@ -1,0 +1,27 @@
+@page "/controls"
+@model Proj44.Compliance.Web.Pages.ControlsModel
+@{
+    ViewData["Title"] = "Controls";
+    ViewData["ActivePage"] = "controls";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Control Library</h2>
+            <p class="hint">Operating mechanisms that enforce the standards, authored by the Control Authoring agent.</p>
+        </div>
+        <div class="result-actions">
+            <span class="agent-badge">🤖 Control Authoring Agent</span>
+            <button type="button" class="btn btn-secondary" data-agent-step="controls">ℹ Agent instructions</button>
+        </div>
+    </div>
+    <div class="filter-row">
+        <input type="search" id="ctlFilter" class="filter-input" placeholder="Filter controls…" />
+        <span class="muted" id="ctlCount"></span>
+    </div>
+</section>
+
+<section class="card">
+    <div id="ctlTable"><p class="muted">Loading controls…</p></div>
+</section>

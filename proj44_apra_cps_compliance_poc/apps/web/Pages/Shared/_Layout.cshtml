@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · APRA CPS 230 Compliance Mapper</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body data-page="@ViewData["ActivePage"]">
+    <header class="topbar">
+        <div class="brand">
+            <a class="brand-link" href="/">
+                <span class="logo">🛡️</span>
+                <span>
+                    <h1>APRA CPS 230 Compliance Mapper</h1>
+                    <p class="tagline">Multi-agent Foundry pipeline · Requirement → Policy → Standard → Control</p>
+                </span>
+            </a>
+        </div>
+        <span id="engineBadge" class="badge offline">engine: …</span>
+    </header>
+
+    <nav class="mainnav" id="mainnav">
+        <div class="nav-inner">
+            <a class="navlink nav-module @Active("overview")" href="/">
+                <span class="nav-module-icon">📋</span>Overview / Ingestion
+            </a>
+
+            <div class="nav-group nav-module @ActiveGroup("framework")">
+                <span class="nav-module-label">📚 Framework</span>
+                <div class="nav-sub">
+                    <a class="navlink sub @Active("requirements")" href="/requirements">Requirements</a>
+                    <a class="navlink sub @Active("policies")" href="/policies">Policies</a>
+                    <a class="navlink sub @Active("standards")" href="/standards">Standards</a>
+                    <a class="navlink sub @Active("controls")" href="/controls">Controls</a>
+                </div>
+            </div>
+
+            <div class="nav-group nav-module @ActiveGroup("analysis")">
+                <span class="nav-module-label">🔎 Analysis</span>
+                <div class="nav-sub">
+                    <a class="navlink sub @Active("mappings")" href="/mappings">Mappings</a>
+                    <a class="navlink sub @Active("gaps")" href="/gaps">Gap Analysis</a>
+                    <a class="navlink sub @Active("traceability")" href="/traceability">Traceability</a>
+                </div>
+            </div>
+
+            <a class="navlink nav-module @Active("pipeline")" href="/pipeline">
+                <span class="nav-module-icon">🤖</span>Agents / Pipeline
+            </a>
+        </div>
+    </nav>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <!-- Agent-instructions / detail modal -->
+    <div id="modalRoot" class="modal-root" hidden>
+        <div class="modal-backdrop" data-close="1"></div>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-head">
+                <h3 id="modalTitle">Details</h3>
+                <button type="button" class="modal-close" data-close="1" aria-label="Close">×</button>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
+    </div>
+
+    <footer class="sitefoot">
+        <p class="muted">
+            POC · APRA Prudential Standard CPS 230 (Operational Risk Management). Content is a
+            paraphrased reference, not legal advice. Built on the proj37 Foundry blueprint.
+        </p>
+    </footer>
+
+    <script src="~/js/app.js" asp-append-version="true"></script>
+</body>
+</html>
+
+@functions {
+    string Active(string page) =>
+        string.Equals(ViewData["ActivePage"] as string, page, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+
+    string ActiveGroup(string group)
+    {
+        var page = ViewData["ActivePage"] as string ?? "";
+        var framework = new[] { "requirements", "policies", "standards", "controls" };
+        var analysis = new[] { "mappings", "gaps", "traceability" };
+        return group switch
+        {
+            "framework" => framework.Contains(page, StringComparer.OrdinalIgnoreCase) ? "active" : "",
+            "analysis" => analysis.Contains(page, StringComparer.OrdinalIgnoreCase) ? "active" : "",
+            _ => ""
+        };
+    }
+}

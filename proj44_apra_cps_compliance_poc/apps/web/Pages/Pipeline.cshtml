@@ -1,0 +1,31 @@
+@page "/pipeline"
+@model Proj44.Compliance.Web.Pages.PipelineModel
+@{
+    ViewData["Title"] = "Agents / Pipeline";
+    ViewData["ActivePage"] = "pipeline";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Multi-Agent Pipeline</h2>
+            <p class="hint">Six Foundry stage-agents, each with its own persona and instructions, run in order to build the framework.</p>
+        </div>
+        <div class="result-actions">
+            <button type="button" id="runBtn2" class="btn btn-primary">▶ Run pipeline</button>
+        </div>
+    </div>
+    <div id="runStatus2" class="status" hidden></div>
+</section>
+
+<section class="card">
+    <h2>Agent stages</h2>
+    <p class="hint">Click any stage to read that agent's exact instructions. Engine: <span id="pipeEngine" class="muted">…</span></p>
+    <div class="step-cards" id="agentCards">Loading agents…</div>
+</section>
+
+<section class="card">
+    <h2>Latest run transcript</h2>
+    <p class="hint">One log entry per stage, in order, showing which agent produced what.</p>
+    <div id="transcript"><p class="muted">Loading transcript…</p></div>
+</section>

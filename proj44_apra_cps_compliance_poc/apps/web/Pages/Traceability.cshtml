@@ -1,0 +1,26 @@
+@page "/traceability"
+@model Proj44.Compliance.Web.Pages.TraceabilityModel
+@{
+    ViewData["Title"] = "Traceability";
+    ViewData["ActivePage"] = "traceability";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Traceability Drill-down</h2>
+            <p class="hint">Pick a requirement to walk its full Requirement → Policy → Standard → Control chain.</p>
+        </div>
+        <div class="result-actions">
+            <span class="agent-badge">🤖 Gap &amp; Traceability Agent</span>
+        </div>
+    </div>
+    <div class="filter-row">
+        <label for="reqSelect" class="muted">Requirement:</label>
+        <select id="reqSelect" class="filter-input"></select>
+    </div>
+</section>
+
+<section class="card">
+    <div id="traceView"><p class="muted">Select a requirement to view its chain.</p></div>
+</section>

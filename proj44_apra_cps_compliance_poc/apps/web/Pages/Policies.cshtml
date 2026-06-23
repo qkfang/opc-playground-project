@@ -1,0 +1,27 @@
+@page "/policies"
+@model Proj44.Compliance.Web.Pages.PoliciesModel
+@{
+    ViewData["Title"] = "Policies";
+    ViewData["ActivePage"] = "policies";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Policy Library</h2>
+            <p class="hint">The firm's governing policy framework authored by the Policy Authoring agent.</p>
+        </div>
+        <div class="result-actions">
+            <span class="agent-badge">🤖 Policy Authoring Agent</span>
+            <button type="button" class="btn btn-secondary" data-agent-step="policies">ℹ Agent instructions</button>
+        </div>
+    </div>
+    <div class="filter-row">
+        <input type="search" id="polFilter" class="filter-input" placeholder="Filter policies…" />
+        <span class="muted" id="polCount"></span>
+    </div>
+</section>
+
+<section class="card">
+    <div id="polTable"><p class="muted">Loading policies…</p></div>
+</section>

@@ -1,0 +1,27 @@
+@page "/requirements"
+@model Proj44.Compliance.Web.Pages.RequirementsModel
+@{
+    ViewData["Title"] = "Requirements";
+    ViewData["ActivePage"] = "requirements";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Regulatory Requirements</h2>
+            <p class="hint">Structured CPS 230 obligations extracted by the Requirement Identification agent.</p>
+        </div>
+        <div class="result-actions">
+            <span class="agent-badge">🤖 Requirement Extraction Agent</span>
+            <button type="button" class="btn btn-secondary" data-agent-step="requirements">ℹ Agent instructions</button>
+        </div>
+    </div>
+    <div class="filter-row">
+        <input type="search" id="reqFilter" class="filter-input" placeholder="Filter requirements…" />
+        <span class="muted" id="reqCount"></span>
+    </div>
+</section>
+
+<section class="card">
+    <div id="reqTable"><p class="muted">Loading requirements…</p></div>
+</section>

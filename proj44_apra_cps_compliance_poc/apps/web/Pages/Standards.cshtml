@@ -1,0 +1,27 @@
+@page "/standards"
+@model Proj44.Compliance.Web.Pages.StandardsModel
+@{
+    ViewData["Title"] = "Standards";
+    ViewData["ActivePage"] = "standards";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Implementation Standards</h2>
+            <p class="hint">The "how" rules that operationalise policies, authored by the Standard Authoring agent.</p>
+        </div>
+        <div class="result-actions">
+            <span class="agent-badge">🤖 Standard Authoring Agent</span>
+            <button type="button" class="btn btn-secondary" data-agent-step="standards">ℹ Agent instructions</button>
+        </div>
+    </div>
+    <div class="filter-row">
+        <input type="search" id="stdFilter" class="filter-input" placeholder="Filter standards…" />
+        <span class="muted" id="stdCount"></span>
+    </div>
+</section>
+
+<section class="card">
+    <div id="stdTable"><p class="muted">Loading standards…</p></div>
+</section>

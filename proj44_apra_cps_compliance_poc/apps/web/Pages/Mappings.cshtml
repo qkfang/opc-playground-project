@@ -1,0 +1,28 @@
+@page "/mappings"
+@model Proj44.Compliance.Web.Pages.MappingsModel
+@{
+    ViewData["Title"] = "Mappings";
+    ViewData["ActivePage"] = "mappings";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Relationship Matrix</h2>
+            <p class="hint">Cross-layer mappings across the Requirement → Policy → Standard → Control spine.</p>
+        </div>
+        <div class="result-actions">
+            <span class="agent-badge">🤖 Standard + Control Authoring Agents</span>
+        </div>
+    </div>
+    <div class="env-toggle" id="mapToggle" role="tablist" aria-label="Mapping view">
+        <button type="button" class="env-btn active" data-map="req-pol" role="tab" aria-selected="true">Requirement → Policy</button>
+        <button type="button" class="env-btn" data-map="pol-std" role="tab" aria-selected="false">Policy → Standard</button>
+        <button type="button" class="env-btn" data-map="std-ctl" role="tab" aria-selected="false">Standard → Control</button>
+    </div>
+    <p class="env-note" id="mapNote"></p>
+</section>
+
+<section class="card">
+    <div id="mapTable"><p class="muted">Loading mappings…</p></div>
+</section>

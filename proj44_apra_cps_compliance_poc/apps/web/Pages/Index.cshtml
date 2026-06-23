@@ -1,0 +1,37 @@
+@page
+@model Proj44.Compliance.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Overview";
+    ViewData["ActivePage"] = "overview";
+}
+
+<section class="card hero">
+    <div class="result-head">
+        <div>
+            <h2>APRA CPS 230 — Operational Risk Management</h2>
+            <p class="hint" id="sourceLine">Loading regulatory source…</p>
+        </div>
+        <div class="result-actions">
+            <button type="button" id="runBtn" class="btn btn-primary">▶ Run 6-agent pipeline</button>
+            <button type="button" class="btn btn-secondary" data-agent-step="ingestion">ℹ Ingestion agent</button>
+        </div>
+    </div>
+    <div id="runStatus" class="status" hidden></div>
+</section>
+
+<section class="card">
+    <h2>Framework at a glance</h2>
+    <p class="hint">Counts from the live compliance graph. The deterministic engine guarantees this scale even with no Azure access.</p>
+    <div id="countCards" class="count-cards">Loading…</div>
+</section>
+
+<section class="card">
+    <h2>Regulatory corpus</h2>
+    <div id="sourceCard"><p class="muted">Loading source metadata…</p></div>
+</section>
+
+<section class="card">
+    <h2>Parsed clauses (Ingestion agent)</h2>
+    <p class="hint">The Ingestion agent splits CPS 230 into addressable clauses by theme. Each downstream requirement cites its clause.</p>
+    <div id="clauseTable"><p class="muted">Loading clauses…</p></div>
+</section>

@@ -1,0 +1,34 @@
+@page "/gaps"
+@model Proj44.Compliance.Web.Pages.GapsModel
+@{
+    ViewData["Title"] = "Gap Analysis";
+    ViewData["ActivePage"] = "gaps";
+}
+
+<section class="card platform-head">
+    <div class="result-head">
+        <div>
+            <h2>Gap Analysis</h2>
+            <p class="hint">Missing links and coverage across the traceability spine, by the Gap &amp; Traceability agent.</p>
+        </div>
+        <div class="result-actions">
+            <span class="agent-badge">🤖 Gap &amp; Traceability Agent</span>
+            <button type="button" class="btn btn-secondary" data-agent-step="gap">ℹ Agent instructions</button>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <h2>Coverage</h2>
+    <div id="coverageCards" class="count-cards">Loading coverage…</div>
+</section>
+
+<section class="card">
+    <h2>Findings</h2>
+    <div id="findings"><p class="muted">Loading findings…</p></div>
+</section>
+
+<section class="card">
+    <h2>Orphans by layer</h2>
+    <div id="gapTables"><p class="muted">Loading gaps…</p></div>
+</section>
