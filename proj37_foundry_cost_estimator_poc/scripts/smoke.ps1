@@ -71,7 +71,15 @@ try {
     foreach ($sheet in @('Summary','Cost Model','Requirements','Scope','Documents')) {
       if ($wbXml -notmatch [regex]::Escape($sheet)) { throw "missing sheet: $sheet" }
     }
-    if (-not (Test-Path (Join-Path $extract 'xl\calcChain.xml'))) { throw "no calcChain (formulas missing)" }
+    # Formulas must be live in the sheet XML (the authoritative source of formulas). We intentionally
+    # DROP calcChain.xml so Excel rebuilds it cleanly (a stale calcChain over uncached ClosedXML
+    # formulas is a repair trigger), so assert formulas + recalc-on-load instead of calcChain presence.
+    $costSheetXml = Get-ChildItem (Join-Path $extract 'xl\worksheets') -Filter *.xml |
+      ForEach-Object { Get-Content $_.FullName -Raw } | Out-String
+    if ($costSheetXml -notmatch '\[@Quantity\]\*\[@\[Unit Price\]\]') { throw 'cost model calc-column formula missing from sheet XML' }
+    if ($costSheetXml -notmatch 'SUBTOTAL\(109') { throw 'totals-row SUBTOTAL formula missing from sheet XML' }
+    if ($wbXml -notmatch 'fullCalcOnLoad="1"') { throw 'workbook is missing fullCalcOnLoad (Excel would show blank/missing formula values + repair prompt)' }
+    if (Test-Path (Join-Path $extract 'xl\calcChain.xml')) { throw 'calcChain.xml should be removed so Excel rebuilds it (avoids repair prompt)' }
   }
 
   Check "Workbook has Non-Prod / Prod / Total environment sheets" {

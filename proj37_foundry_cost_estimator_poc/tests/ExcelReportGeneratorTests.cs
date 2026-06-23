@@ -105,16 +105,57 @@ public class ExcelReportGeneratorTests
     }
 
     [Fact]
-    public async Task Workbook_emits_calcChain_so_formulas_are_live()
+    public async Task Workbook_forces_full_recalc_on_load_and_omits_stale_calcChain()
     {
         var job = await SampleJobAsync();
         var bytes = new ExcelReportGenerator().Generate(job);
 
-        // calcChain.xml present => Excel will recalc the live formulas on open / on edit.
         using var ms = new MemoryStream(bytes);
         using var zip = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Read);
-        Assert.Contains(zip.Entries, e => e.FullName.Equals("xl/calcChain.xml", StringComparison.OrdinalIgnoreCase));
-        // And the table part must be present.
+
+        // The table part must be present (editable cost table).
         Assert.Contains(zip.Entries, e => e.FullName.StartsWith("xl/tables/", StringComparison.OrdinalIgnoreCase));
+
+        // workbook.xml must tell Excel to fully recalculate on open. ClosedXML writes formula cells with
+        // NO cached value, so without this Excel shows blank/0 in formula cells ("missing formulas") and
+        // can raise a repair prompt over the uncached table totals / structured references.
+        var wbEntry = zip.Entries.Single(e => e.FullName.Equals("xl/workbook.xml", StringComparison.OrdinalIgnoreCase));
+        using var wbReader = new StreamReader(wbEntry.Open());
+        var workbookXml = await wbReader.ReadToEndAsync();
+        Assert.Contains("fullCalcOnLoad=\"1\"", workbookXml);
+        Assert.Contains("calcId=\"0\"", workbookXml);
+
+        // calcChain.xml is intentionally removed so Excel rebuilds it cleanly (a stale calcChain over
+        // uncached ClosedXML formulas is itself an Excel repair trigger). Formulas are NOT lost - they
+        // live in the sheet XML (asserted below).
+        Assert.DoesNotContain(zip.Entries, e => e.FullName.Equals("xl/calcChain.xml", StringComparison.OrdinalIgnoreCase));
+
+        // The live formulas are present in the worksheet parts.
+        var sheetXml = new System.Text.StringBuilder();
+        foreach (var e in zip.Entries.Where(e => e.FullName.StartsWith("xl/worksheets/sheet", StringComparison.OrdinalIgnoreCase) && e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)))
+        {
+            using var sr = new StreamReader(e.Open());
+            sheetXml.Append(await sr.ReadToEndAsync());
+        }
+        var allSheets = sheetXml.ToString();
+        Assert.Contains("[@Quantity]*[@[Unit Price]]", allSheets);
+        Assert.Contains("SUBTOTAL(109", allSheets);
+    }
+
+    [Fact]
+    public async Task Workbook_opens_without_excel_repair_strict_ooxml_validation_passes()
+    {
+        var job = await SampleJobAsync();
+        var bytes = new ExcelReportGenerator().Generate(job);
+
+        // Strict OOXML validation at the Office 2019 target. Zero errors => the package is well-formed
+        // and Excel will not show the "we found a problem with some content" repair prompt on open.
+        using var ms = new MemoryStream();
+        ms.Write(bytes, 0, bytes.Length);
+        ms.Position = 0;
+        using var doc = DocumentFormat.OpenXml.Packaging.SpreadsheetDocument.Open(ms, false);
+        var validator = new DocumentFormat.OpenXml.Validation.OpenXmlValidator(DocumentFormat.OpenXml.FileFormatVersions.Office2019);
+        var errors = validator.Validate(doc).ToList();
+        Assert.True(errors.Count == 0, "OOXML validation errors:\n" + string.Join("\n", errors.Select(e => $"{e.Id} {e.Description} @ {e.Part?.Uri} {e.Path?.XPath}")));
     }
 }

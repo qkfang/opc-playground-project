@@ -1,4 +1,6 @@
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Proj37.CostEstimator.Web.Models;
 
 namespace Proj37.CostEstimator.Web.Services;
@@ -53,6 +55,12 @@ public sealed class ExcelReportGenerator
     public byte[] Generate(EstimationResult r)
     {
         using var wb = new XLWorkbook();
+        // Excel must recalculate every formula when the workbook is opened. ClosedXML writes formula
+        // cells WITHOUT cached values, so without a forced recalc Excel shows blank/0 in formula cells
+        // ("missing formulas") and can raise a repair prompt on the uncached table totals / structured
+        // references. Auto calc mode + fullCalcOnLoad (stamped below) fixes both.
+        wb.CalculateMode = XLCalculateMode.Auto;
+
         BuildSummarySheet(wb, r);
         // Primary editable cost sheet (production sizing) — keeps the original "Cost Model" tab + defined names.
         var costSheet = BuildCostSheet(wb, r);
@@ -68,6 +76,48 @@ public sealed class ExcelReportGenerator
 
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
+        return ForceFullRecalcOnLoad(ms.ToArray());
+    }
+
+    /// <summary>
+    /// Post-save OOXML fixup: ClosedXML 0.104 emits formula cells with no cached value and stamps a
+    /// known <c>calcId</c>, so Excel trusts the (absent) cached results — formula cells render blank/0
+    /// and the uncached table totals-row SUBTOTAL + structured-reference cells can trigger Excel's
+    /// "we found a problem with some content" repair prompt. Setting <c>fullCalcOnLoad="1"</c> and
+    /// <c>calcId="0"</c> tells Excel the values came from a different calc engine and to recompute the
+    /// whole workbook on open, which populates every formula and removes the repair prompt.
+    /// </summary>
+    private static byte[] ForceFullRecalcOnLoad(byte[] xlsx)
+    {
+        using var ms = new MemoryStream();
+        ms.Write(xlsx, 0, xlsx.Length);
+        ms.Position = 0;
+        using (var doc = SpreadsheetDocument.Open(ms, isEditable: true))
+        {
+            var wbPart = doc.WorkbookPart ?? throw new InvalidOperationException("Workbook part missing.");
+            var workbook = wbPart.Workbook;
+            var calcPr = workbook.CalculationProperties;
+            if (calcPr is null)
+            {
+                calcPr = new CalculationProperties();
+                // CalculationProperties must sit after definedNames/sheets per the schema; AppendChild is safe.
+                workbook.AppendChild(calcPr);
+            }
+            // calcId 0 => "produced by an unknown/older engine" => Excel does a full recalc.
+            calcPr.CalculationId = 0U;
+            calcPr.FullCalculationOnLoad = true;
+            calcPr.ForceFullCalculation = true;
+            calcPr.CalculationMode = CalculateModeValues.Auto;
+            workbook.Save();
+
+            // Remove the calculation chain. ClosedXML writes formula cells with no cached value, which
+            // makes the emitted calcChain.xml inconsistent with the cells — a classic Excel repair
+            // trigger ("Removed Records: Formula referenced from /xl/calcChain.xml part"). Excel safely
+            // rebuilds the chain from scratch on open when the part is absent, so deleting it removes the
+            // repair prompt without losing any formulas.
+            if (wbPart.CalculationChainPart is not null)
+                wbPart.DeletePart(wbPart.CalculationChainPart);
+        }
         return ms.ToArray();
     }
 
