@@ -35,6 +35,7 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
     private readonly OfflineFinOpsAgent _offline;
     private readonly ConversationStore _store;
     private readonly MarkdownRenderer _md;
+    private readonly FoundryAgentDiagnostics _diag;
     private readonly ILogger<FoundryFinOpsAgent> _logger;
 
     // Lazily-created singletons for the live path.
@@ -46,7 +47,7 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
     public FoundryFinOpsAgent(
         FoundryOptions foundry, FabricOptions fabric, McpOptions mcp,
         OfflineFinOpsAgent offline, ConversationStore store, MarkdownRenderer md,
-        ILogger<FoundryFinOpsAgent> logger)
+        FoundryAgentDiagnostics diag, ILogger<FoundryFinOpsAgent> logger)
     {
         _foundry = foundry;
         _fabric = fabric;
@@ -54,8 +55,12 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
         _offline = offline;
         _store = store;
         _md = md;
+        _diag = diag;
         _logger = logger;
     }
+
+    /// <summary>Live diagnostics: created agent id, Fabric-tool wiring, last engine used.</summary>
+    public FoundryAgentDiagnostics Diagnostics => _diag;
 
     public string Name => "foundry";
 
@@ -108,14 +113,15 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
 
         if (agent is null || session is null)
         {
+            _diag.RecordTurn("offline", initError ?? "init");
             yield return new ChatStreamEvent { Type = "status", Data = $"Live agent unavailable ({initError ?? "init"}); using offline FinOps engine.", ConversationId = id };
             await foreach (var ev in _offline.StreamAsync(id, message, ct)) yield return ev;
             yield break;
         }
 
         _store.Add(id, "user", message);
-        yield return new ChatStreamEvent { Type = "meta", ConversationId = id, Engine = Name, Tool = "fabric" };
-        yield return new ChatStreamEvent { Type = "status", Data = "Asking the Foundry agent (querying Microsoft Fabric)…", ConversationId = id };
+        yield return new ChatStreamEvent { Type = "meta", ConversationId = id, Engine = Name, Tool = "fabric", Data = _diag.AgentId };
+        yield return new ChatStreamEvent { Type = "status", Data = $"Asking the Foundry agent ({_diag.AgentId ?? _foundry.AgentName}) — querying Microsoft Fabric…", ConversationId = id };
 
         // Stream tokens; on any mid-stream failure, fall back to offline for a complete answer.
         var sb = new StringBuilder();
@@ -160,6 +166,7 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
         if (failed || sb.Length == 0)
         {
             // Reset partial output and let the offline engine answer fully.
+            _diag.RecordTurn("offline", failed ? "stream_failed" : "empty_response");
             yield return new ChatStreamEvent { Type = "status", Data = "Falling back to offline FinOps engine…", ConversationId = id };
             await foreach (var ev in _offline.StreamAsync(id, message, ct)) yield return ev;
             yield break;
@@ -167,6 +174,7 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
 
         var final = sb.ToString();
         _store.Add(id, "assistant", final);
+        _diag.RecordTurn("foundry");
         yield return new ChatStreamEvent { Type = "done", ConversationId = id, Engine = Name, Tool = "fabric", Data = _md.ToHtml(final) };
     }
 
@@ -181,14 +189,16 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
             if (_agent is not null) return _agent;
 
             var tools = new List<AITool>();
+            int mcpCount = 0;
 
-            // (1) Fabric MCP tools — generic "MCP access to Fabric" path.
+            // (1) Fabric MCP tools — generic "MCP access to Fabric" path (optional).
             if (_mcp.IsConfigured)
             {
                 try
                 {
                     var mcpTools = await ConnectMcpAsync(ct);
                     tools.AddRange(mcpTools.Cast<AITool>());
+                    mcpCount = mcpTools.Count;
                     _logger.LogInformation("Attached {Count} Fabric MCP tool(s): {Names}",
                         mcpTools.Count, string.Join(", ", mcpTools.Select(t => t.Name)));
                 }
@@ -198,26 +208,41 @@ public sealed class FoundryFinOpsAgent : IFinOpsAgent
                 }
             }
 
-            // (2) Fabric data agent tool — attached via the Foundry project connection id.
-            //     The published Fabric data agent is exposed to the model as a knowledge/Fabric tool
-            //     (identity passthrough). We surface it as a function tool stub so the model knows it
-            //     exists and how to call it; the Foundry service routes it to Fabric using the
-            //     connection's workspace-id/artifact-id. (Preview — see solution.md "Microsoft grounding".)
-            if (_fabric.IsConfigured)
+            // (2) Microsoft Fabric data-agent tool — the REAL hosted Foundry tool, bound to the
+            //     published Fabric data agent via the Foundry project connection id. The Foundry
+            //     service routes tool calls to Fabric (identity passthrough). This is not a stub.
+            var fabricTool = FoundryAgentFactory.TryCreateFabricTool(_fabric);
+            bool fabricWired = fabricTool is not null;
+            if (fabricTool is not null)
             {
-                tools.Add(FabricToolStub.Create(_fabric));
-                _logger.LogInformation("Fabric data agent tool wired via connection {ConnectionId}", _fabric.ConnectionId);
+                tools.Add(fabricTool);
+                _logger.LogInformation("Microsoft Fabric data-agent tool wired via connection {ConnectionId}", _fabric.ConnectionId);
+            }
+            else
+            {
+                _logger.LogWarning("No Fabric connection configured; the Foundry agent is created without the Fabric tool.");
             }
 
-            var instructions = AgentPersona.SystemPersona +
-                "\n\nWhen you need cost/usage figures, call the Fabric tool(s). Never fabricate numbers.";
+            var instructions = FoundryAgentFactory.BuildInstructions();
 
+            // Create the Foundry agent in the project. AsAIAgent(...) provisions a server-side agent
+            // (Responses-API backed) and returns its handle, including the agent Id we surface as proof.
             var client = new AIProjectClient(new Uri(_foundry.ProjectEndpoint!), new DefaultAzureCredential());
             _agent = client.AsAIAgent(
                 model: _foundry.ModelDeploymentName,
                 instructions: instructions,
                 name: _foundry.AgentName,
                 tools: tools);
+
+            _diag.RecordProvisioned(
+                agentId: _agent.Id,
+                agentName: _agent.Name ?? _foundry.AgentName,
+                model: _foundry.ModelDeploymentName,
+                fabricToolWired: fabricWired,
+                fabricConnectionId: _fabric.ConnectionId,
+                mcpToolCount: mcpCount);
+            _logger.LogInformation("Foundry agent provisioned: id={AgentId} name={AgentName} model={Model} fabricTool={Fabric} mcpTools={Mcp}",
+                _agent.Id, _agent.Name, _foundry.ModelDeploymentName, fabricWired, mcpCount);
             return _agent;
         }
         finally

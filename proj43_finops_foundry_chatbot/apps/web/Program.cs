@@ -31,6 +31,7 @@ builder.Services.AddSingleton<FinOpsAnalytics>();
 builder.Services.AddSingleton<MarkdownRenderer>();
 builder.Services.AddSingleton<ConversationStore>();
 builder.Services.AddSingleton<OfflineFinOpsAgent>();
+builder.Services.AddSingleton<FoundryAgentDiagnostics>();
 builder.Services.AddSingleton<FoundryFinOpsAgent>();
 
 // Engine selection: live Foundry agent when configured, else deterministic offline agent.
@@ -63,7 +64,7 @@ app.MapOpenApi();
 var jsonOpts = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
 // ----- Health -----
-app.MapGet("/api/health", (IFinOpsAgent agent, FoundryOptions foundry, FabricOptions fabric, McpOptions mcp, FinOpsAnalytics analytics) =>
+app.MapGet("/api/health", (IFinOpsAgent agent, FoundryOptions foundry, FabricOptions fabric, McpOptions mcp, FoundryAgentDiagnostics diag, FinOpsAnalytics analytics) =>
     Results.Json(new
     {
         status = "ok",
@@ -71,10 +72,27 @@ app.MapGet("/api/health", (IFinOpsAgent agent, FoundryOptions foundry, FabricOpt
         foundryConfigured = foundry.IsConfigured,
         fabricConfigured = fabric.IsConfigured,
         mcpConfigured = mcp.IsConfigured,
+        agentProvisioned = diag.Provisioned,
+        agentId = diag.AgentId,
+        fabricToolWired = diag.FabricToolWired,
+        lastEngineUsed = diag.LastEngineUsed,
         currency = analytics.Currency,
         dataThrough = analytics.EndDate.ToString("yyyy-MM-dd"),
     }, jsonOpts))
    .WithName("Health").WithSummary("Liveness + engine/config status.");
+
+// ----- Foundry agent diagnostics (proof the real agent was created + which engine served traffic) -----
+app.MapGet("/api/agent", (FoundryOptions foundry, FabricOptions fabric, FoundryAgentDiagnostics diag) =>
+    Results.Json(new
+    {
+        foundryConfigured = foundry.IsConfigured,
+        configuredAgentName = foundry.AgentName,
+        configuredModel = foundry.ModelDeploymentName,
+        projectEndpointConfigured = !string.IsNullOrWhiteSpace(foundry.ProjectEndpoint),
+        fabricConfigured = fabric.IsConfigured,
+        diagnostics = diag.Snapshot(),
+    }, jsonOpts))
+   .WithName("Agent").WithSummary("Foundry agent provisioning + tool-wiring diagnostics.");
 
 // ----- Suggested prompts (UI chips) -----
 app.MapGet("/api/suggestions", () => Results.Json(AgentPersona.Suggestions, jsonOpts))

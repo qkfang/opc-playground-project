@@ -39,4 +39,9 @@
     <Content Include="Data\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Expose internal agent factory/diagnostics to the test project for white-box wiring tests. -->
+    <InternalsVisibleTo Include="Proj43.FinOps.Tests" />
+  </ItemGroup>
+
 </Project>
