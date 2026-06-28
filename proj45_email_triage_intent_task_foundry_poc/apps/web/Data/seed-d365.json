@@ -1,0 +1,102 @@
+{
+  "accounts": [
+    {
+      "accountId": "ACC-2001",
+      "name": "Brightwave Retail",
+      "domains": ["brightwave-retail.com"],
+      "tier": "Gold",
+      "industry": "Retail",
+      "annualValue": 384000,
+      "owner": "Dana Whitfield",
+      "status": "Active",
+      "contractMonthly": 3200,
+      "contacts": [
+        { "name": "Priya Nair", "title": "Head of Finance", "email": "priya.nair@brightwave-retail.com", "primary": true },
+        { "name": "Leon Marsh", "title": "IT Manager", "email": "leon.marsh@brightwave-retail.com", "primary": false }
+      ],
+      "opportunities": [
+        { "opportunityId": "OPP-7001", "name": "Brightwave - Analytics add-on", "stage": "Proposal", "amount": 48000 }
+      ],
+      "serviceCases": [
+        { "caseId": "CASE-5001", "title": "Billing discrepancy Feb invoice", "priority": "P2", "status": "Open" }
+      ]
+    },
+    {
+      "accountId": "ACC-2002",
+      "name": "Nordpeak Logistics",
+      "domains": ["nordpeak-logistics.com"],
+      "tier": "Silver",
+      "industry": "Logistics & Transport",
+      "annualValue": 156000,
+      "owner": "Raj Patel",
+      "status": "At Risk",
+      "contractMonthly": 1300,
+      "contacts": [
+        { "name": "Tom Becker", "title": "Operations Director", "email": "tom.becker@nordpeak-logistics.com", "primary": true }
+      ],
+      "opportunities": [
+        { "opportunityId": "OPP-7002", "name": "Nordpeak - Renewal FY26", "stage": "Negotiation", "amount": 156000 }
+      ],
+      "serviceCases": [
+        { "caseId": "CASE-5002", "title": "Onboarding follow-up", "priority": "P3", "status": "Closed" }
+      ]
+    },
+    {
+      "accountId": "ACC-2003",
+      "name": "Helios Cloud",
+      "domains": ["helioscloud.io"],
+      "tier": "Platinum",
+      "industry": "Technology / SaaS",
+      "annualValue": 720000,
+      "owner": "Sofia Klein",
+      "status": "Active",
+      "contractMonthly": 6000,
+      "contacts": [
+        { "name": "Marcus Webb", "title": "Platform Lead", "email": "devops@helioscloud.io", "primary": true }
+      ],
+      "opportunities": [
+        { "opportunityId": "OPP-7003", "name": "Helios - Premium support tier", "stage": "Qualification", "amount": 90000 }
+      ],
+      "serviceCases": [
+        { "caseId": "CASE-5003", "title": "Rate limit increase request", "priority": "P3", "status": "Resolved" }
+      ]
+    },
+    {
+      "accountId": "ACC-2004",
+      "name": "Meridian Foods",
+      "domains": ["meridian-foods.com"],
+      "tier": "Gold",
+      "industry": "Food & Beverage",
+      "annualValue": 264000,
+      "owner": "Dana Whitfield",
+      "status": "Active",
+      "contractMonthly": 2200,
+      "contacts": [
+        { "name": "Jordan Fox", "title": "VP Operations", "email": "jordan.fox@meridian-foods.com", "primary": true }
+      ],
+      "opportunities": [
+        { "opportunityId": "OPP-7004", "name": "Meridian - 200 seat expansion", "stage": "Discovery", "amount": 132000 }
+      ],
+      "serviceCases": []
+    },
+    {
+      "accountId": "ACC-2005",
+      "name": "Summit Parts Co.",
+      "domains": ["summitparts.com"],
+      "tier": "Silver",
+      "industry": "Manufacturing / Distribution",
+      "annualValue": 198000,
+      "owner": "Raj Patel",
+      "status": "At Risk",
+      "contractMonthly": 1650,
+      "contacts": [
+        { "name": "Angela Cruz", "title": "Procurement Manager", "email": "angela.cruz@summitparts.com", "primary": true }
+      ],
+      "opportunities": [],
+      "serviceCases": [
+        { "caseId": "CASE-5005", "title": "Repeated unanswered support tickets", "priority": "P1", "status": "Open" },
+        { "caseId": "CASE-5006", "title": "Performance complaint", "priority": "P2", "status": "Open" }
+      ]
+    }
+  ]
+}

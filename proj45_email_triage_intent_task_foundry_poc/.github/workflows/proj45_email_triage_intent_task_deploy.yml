@@ -1,0 +1,126 @@
+name: proj45_email_triage_intent_task_deploy
+
+# Builds, publishes, and zip-deploys the proj45 .NET web app (Relay Desk — Inbound Email Orchestration)
+# to its Azure App Service. Run proj45_email_triage_intent_task_infra first so the Web App exists.
+#
+# Manual trigger. Requires the AZURE_CREDENTIALS secret.
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseName:
+        description: "Base name used in resource naming (must match infra)"
+        required: true
+        default: "proj45"
+      assertFoundryLive:
+        description: "Fail the deploy unless the live Foundry agent path is verified (true/false)"
+        required: true
+        default: "true"
+
+permissions:
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-playground-01
+  DOTNET_VERSION: "10.0.x"
+  APP_PROJECT: proj45_email_triage_intent_task_foundry_poc/apps/web/Proj45.RelayDesk.Web.csproj
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: "preview"
+
+      - name: Restore
+        run: dotnet restore "$APP_PROJECT"
+
+      - name: Publish
+        run: dotnet publish "$APP_PROJECT" -c Release -o "${{ github.workspace }}/publish" --no-restore
+
+      - name: Zip publish output
+        working-directory: ${{ github.workspace }}/publish
+        run: zip -r "${{ github.workspace }}/app.zip" .
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Resolve Web App name
+        id: web
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            WEBAPP=$(az webapp list -g "$RESOURCE_GROUP" \
+              --query "[?starts_with(name,'${{ inputs.baseName }}-web-')].name | [0]" -o tsv)
+            if [ -z "$WEBAPP" ]; then
+              echo "No Web App found for baseName=${{ inputs.baseName }} in $RESOURCE_GROUP."
+              echo "Run proj45_email_triage_intent_task_infra first."; exit 1
+            fi
+            echo "webApp=$WEBAPP" >> "$GITHUB_OUTPUT"
+            echo "Resolved Web App: $WEBAPP"
+
+      - name: Deploy ZIP to App Service
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            az webapp deploy \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.web.outputs.webApp }}" \
+              --src-path "${{ github.workspace }}/app.zip" \
+              --type zip
+
+      - name: Ensure live Foundry is enabled
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            # The app must run the live Foundry path in this environment (offline is fallback only).
+            az webapp config appsettings set \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "${{ steps.web.outputs.webApp }}" \
+              --settings Foundry__Enabled=true \
+              -o none
+            echo "Foundry__Enabled=true asserted on ${{ steps.web.outputs.webApp }}."
+
+      - name: Smoke test (health + live Foundry probe)
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            HOST=$(az webapp show -g "$RESOURCE_GROUP" --name "${{ steps.web.outputs.webApp }}" --query defaultHostName -o tsv)
+            echo "Waiting for app to warm up at https://$HOST ..."
+            OK=""
+            for i in $(seq 1 20); do
+              CODE=$(curl -s -o /tmp/health.json -w "%{http_code}" "https://$HOST/api/health" || true)
+              if [ "$CODE" = "200" ]; then
+                echo "Health OK:"; cat /tmp/health.json; echo ""; OK=1; break
+              fi
+              echo "Attempt $i: HTTP $CODE; retrying in 10s..."; sleep 10
+            done
+            if [ -z "$OK" ]; then echo "Health check did not return 200 in time."; exit 1; fi
+
+            if [ "${{ inputs.assertFoundryLive }}" != "true" ]; then
+              echo "assertFoundryLive=false; skipping live Foundry verification."; exit 0
+            fi
+
+            echo "Verifying the live Foundry agent path via /api/health/foundry ..."
+            for i in $(seq 1 12); do
+              curl -s -o /tmp/foundry.json -w "" "https://$HOST/api/health/foundry" || true
+              MODE=$(python3 -c "import json,sys;print(json.load(open('/tmp/foundry.json')).get('foundryMode',''))" 2>/dev/null || echo "")
+              echo "Attempt $i: foundryMode=$MODE"; cat /tmp/foundry.json; echo ""
+              if [ "$MODE" = "live" ]; then
+                echo "Live Foundry verified."; exit 0
+              fi
+              sleep 10
+            done
+            echo "Live Foundry was not verified (foundryMode != live). Failing deploy."; exit 1

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "eml-1001",
+    "from": "priya.nair@brightwave-retail.com",
+    "fromName": "Priya Nair",
+    "subject": "Overcharged on invoice INV-44821 - urgent",
+    "body": "Hi team,\n\nWe just received invoice INV-44821 for our March subscription and it shows $4,800 but our contract is $3,200/month. This is the second month in a row we've been overcharged. Please correct this and issue a credit for the difference as soon as possible. We are a long-standing Brightwave Retail customer and this is becoming frustrating.\n\nRegards,\nPriya Nair\nHead of Finance, Brightwave Retail",
+    "channel": "email",
+    "mailbox": "billing@relay-desk.example",
+    "unread": true,
+    "attachments": ["INV-44821.pdf"]
+  },
+  {
+    "id": "eml-1002",
+    "from": "tom.becker@nordpeak-logistics.com",
+    "fromName": "Tom Becker",
+    "subject": "Cancelling our account at renewal",
+    "body": "Hello,\n\nWe've decided not to renew our contract when it expires next month. The platform hasn't delivered the ROI we expected and we've found an alternative. Please confirm the cancellation process and what we need to do to export our data.\n\nThanks,\nTom Becker\nOperations Director, Nordpeak Logistics",
+    "channel": "email",
+    "mailbox": "support@relay-desk.example",
+    "unread": true,
+    "attachments": []
+  },
+  {
+    "id": "eml-1003",
+    "from": "devops@helioscloud.io",
+    "fromName": "Marcus Webb",
+    "subject": "API returning 503 in production - need help",
+    "body": "Our integration against your Orders API has been returning intermittent 503 errors since this morning (around 08:00 UTC). About 15% of calls fail. Order reference ORD-99812 is one example that failed. This is impacting our checkout. Can someone from technical support look into this urgently? We're on the Enterprise plan.\n\nMarcus Webb\nHelios Cloud Platform Team",
+    "channel": "email",
+    "mailbox": "support@relay-desk.example",
+    "unread": true,
+    "attachments": ["error-log.txt"]
+  },
+  {
+    "id": "eml-1004",
+    "from": "jordan.fox@meridian-foods.com",
+    "fromName": "Jordan Fox",
+    "subject": "Interested in adding 200 more seats",
+    "body": "Hi there,\n\nThings are going really well with the rollout to our first team. We're now looking to expand and would like pricing for an additional 200 seats, plus the advanced analytics add-on. Could someone from your sales team reach out to discuss an enterprise agreement? Ideally a call this week.\n\nBest,\nJordan Fox\nVP Operations, Meridian Foods",
+    "channel": "email",
+    "mailbox": "sales@relay-desk.example",
+    "unread": true,
+    "attachments": []
+  },
+  {
+    "id": "eml-1005",
+    "from": "angela.cruz@summitparts.com",
+    "fromName": "Angela Cruz",
+    "subject": "Extremely disappointed with support response times",
+    "body": "This is the third time I'm writing about the same issue and nobody has gotten back to me. Your support has been completely unacceptable and I'm seriously considering escalating this to your management and leaving a public review. We pay a premium for this service and expect far better. Someone needs to call me today.\n\nAngela Cruz\nSummit Parts Co.",
+    "channel": "email",
+    "mailbox": "support@relay-desk.example",
+    "unread": true,
+    "attachments": []
+  },
+  {
+    "id": "eml-1006",
+    "from": "k.osei@unknown-sender.net",
+    "fromName": "K. Osei",
+    "subject": "Not sure who to ask",
+    "body": "Hi, we had a chat internally and there are a few things on our side we're not totally happy about. Before we decide anything we wanted to reach out and see how you'd suggest handling it. Appreciate any steer. Thanks.",
+    "channel": "email",
+    "mailbox": "support@relay-desk.example",
+    "unread": true,
+    "attachments": []
+  },
+  {
+    "id": "eml-1007",
+    "from": "promo@bestdeals-marketing.biz",
+    "fromName": "Best Deals",
+    "subject": "Congratulations!!! You have WON a $1000 gift card!!!",
+    "body": "CLICK HERE NOW to claim your FREE $$$ reward!!! Limited time only!!! Act fast before this exclusive offer expires!!! Visit http://totally-not-a-scam.biz/claim to verify your details and receive your prize!!!",
+    "channel": "email",
+    "mailbox": "support@relay-desk.example",
+    "unread": true,
+    "attachments": []
+  }
+]

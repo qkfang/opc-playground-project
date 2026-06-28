@@ -1,0 +1,25 @@
+@page
+@model Proj45.RelayDesk.Web.Pages.ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Error — Relay Desk</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <main class="stage" style="padding:40px">
+        <h1>Something went wrong</h1>
+        <p class="muted">An unexpected error occurred while processing your request.</p>
+        @if (Model.ShowRequestId)
+        {
+            <p><strong>Request ID:</strong> <code>@Model.RequestId</code></p>
+        }
+        <p><a href="/">Back to Relay Desk</a></p>
+    </main>
+</body>
+</html>

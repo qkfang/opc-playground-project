@@ -1,0 +1,8 @@
+bin/
+obj/
+publish/
+*.user
+App_Data/
+.vs/
+*.log
+bicep/main.json

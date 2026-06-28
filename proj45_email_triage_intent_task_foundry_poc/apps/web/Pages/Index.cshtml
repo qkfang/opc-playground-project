@@ -1,0 +1,116 @@
+@page
+@model Proj45.RelayDesk.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Relay Desk — Inbound Email Orchestration";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div id="app">
+    <aside class="rail">
+        <div class="brand">
+            <div class="brand-mark">RD</div>
+            <div class="brand-text">
+                <div class="brand-name">Relay Desk</div>
+                <div class="brand-sub">Email Orchestration</div>
+            </div>
+        </div>
+        <nav class="nav">
+            <a class="nav-item" data-view="email"><span class="ic">📥</span> <span>Email</span><span class="step-no">1</span></a>
+            <a class="nav-item" data-view="triage"><span class="ic">🏷️</span> <span>Triage</span><span class="step-no">2</span></a>
+            <a class="nav-item" data-view="intent"><span class="ic">🎯</span> <span>Intent</span><span class="step-no">3</span></a>
+            <a class="nav-item" data-view="task"><span class="ic">🛠️</span> <span>Task · D365</span><span class="step-no">4</span></a>
+            <a class="nav-item" data-view="outcome"><span class="ic">✅</span> <span>Outcome</span><span class="step-no">5</span></a>
+        </nav>
+        <div class="rail-queue">
+            <a class="nav-item subtle" data-view="email" id="queueNav"><span class="ic">🧑‍⚖️</span> <span>Human queue</span><span class="pill warn" id="queueCount">0</span></a>
+        </div>
+        <div class="rail-foot">
+            <span id="engineBadge" class="engine-badge">● engine…</span>
+            <div class="rail-note">proj45 · Foundry prompt-agents</div>
+        </div>
+    </aside>
+
+    <main class="stage">
+        <header class="topbar">
+            <div>
+                <h1 id="viewTitle">Email</h1>
+                <p id="viewSubtitle" class="muted">Watched mailbox — inbound messages that trigger the orchestration pipeline.</p>
+            </div>
+            <div class="pipeline" id="pipeline" aria-label="pipeline stages">
+                <span class="stage-pill" data-stage="email">1 · Email</span><span class="arrow">→</span>
+                <span class="stage-pill" data-stage="triage">2 · Triage</span><span class="arrow">→</span>
+                <span class="stage-pill" data-stage="intent">3 · Intent</span><span class="arrow">→</span>
+                <span class="stage-pill" data-stage="task">4 · Task</span><span class="arrow">→</span>
+                <span class="stage-pill" data-stage="outcome">5 · Outcome</span>
+            </div>
+        </header>
+
+        <!-- Per-page Foundry agent instruction panel (filled by JS) -->
+        <section class="agent-panel" id="agentPanel">
+            <div class="agent-panel-head" id="agentPanelHead">
+                <span class="agent-dot">🧠</span>
+                <span id="agentName">Foundry agent</span>
+                <button class="agent-toggle" id="agentToggle" aria-expanded="false">View instructions ▾</button>
+            </div>
+            <div class="agent-panel-body hidden" id="agentBody">
+                <p class="agent-role" id="agentRole"></p>
+                <pre class="agent-instructions" id="agentInstructions"></pre>
+            </div>
+        </section>
+
+        <!-- EMAIL ---------------------------------------------------------->
+        <section class="view" id="view-email">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-head"><h2>Watched mailbox</h2><span class="pill" id="inboxCount">0</span></div>
+                    <div id="inbox" class="inbox"></div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><h2>Ingest / trigger</h2></div>
+                    <div id="selectedPreview" class="preview muted">Select an email to run it through the pipeline, or paste a new one below.</div>
+                    <button id="runSelected" class="btn primary hidden">▶ Run pipeline on selected</button>
+                    <div class="divider"></div>
+                    <label class="lbl">From</label>
+                    <input id="fldFrom" class="inp" placeholder="customer@company.com" />
+                    <label class="lbl">Subject</label>
+                    <input id="fldSubject" class="inp" placeholder="Subject line…" />
+                    <label class="lbl">Body</label>
+                    <textarea id="fldBody" class="inp area" placeholder="Paste an inbound email…"></textarea>
+                    <button id="runAdhoc" class="btn primary block">Run pipeline</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-head">
+                    <h2>Processed cases</h2>
+                    <div class="head-actions">
+                        <button id="runDemo" class="btn ghost">⚡ Run whole mailbox</button>
+                        <button id="resetCases" class="btn ghost danger">Reset</button>
+                    </div>
+                </div>
+                <div id="queue" class="queue"></div>
+            </div>
+            <div class="card" id="humanQueueCard">
+                <div class="card-head"><h2>🧑‍⚖️ Human review queue</h2><span class="pill warn" id="queueCount2">0</span></div>
+                <div id="humanQueue" class="hq"></div>
+            </div>
+        </section>
+
+        <!-- TRIAGE / INTENT / TASK / OUTCOME share the detail surface -->
+        <section class="view hidden" id="view-triage"><div id="triageBody" class="detail-body"></div></section>
+        <section class="view hidden" id="view-intent"><div id="intentBody" class="detail-body"></div></section>
+        <section class="view hidden" id="view-task"><div id="taskBody" class="detail-body"></div></section>
+        <section class="view hidden" id="view-outcome"><div id="outcomeBody" class="detail-body"></div></section>
+    </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="~/js/app.js" asp-append-version="true"></script>
+</body>
+</html>
