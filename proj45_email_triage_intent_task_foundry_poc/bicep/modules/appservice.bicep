@@ -55,7 +55,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
-      appCommandLine: 'dotnet Proj41.Underwriting.Web.dll'
+      appCommandLine: 'dotnet Proj45.RelayDesk.Web.dll'
       appSettings: [
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
