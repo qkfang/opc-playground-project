@@ -1,0 +1,6 @@
+@backend_HostAddress = http://localhost:5123
+
+GET {{backend_HostAddress}}/api/news/robotics?count=10
+Accept: application/json
+
+###
