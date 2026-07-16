@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fruit Robotics News</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <p class="hero-kicker"><span aria-hidden="true">🍓</span> Fresh picks for robotics fans</p>
+        <h1>Fruit Robotics News</h1>
+        <p class="hero-copy">
+          A juicy roundup of robotics headlines, served straight from your API.
+        </p>
+        <button id="refresh-button" class="refresh-button" type="button">
+          Refresh
+        </button>
+      </header>
+
+      <main class="content">
+        <section id="status" class="status" aria-live="polite"></section>
+        <section id="news-list" class="news-list" aria-label="Robotics news"></section>
+      </main>
+    </div>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
