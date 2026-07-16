@@ -1,0 +1,56 @@
+name: 20260606_fruit_robotics_news_deploy_backend
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '20260606_fruit_robotics_news/apps/backend/**'
+      - '.github/workflows/20260606_fruit_robotics_news_deploy_backend.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy-backend:
+    runs-on: ubuntu-latest
+    env:
+      BACKEND_DIR: 20260606_fruit_robotics_news/apps/backend
+      WEB_APP_NAME: fruitroboticsnews-api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Publish
+        run: dotnet publish --configuration Release --no-build --output ./publish
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.WEB_APP_NAME }}
+          package: ${{ env.BACKEND_DIR }}/publish
