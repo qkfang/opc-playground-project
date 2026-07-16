@@ -186,6 +186,21 @@ function showOrEmpty(job, cardSel) {
   return true;
 }
 
+// Returns a job that satisfies `hasData`. If the locally-stored job is missing the data (e.g. a stale
+// job stored before Project/Operation cost existed), re-fetch the authoritative job from the server —
+// which always generates it — and refresh the local store so every tab renders consistently.
+async function ensureJobDetail(job, hasData) {
+  if (!job || !job.jobId || hasData(job)) return job;
+  try {
+    const r = await fetch('/api/estimations/' + encodeURIComponent(job.jobId));
+    if (r.ok) {
+      const fresh = await r.json();
+      if (fresh && fresh.jobId) { Store.set(fresh); return fresh; }
+    }
+  } catch { /* keep the local copy on any error */ }
+  return job;
+}
+
 function initScope() {
   const job = Store.get();
   platformContext(job);
@@ -221,10 +236,14 @@ function initSteps() {
 // One-time delivery cost: roles with an editable Day rate and Estimated days; Cost = rate * days.
 let PROJECT_STATE = null;
 
-function initProjectCost() {
-  const job = Store.get();
+async function initProjectCost() {
+  let job = Store.get();
   platformContext(job);
   if (!showOrEmpty(job, '#projectCard')) return;
+  // Self-heal: an older/stale stored job may predate the Project Cost data. Re-fetch the
+  // authoritative job from the server (which generates it) so the tab is never blank.
+  job = await ensureJobDetail(job, j => ((j.projectCost && j.projectCost.roles) || []).length > 0);
+  platformContext(job);
   const dl = $('#downloadBtn');
   if (dl) { dl.hidden = false; dl.href = `/api/estimations/${job.jobId}/workbook`; dl.setAttribute('download', ''); }
   renderProjectCost(job.projectCost || {});
@@ -235,7 +254,7 @@ function renderProjectCost(p) {
   const roles = p.roles || [];
   roles.forEach(r => { r.cost = Math.round(Number(r.dayRate || 0) * Number(r.estimatedDays || 0) * 100) / 100; });
   renderProjectTotals(p);
-  if (!roles.length) { $('#tab-project').innerHTML = '<p class="muted">No delivery roles.</p>'; return; }
+  if (!roles.length) { $('#tab-project').innerHTML = '<p class="muted">No delivery roles were generated for this estimation. <a href="/">Run the estimate again</a> to generate the project (build) cost.</p>'; return; }
   const rows = roles.map((r, idx) => `<tr>
       <td>${esc(r.role)}</td><td class="muted">${esc(r.description)}</td>
       <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="dayRate" value="${Number(r.dayRate)}" aria-label="Day rate for ${esc(r.role)}" /></td>
@@ -295,10 +314,13 @@ function renderProjectTotals(p) {
 // Ongoing monthly cost: line items with an editable Qty and Unit price; Monthly = qty * unit price.
 let OPERATIONS_STATE = null;
 
-function initOperations() {
-  const job = Store.get();
+async function initOperations() {
+  let job = Store.get();
   platformContext(job);
   if (!showOrEmpty(job, '#operationsCard')) return;
+  // Self-heal: re-fetch the authoritative job if the stored copy lacks operating line items.
+  job = await ensureJobDetail(job, j => ((j.operations && j.operations.items) || []).length > 0);
+  platformContext(job);
   const dl = $('#downloadBtn');
   if (dl) { dl.hidden = false; dl.href = `/api/estimations/${job.jobId}/workbook`; dl.setAttribute('download', ''); }
   renderOperations(job.operations || {});
@@ -309,7 +331,7 @@ function renderOperations(o) {
   const items = o.items || [];
   items.forEach(i => { i.monthlyCost = Math.round(Number(i.quantity || 0) * Number(i.unitPrice || 0) * 100) / 100; });
   renderOperationsTotals(o);
-  if (!items.length) { $('#tab-operations').innerHTML = '<p class="muted">No operating line items.</p>'; return; }
+  if (!items.length) { $('#tab-operations').innerHTML = '<p class="muted">No operating line items were generated for this estimation. <a href="/">Run the estimate again</a> to generate the operation (run) cost.</p>'; return; }
   const rows = items.map((i, idx) => `<tr>
       <td>${esc(i.category)}</td><td>${esc(i.item)}</td><td class="muted">${esc(i.description)}</td>
       <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="qty" value="${Number(i.quantity)}" aria-label="Quantity for ${esc(i.item)}" /></td>
