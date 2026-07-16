@@ -40,6 +40,7 @@ builder.Services.AddSingleton<IEstimationEngine>(sp =>
 });
 
 builder.Services.AddSingleton<EstimationJobService>();
+builder.Services.AddSingleton<CostComparisonService>();
 
 builder.Services.AddRazorPages();
 builder.Services.AddEndpointsApiExplorer();
@@ -88,7 +89,7 @@ api.MapGet("/agent-instructions", () => Results.Ok(new
     steps = AgentInstructions.All.Select(s => new { s.Key, s.Title, s.Agent, s.Goal, s.Instructions })
 }))
 .WithName("GetAgentInstructions")
-.WithDescription("Returns the per-step agent instructions for the Scope, Requirements, and Cost Model steps.");
+.WithDescription("Returns the per-step agent instructions for the Scope, Requirements, Cost Model, Project Cost, and Operation Cost steps.");
 
 // Sample requirement documents shown on the Upload page (clickable + viewable in a modal).
 api.MapGet("/samples", (SampleRequirementsService samples) =>
@@ -140,6 +141,22 @@ api.MapGet("/estimations/{jobId}/workbook", (string jobId, EstimationJobService 
 })
 .WithName("DownloadWorkbook")
 .WithDescription("Downloads the generated Excel cost-calculation workbook for a job.");
+
+// Build-vs-Buy comparison: compares the agentic Azure BUILD cost against the off-the-shelf BUY
+// baseline parsed from the source document's cost section, section-by-section, with agent reasoning.
+api.MapPost("/estimations/{jobId}/compare", async (string jobId, EstimationJobService svc, CostComparisonService compare, CancellationToken ct) =>
+{
+    var job = svc.Get(jobId);
+    if (job is null)
+        return Results.NotFound(new { error = "Job not found", jobId });
+    if (job.Status != "completed")
+        return Results.UnprocessableEntity(new { error = "Estimation is not complete for this job.", jobId, job.Status });
+
+    var result = await compare.CompareAsync(job, ct);
+    return Results.Ok(result);
+})
+.WithName("CompareEstimation")
+.WithDescription("Compares the agentic Azure build cost against the off-the-shelf buy baseline from the source documents, with a section-by-section breakdown and a reasoned recommendation.");
 
 // Multipart upload -> ingest -> estimate -> return result.
 api.MapPost("/estimations", async (HttpRequest request, EstimationJobService svc, CancellationToken ct) =>

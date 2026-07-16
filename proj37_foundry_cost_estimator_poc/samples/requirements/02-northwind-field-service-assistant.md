@@ -32,3 +32,21 @@ questions grounded in the equipment manuals and past work orders, so first-time-
 - Offline mode / on-device inference.
 - Integration with third-party parts-ordering systems.
 - Native iOS/Android apps (responsive web only for now).
+
+### Off-the-shelf software product cost comparison
+The following is an indicative price list for buying a commercial off-the-shelf (COTS) /
+SaaS field-service knowledge-assistant product instead of building the solution ourselves.
+Use it as the "buy" baseline to compare against the estimated "build" cost. All figures are
+indicative AUD for a production pilot of ~5,000 technicians and ~30,000 queries per month.
+
+| Cost category | Type | Indicative cost (AUD) | Notes |
+|---|---|---|---|
+| Product licensing / subscription | Recurring (annual) | $138,000 / yr | Per-technician subscription (~5,000 seats), mid tier |
+| Onboarding & implementation | One-time | $70,000 | Guided onboarding, environment setup, go-live |
+| Setup & configuration | One-time | $28,000 | Knowledge base config, roles, branding |
+| Content ingestion (manuals, bulletins, work orders) | One-time | $32,000 | Corpus load and indexing for retrieval |
+| Integration (dispatch system API, SSO) | One-time | $40,000 | Pre-load job context + single sign-on |
+| Annual support & maintenance | Recurring (annual) | $27,600 | Vendor standard support (20% of licence) |
+| Training & enablement | One-time | $18,000 | Technician and dispatcher training |
+| **Year 1 total (one-time + first-year recurring)** | — | **≈ $353,600** | One-time $188,000 + first-year recurring $165,600 |
+| **Ongoing annual run cost (year 2+)** | Recurring | **≈ $165,600 / yr** | Subscription + support |

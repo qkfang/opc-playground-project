@@ -40,6 +40,33 @@ public class ExcelReportGeneratorTests
     }
 
     [Fact]
+    public async Task Workbook_has_project_and_operation_cost_sheets()
+    {
+        var job = await SampleJobAsync();
+        var bytes = new ExcelReportGenerator().Generate(job);
+
+        using var ms = new MemoryStream(bytes);
+        using var wb = new XLWorkbook(ms);
+
+        // The two new agentic-cost tabs must each be an editable table with a formula-driven cost column.
+        var project = wb.Worksheet("Project Cost");
+        var projectTable = Assert.Single(project.Tables);
+        Assert.Equal("ProjectCost", projectTable.Name);
+        Assert.True(projectTable.ShowTotalsRow);
+        Assert.Equal(XLTotalsRowFunction.Sum, projectTable.Field("Cost").TotalsRowFunction);
+        var projCostCell = project.Cell(projectTable.DataRange.FirstRow().RowNumber(), projectTable.Field("Cost").Column.ColumnNumber());
+        Assert.True(projCostCell.HasFormula, "Project Cost must be a Day Rate * Estimated Days formula");
+
+        var ops = wb.Worksheet("Operation Cost");
+        var opsTable = Assert.Single(ops.Tables);
+        Assert.Equal("OperationCost", opsTable.Name);
+        Assert.True(opsTable.ShowTotalsRow);
+        Assert.Equal(XLTotalsRowFunction.Sum, opsTable.Field("Monthly Cost").TotalsRowFunction);
+        var opsCostCell = ops.Cell(opsTable.DataRange.FirstRow().RowNumber(), opsTable.Field("Monthly Cost").Column.ColumnNumber());
+        Assert.True(opsCostCell.HasFormula, "Operation Monthly Cost must be a Quantity * Unit Price formula");
+    }
+
+    [Fact]
     public async Task CostModel_is_an_editable_table_with_formula_column_and_totals_row()
     {
         var job = await SampleJobAsync();

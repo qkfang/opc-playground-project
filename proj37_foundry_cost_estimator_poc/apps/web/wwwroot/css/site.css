@@ -58,7 +58,7 @@ main { max-width: 1080px; margin: 1.5rem auto; padding: 0 1rem; display: grid; g
 .navlink:hover { color: var(--brand-2); background: var(--accent); }
 .navlink.active { color: var(--brand-2); border-bottom-color: var(--brand-2); }
 
-/* ---- top-level nav modules (Upload / Agentic Cost Estimation / Recent Estimations) ---- */
+/* ---- top-level nav modules (Upload / Build vs Buy Agent / Recent Estimations) ---- */
 .nav-module { background: #eef3fb; border: 1px solid var(--border); border-bottom: 3px solid transparent; border-radius: 10px 10px 0 0; margin: .35rem .15rem 0; }
 .nav-module > .nav-module-label,
 a.nav-module { font-weight: 700; }
@@ -188,3 +188,23 @@ ul.tight { margin: .2rem 0; padding-left: 1.2rem; }
 footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 1.5rem; }
 footer a { color: var(--brand-2); }
 .muted { color: var(--muted); }
+
+/* ---- Compare (Build vs Buy) ---- */
+.cmp-recommend { border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.15rem; margin: .3rem 0 1.1rem; background: #fafbfd; border-left: 6px solid var(--muted); }
+.cmp-recommend.rec-build { border-left-color: var(--ok); background: #f2fbf5; }
+.cmp-recommend.rec-buy { border-left-color: var(--brand-2); background: #f2f7fe; }
+.cmp-recommend.rec-neutral { border-left-color: var(--warn); background: #fefbf2; }
+.cmp-rec-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.cmp-rec-badge { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.cmp-rec-value { font-size: 1.15rem; font-weight: 800; color: var(--brand); }
+.cmp-rec-summary { margin: .5rem 0 0; line-height: 1.5; }
+.cmp-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+.cmp-col { border: 1px solid var(--border); border-radius: 12px; padding: .8rem; background: #fff; }
+.cmp-col h4 { margin: 0 0 .6rem; color: var(--brand); font-size: .95rem; }
+.cmp-col .totals, .cmp-col { }
+.cmp-col .total-box { margin-bottom: .5rem; }
+.cmp-h { margin: 1.2rem 0 .3rem; color: var(--brand); font-size: 1.02rem; }
+.cmp-table td:first-child { max-width: 320px; }
+.cmp-detail { font-size: .74rem; line-height: 1.35; }
+.cmp-reason-row td { border-bottom: 1px solid var(--border); background: #f7f9fd !important; font-size: .82rem; padding-top: .3rem; }
+@media (max-width: 720px) { .cmp-totals { grid-template-columns: 1fr; } }

@@ -73,6 +73,16 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
             job.Cost = CostFromPlan(plan, job.Scope);
             job.AgentSteps.Add(new AgentStepLog { Step = "cost", Summary = $"Foundry agent proposed {job.Cost.LineItems.Count} services; costed locally to {job.Cost.Currency} {job.Cost.MonthlyTotalWithContingency:N2}/mo (incl. contingency)." });
 
+            // 4) PROJECT (build) COST
+            var buildPlan = await RunJsonAsync<BuildPlan>(agent, ProjectCostPrompt(corpus, job.Scope), ct);
+            job.ProjectCost = ProjectCostFromPlan(buildPlan);
+            job.AgentSteps.Add(new AgentStepLog { Step = "project", Summary = $"Foundry agent planned a {job.ProjectCost.Roles.Count}-role delivery team (~{job.ProjectCost.TotalDays:N0} person-days); build cost {job.ProjectCost.Currency} {job.ProjectCost.TotalWithContingency:N2} (incl. contingency)." });
+
+            // 5) OPERATION (run) COST
+            var opsPlan = await RunJsonAsync<OperationsPlan>(agent, OperationsPrompt(corpus, job.Scope), ct);
+            job.Operations = OperationsFromPlan(opsPlan);
+            job.AgentSteps.Add(new AgentStepLog { Step = "operations", Summary = $"Foundry agent estimated {job.Operations.Items.Count} operating line items; monthly run cost {job.Operations.Currency} {job.Operations.MonthlyTotalWithContingency:N2} (incl. contingency)." });
+
             job.Engine = Name;
             job.Status = "completed";
             return job;
@@ -84,6 +94,8 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
             job.Scope = new();
             job.Requirements = new();
             job.Cost = new();
+            job.ProjectCost = new();
+            job.Operations = new();
             job.AgentSteps.Clear();
             await _offline.EstimateAsync(job, ct);
             job.AgentSteps.Insert(0, new AgentStepLog { Step = "engine", Summary = $"Foundry call failed ({ex.GetType().Name}); fell back to offline engine. Detail: {Trunc(ex.Message, 200)}" });
@@ -204,6 +216,58 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
         {{corpus}}
         """;
 
+    private static string ProjectCostPrompt(string corpus, ScopeSummary scope) =>
+        $$"""
+        Plan the delivery team and effort to BUILD this solution (one-time cost). You choose the roles,
+        their day rates, and person-days; do NOT compute dollar totals (we multiply rate × days).
+
+        SCOPE: {{JsonSerializer.Serialize(scope, JsonOpts)}}
+
+        Return JSON: { "roles": [ {
+          "role": string,               // e.g. "Solution Architect", "Backend Developer", "QA Engineer", "Project Manager"
+          "description": string,        // one line on what this role delivers on this project
+          "dayRate": number,            // reference USD day rate for the role
+          "estimatedDays": number       // person-days of effort for this role on this build
+        } ],
+          "contingencyPercent": number  // 10-25, delivery risk buffer
+        }
+
+        Always include a Solution Architect, Project Manager, and QA Engineer. Add Backend, Frontend,
+        AI/ML, Data, and DevOps roles only when the scope/requirements call for them. Scale the person-days
+        to complexity and expected scale — a small POC is a few weeks; an enterprise build is much larger.
+
+        DOCUMENTS:
+        {{corpus}}
+        """;
+
+    private static string OperationsPrompt(string corpus, ScopeSummary scope) =>
+        $$"""
+        Estimate the ONGOING monthly cost to run, support, and maintain this solution after go-live
+        (separate from Azure infrastructure and from the one-time build). You choose the activities and
+        sizing; do NOT compute dollar totals (we multiply quantity × unit price).
+
+        SCOPE: {{JsonSerializer.Serialize(scope, JsonOpts)}}
+
+        Return JSON: { "items": [ {
+          "item": string,               // e.g. "Application support (L2/L3)", "Monitoring & incident response"
+          "description": string,        // what the activity covers
+          "category": "Support|Maintenance|Operations|Licensing",
+          "cadence": string,            // informational, e.g. "Monthly"
+          "quantity": number,           // monthly quantity for the meter (e.g. hours/mo)
+          "unitPrice": number,          // reference USD unit price (e.g. per hour)
+          "unit": string                // e.g. "per hour", "per month"
+        } ],
+          "contingencyPercent": number  // 10-25, operating risk buffer
+        }
+
+        Always include application support, monitoring & incident response, software updates & patching,
+        and minor enhancements. Add security & compliance reviews when data is PII/regulated, and AI model
+        monitoring / prompt tuning when the workload uses AI. 4-8 line items.
+
+        DOCUMENTS:
+        {{corpus}}
+        """;
+
     // ---------------- Plan -> Cost ----------------
 
     private static CostEstimate CostFromPlan(ServicePlan? plan, ScopeSummary scope)
@@ -271,6 +335,86 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
         return est;
     }
 
+    // ---------------- Plan -> Project (build) cost ----------------
+
+    private static ProjectBuildCost ProjectCostFromPlan(BuildPlan? plan)
+    {
+        var est = new ProjectBuildCost
+        {
+            Currency = AzurePricingCatalog.Currency,
+            ContingencyPercent = plan?.ContingencyPercent is >= 5 and <= 40 ? plan.ContingencyPercent : 15m,
+            Notes =
+            {
+                "Delivery plan proposed by Microsoft Foundry prompt agent; day rates and effort are reference estimates.",
+                "One-time cost to design and build the solution (delivery team effort), separate from Azure run cost.",
+                "Edit day rates / person-days to re-plan the team; validate against an actual statement of work."
+            }
+        };
+
+        foreach (var role in plan?.Roles ?? new())
+        {
+            est.Roles.Add(new ProjectRoleLineItem
+            {
+                Role = string.IsNullOrWhiteSpace(role.Role) ? "Delivery role" : role.Role,
+                Description = role.Description,
+                DayRate = role.DayRate > 0 ? role.DayRate : 900m,
+                EstimatedDays = role.EstimatedDays > 0 ? role.EstimatedDays : 5m
+            });
+        }
+
+        if (est.Roles.Count == 0)
+        {
+            est.Notes.Add("Foundry returned no delivery roles; supplementing with a baseline core team.");
+            est.Roles.Add(new ProjectRoleLineItem { Role = "Solution Architect", Description = "Solution design and Azure architecture.", DayRate = 1200m, EstimatedDays = 10m });
+            est.Roles.Add(new ProjectRoleLineItem { Role = "Backend Developer", Description = "APIs, services, and integration.", DayRate = 900m, EstimatedDays = 25m });
+            est.Roles.Add(new ProjectRoleLineItem { Role = "QA Engineer", Description = "Test planning and release verification.", DayRate = 750m, EstimatedDays = 15m });
+            est.Roles.Add(new ProjectRoleLineItem { Role = "Project Manager", Description = "Delivery planning and coordination.", DayRate = 1000m, EstimatedDays = 14m });
+        }
+
+        return est;
+    }
+
+    // ---------------- Plan -> Operation (run) cost ----------------
+
+    private static OperationCost OperationsFromPlan(OperationsPlan? plan)
+    {
+        var est = new OperationCost
+        {
+            Currency = AzurePricingCatalog.Currency,
+            ContingencyPercent = plan?.ContingencyPercent is >= 5 and <= 40 ? plan.ContingencyPercent : 15m,
+            Notes =
+            {
+                "Operating plan proposed by Microsoft Foundry prompt agent; quantities and rates are reference estimates.",
+                "Ongoing monthly cost to run, support, and maintain the solution (excludes Azure infra and the one-time build).",
+                "Edit quantities / unit prices to adjust the operating model; validate against an actual support agreement."
+            }
+        };
+
+        foreach (var it in plan?.Items ?? new())
+        {
+            est.Items.Add(new OperationCostLineItem
+            {
+                Item = string.IsNullOrWhiteSpace(it.Item) ? "Operating activity" : it.Item,
+                Description = it.Description,
+                Category = string.IsNullOrWhiteSpace(it.Category) ? "Operations" : it.Category,
+                Cadence = string.IsNullOrWhiteSpace(it.Cadence) ? "Monthly" : it.Cadence,
+                Quantity = it.Quantity > 0 ? it.Quantity : 1m,
+                UnitPrice = it.UnitPrice > 0 ? it.UnitPrice : 120m,
+                Unit = string.IsNullOrWhiteSpace(it.Unit) ? "per hour" : it.Unit
+            });
+        }
+
+        if (est.Items.Count == 0)
+        {
+            est.Notes.Add("Foundry returned no operating line items; supplementing with a baseline run-support model.");
+            est.Items.Add(new OperationCostLineItem { Item = "Application support (L2/L3)", Description = "Triage, bug fixes, and user support.", Category = "Support", Cadence = "Monthly", Quantity = 16m, UnitPrice = 120m, Unit = "per hour" });
+            est.Items.Add(new OperationCostLineItem { Item = "Monitoring & incident response", Description = "Health monitoring and incident handling.", Category = "Operations", Cadence = "Monthly", Quantity = 8m, UnitPrice = 130m, Unit = "per hour" });
+            est.Items.Add(new OperationCostLineItem { Item = "Software updates & patching", Description = "Dependency updates and security patching.", Category = "Maintenance", Cadence = "Monthly", Quantity = 6m, UnitPrice = 120m, Unit = "per hour" });
+        }
+
+        return est;
+    }
+
     private static void NormalizeScope(ScopeSummary s)
     {
         s.ProjectName = string.IsNullOrWhiteSpace(s.ProjectName) ? "Untitled POC" : s.ProjectName;
@@ -316,5 +460,36 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
         [JsonPropertyName("unit")] public string Unit { get; set; } = "";
         [JsonPropertyName("pricingReferenceUrl")] public string? PricingReferenceUrl { get; set; }
         [JsonPropertyName("pricingReferenceLabel")] public string? PricingReferenceLabel { get; set; }
+    }
+
+    private sealed class BuildPlan
+    {
+        [JsonPropertyName("roles")] public List<BuildPlanRole> Roles { get; set; } = new();
+        [JsonPropertyName("contingencyPercent")] public decimal ContingencyPercent { get; set; } = 15m;
+    }
+
+    private sealed class BuildPlanRole
+    {
+        [JsonPropertyName("role")] public string Role { get; set; } = "";
+        [JsonPropertyName("description")] public string Description { get; set; } = "";
+        [JsonPropertyName("dayRate")] public decimal DayRate { get; set; }
+        [JsonPropertyName("estimatedDays")] public decimal EstimatedDays { get; set; }
+    }
+
+    private sealed class OperationsPlan
+    {
+        [JsonPropertyName("items")] public List<OperationsPlanItem> Items { get; set; } = new();
+        [JsonPropertyName("contingencyPercent")] public decimal ContingencyPercent { get; set; } = 15m;
+    }
+
+    private sealed class OperationsPlanItem
+    {
+        [JsonPropertyName("item")] public string Item { get; set; } = "";
+        [JsonPropertyName("description")] public string Description { get; set; } = "";
+        [JsonPropertyName("category")] public string Category { get; set; } = "";
+        [JsonPropertyName("cadence")] public string Cadence { get; set; } = "";
+        [JsonPropertyName("quantity")] public decimal Quantity { get; set; }
+        [JsonPropertyName("unitPrice")] public decimal UnitPrice { get; set; }
+        [JsonPropertyName("unit")] public string Unit { get; set; } = "";
     }
 }

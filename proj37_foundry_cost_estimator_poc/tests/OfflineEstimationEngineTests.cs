@@ -32,7 +32,7 @@ public class OfflineEstimationEngineTests
         Assert.NotEmpty(job.Requirements);
         Assert.NotEmpty(job.Cost.LineItems);
         Assert.True(job.Cost.MonthlyTotal > 0);
-        Assert.Equal(3, job.AgentSteps.Count); // scope, requirements, cost
+        Assert.Equal(5, job.AgentSteps.Count); // scope, requirements, cost, project, operations
     }
 
     [Fact]
@@ -65,6 +65,49 @@ public class OfflineEstimationEngineTests
         Assert.Contains(job.Cost.LineItems, l => l.Category == "Security");
         Assert.Contains(job.Cost.LineItems, l => l.Category == "Observability");
         Assert.Contains(job.Cost.LineItems, l => l.Service.Contains("Blob"));
+    }
+
+    [Fact]
+    public async Task Produces_project_build_cost_with_core_roles()
+    {
+        var job = await new OfflineEstimationEngine().EstimateAsync(JobFrom("Internal web app with an API."));
+        Assert.NotEmpty(job.ProjectCost.Roles);
+        Assert.Contains(job.ProjectCost.Roles, r => r.Role.Contains("Architect"));
+        Assert.Contains(job.ProjectCost.Roles, r => r.Role.Contains("QA"));
+        Assert.Contains(job.ProjectCost.Roles, r => r.Role.Contains("Project Manager"));
+        Assert.All(job.ProjectCost.Roles, r => Assert.Equal(Math.Round(r.DayRate * r.EstimatedDays, 2), r.Cost));
+        Assert.True(job.ProjectCost.TotalWithContingency > job.ProjectCost.LaborTotal);
+    }
+
+    [Fact]
+    public async Task Produces_operation_cost_with_support_and_maintenance()
+    {
+        var job = await new OfflineEstimationEngine().EstimateAsync(JobFrom("Internal web app with an API."));
+        Assert.NotEmpty(job.Operations.Items);
+        Assert.Contains(job.Operations.Items, i => i.Category == "Support");
+        Assert.Contains(job.Operations.Items, i => i.Category == "Maintenance");
+        Assert.All(job.Operations.Items, i => Assert.Equal(Math.Round(i.Quantity * i.UnitPrice, 2), i.MonthlyCost));
+        Assert.True(job.Operations.MonthlyTotalWithContingency > job.Operations.MonthlyTotal);
+    }
+
+    [Fact]
+    public async Task Ai_workload_adds_ai_ops_line_and_ml_role()
+    {
+        var job = await new OfflineEstimationEngine().EstimateAsync(
+            JobFrom("An AI agent with Foundry that does document file search and RAG grounding."));
+        Assert.Contains(job.ProjectCost.Roles, r => r.Role.Contains("AI/ML"));
+        Assert.Contains(job.Operations.Items, i => i.Item.Contains("AI model"));
+    }
+
+    [Fact]
+    public async Task Enterprise_build_effort_exceeds_poc_build_effort()
+    {
+        var poc = await new OfflineEstimationEngine().EstimateAsync(
+            JobFrom("Small POC web app prototype demo for a single team."));
+        var ent = await new OfflineEstimationEngine().EstimateAsync(
+            JobFrom("Enterprise mission critical web app, global, millions of users, high throughput at scale."));
+        Assert.True(ent.ProjectCost.TotalDays > poc.ProjectCost.TotalDays,
+            $"enterprise days {ent.ProjectCost.TotalDays} should exceed poc days {poc.ProjectCost.TotalDays}");
     }
 
     [Fact]

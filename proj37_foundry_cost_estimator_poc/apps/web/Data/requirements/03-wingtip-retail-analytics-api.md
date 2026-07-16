@@ -30,3 +30,22 @@ UI in this phase — the deliverable is a robust, well-instrumented HTTP API and
 - Any web/UI front end (API only).
 - Predictive forecasting (a later phase).
 - Cross-region replication.
+
+### Off-the-shelf software product cost comparison
+The following is an indicative price list for buying a commercial off-the-shelf (COTS) /
+SaaS retail analytics + event-ingestion platform instead of building the solution ourselves.
+Use it as the "buy" baseline to compare against the estimated "build" cost. All figures are
+indicative AUD for a production API workload ingesting events from ~1,200 stores (tens of
+millions of events per month).
+
+| Cost category | Type | Indicative cost (AUD) | Notes |
+|---|---|---|---|
+| Platform licensing / subscription | Recurring (annual) | $264,000 / yr | Volume-based ingestion + API tier at high event throughput |
+| Onboarding & implementation | One-time | $120,000 | Data-model design, environment provisioning, go-live |
+| Setup & configuration | One-time | $55,000 | Pipelines, aggregates, API surface, metrics config |
+| Data migration & historical backfill | One-time | $48,000 | Seed curated aggregates and raw archive import |
+| Integration (POS event sources, dashboards) | One-time | $85,000 | 1,200-store event feeds + internal dashboard connectors |
+| Annual support & maintenance | Recurring (annual) | $52,800 | Vendor support (20% of licence), ingestion-lag SLA |
+| Training & enablement | One-time | $22,000 | Data/ops team onboarding |
+| **Year 1 total (one-time + first-year recurring)** | — | **≈ $646,800** | One-time $330,000 + first-year recurring $316,800 |
+| **Ongoing annual run cost (year 2+)** | Recurring | **≈ $316,800 / yr** | Subscription + support |

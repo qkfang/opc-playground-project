@@ -157,7 +157,7 @@ public class ApiEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         var resp = await client.GetAsync(url);
         resp.EnsureSuccessStatusCode();
         var html = await resp.Content.ReadAsStringAsync();
-        Assert.Contains("Azure Cost Estimator", html);
+        Assert.Contains("Build vs Buy Agent", html);
         Assert.Contains("mainnav", html); // top nav present on every page
     }
 

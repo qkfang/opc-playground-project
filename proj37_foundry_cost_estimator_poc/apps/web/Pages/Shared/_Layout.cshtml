@@ -1,14 +1,14 @@
 @{
     var page = (ViewData["ActivePage"] as string) ?? "";
     string Active(string key) => page == key ? "active" : "";
-    bool platformActive = page is "scope" or "requirements" or "cost" or "steps";
+    bool platformActive = page is "scope" or "requirements" or "cost" or "project" or "operations" or "steps";
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — Azure Cost Estimator</title>
+    <title>@ViewData["Title"] — Build vs Buy Agent</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body data-page="@(page)">
@@ -17,7 +17,7 @@
         <a class="brand-link" href="/">
             <span class="logo">⛅</span>
             <div>
-                <h1>Azure Cost Estimator</h1>
+                <h1>Build vs Buy Agent</h1>
                 <p class="tagline">Foundry agents · documents → scope → requirements → cost → Excel</p>
             </div>
         </a>
@@ -31,16 +31,21 @@
             <span class="nav-module-icon">📤</span> Upload
         </a>
         <div class="nav-group nav-module @(platformActive ? "active" : "")">
-            <span class="nav-module-label"><span class="nav-module-icon">🤖</span> Agentic Cost Estimation</span>
+            <span class="nav-module-label"><span class="nav-module-icon">🤖</span> Build</span>
             <div class="nav-sub">
                 <a class="navlink sub @Active("scope")" href="/platform/scope">Scope</a>
                 <a class="navlink sub @Active("requirements")" href="/platform/requirements">Requirements</a>
                 <a class="navlink sub @Active("cost")" href="/platform/cost">Cost Model</a>
-                <a class="navlink sub @Active("steps")" href="/platform/steps">Agent Steps</a>
+                <a class="navlink sub @Active("project")" href="/platform/project">Project Cost</a>
+                <a class="navlink sub @Active("operations")" href="/platform/operations">Operation Cost</a>
+                <a class="navlink sub @Active("steps")" href="/platform/steps">Prompts</a>
             </div>
         </div>
+        <a class="navlink nav-module @Active("compare")" href="/compare">
+            <span class="nav-module-icon">⚖️</span> Compare
+        </a>
         <a class="navlink nav-module @Active("estimations")" href="/estimations">
-            <span class="nav-module-icon">📊</span> Recent Estimations
+            <span class="nav-module-icon">📊</span> Histories
         </a>
     </div>
 </nav>

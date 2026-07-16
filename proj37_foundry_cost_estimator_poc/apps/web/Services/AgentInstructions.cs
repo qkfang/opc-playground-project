@@ -3,8 +3,8 @@ namespace Proj37.CostEstimator.Web.Services;
 /// <summary>
 /// Single source of truth for the per-step agent instructions shown to users (in the UI popups)
 /// and used to ground each estimation step. Each step runs as an individual agent-backed step:
-/// Scope, Requirements, and Cost Model. Exposing the instructions makes the pipeline transparent
-/// and auditable.
+/// Scope, Requirements, Cost Model, Project Cost, and Operation Cost. Exposing the instructions makes
+/// the pipeline transparent and auditable.
 ///
 /// Authoring conventions (keep ALL steps consistent so the frontend popups read as one coherent
 /// playbook):
@@ -159,5 +159,128 @@ public static class AgentInstructions
             "  Learn / azure.microsoft.com). Treat all rates as reference estimates to be validated against\n" +
             "  the Azure Pricing Calculator or the Azure Retail Prices API before any commitment.");
 
-    public static readonly IReadOnlyList<StepInstruction> All = new[] { Scope, Requirements, Cost };
+    public static readonly StepInstruction ProjectCost = new(
+        Key: "project",
+        Title: "Project Cost",
+        Agent: "Delivery Estimator agent",
+        Goal: "Plan the delivery team and effort to BUILD the solution; the app prices roles deterministically (rate × days).",
+        Instructions:
+            "ROLE:\n" +
+            "  You are the Delivery Estimator (professional-services lead). You turn the scope, requirements,\n" +
+            "  and Azure architecture into a realistic delivery plan: who builds it, and for how long.\n\n" +
+            "OBJECTIVE:\n" +
+            "  Produce the ONE-TIME cost to design and build the solution as a team of roles, each with a\n" +
+            "  day rate and an estimated number of person-days. You choose the roles and effort; the\n" +
+            "  application multiplies rate × days and totals it, so the arithmetic stays auditable.\n\n" +
+            "INPUTS:\n" +
+            "  • The SCOPE, the derived REQUIREMENTS, and the Azure service plan (Cost Model).\n" +
+            "  • The source documents (for complexity and scale signals).\n\n" +
+            "METHOD:\n" +
+            "  1. Choose the delivery roles the build actually needs. Always include a Solution Architect,\n" +
+            "     Project Manager, and QA Engineer. Add Backend, Frontend, AI/ML, Data, and DevOps roles\n" +
+            "     only when the scope/requirements call for them (e.g. AI/ML only if the workload uses AI).\n" +
+            "  2. For each role, set a defensible reference DAY RATE (USD/day) for a delivery-team member.\n" +
+            "  3. Estimate the person-days each role needs, scaled to complexity, scope size, and expected\n" +
+            "     scale — a small POC is a few weeks of effort; an enterprise build is materially larger.\n" +
+            "  4. Do NOT compute dollar totals per role; the application does rate × days and sums them.\n" +
+            "  5. Set a delivery contingency buffer appropriate to estimation uncertainty.\n\n" +
+            "OUTPUT CONTRACT (single JSON object):\n" +
+            "  { \"roles\": [ { role, description, dayRate, estimatedDays } ],\n" +
+            "    \"contingencyPercent\": number }\n" +
+            "    role            — e.g. \"Solution Architect\", \"Backend Developer\", \"QA Engineer\", \"Project Manager\"\n" +
+            "    description     — one line on what this role delivers on this project\n" +
+            "    dayRate         — reference USD day rate for the role\n" +
+            "    estimatedDays   — person-days of effort for this role on this build\n" +
+            "    contingencyPercent — 10-25 delivery risk buffer\n\n" +
+            "QUALITY BAR:\n" +
+            "  • Roles are non-overlapping; effort is realistic and traceable to scope complexity.\n" +
+            "  • Larger / more complex scope yields more roles and more days than a small POC.\n" +
+            "  • Rates and days feed an editable Project Cost table (UI + Excel), so keep them clean.\n\n" +
+            "GROUNDING:\n" +
+            "  Base rates and effort on typical Azure delivery engagements. Treat all figures as reference\n" +
+            "  estimates to be validated against an actual statement of work before any commitment.");
+
+    public static readonly StepInstruction Operations = new(
+        Key: "operations",
+        Title: "Operation Cost",
+        Agent: "Run & Support agent",
+        Goal: "Estimate the ongoing cost to run, support, and maintain the solution after go-live; the app prices each line deterministically.",
+        Instructions:
+            "ROLE:\n" +
+            "  You are the Run & Support lead (service management / SRE). You size the ONGOING cost to keep\n" +
+            "  the solution healthy, supported, and current after it ships — separate from Azure infra and\n" +
+            "  from the one-time build.\n\n" +
+            "OBJECTIVE:\n" +
+            "  Produce the MONTHLY operating cost as line items, each expressed as a quantity and a unit\n" +
+            "  price (e.g. hours/month × hourly rate). You choose the activities and sizing; the application\n" +
+            "  multiplies quantity × unit price and totals it.\n\n" +
+            "INPUTS:\n" +
+            "  • The SCOPE, the REQUIREMENTS, and the Azure service plan (Cost Model).\n" +
+            "  • The data sensitivity and expected scale (drive support and compliance effort).\n\n" +
+            "METHOD:\n" +
+            "  1. Cover the standard operating activities: application support (L2/L3), monitoring &\n" +
+            "     incident response, software updates & patching, and minor enhancements / change requests.\n" +
+            "  2. Add security & compliance review effort when the data is PII / regulated.\n" +
+            "  3. Add AI model monitoring, prompt tuning, and evaluation effort when the workload uses AI.\n" +
+            "  4. For each line, set a defensible monthly quantity (e.g. hours/mo) and a unit price\n" +
+            "     (e.g. USD/hour). Do NOT compute dollar totals; the application does quantity × unit price.\n" +
+            "  5. Set a contingency buffer appropriate to operating-model uncertainty.\n\n" +
+            "OUTPUT CONTRACT (single JSON object):\n" +
+            "  { \"items\": [ { item, description, category, cadence, quantity, unitPrice, unit } ],\n" +
+            "    \"contingencyPercent\": number }\n" +
+            "    item            — e.g. \"Application support (L2/L3)\", \"Monitoring & incident response\"\n" +
+            "    category        — Support | Maintenance | Operations | Licensing\n" +
+            "    cadence         — informational, e.g. \"Monthly\"\n" +
+            "    quantity        — monthly quantity for the meter (e.g. hours/mo)\n" +
+            "    unitPrice       — reference USD unit price (e.g. per hour)\n" +
+            "    unit            — e.g. \"per hour\", \"per month\"\n" +
+            "    contingencyPercent — 10-25 operating risk buffer\n\n" +
+            "QUALITY BAR:\n" +
+            "  • 4-8 line items; each is a distinct operating activity with a realistic monthly quantity.\n" +
+            "  • Support and maintenance baselines are always present; AI ops appear only for AI workloads.\n" +
+            "  • Quantities and prices feed an editable Operation Cost table (UI + Excel), so keep them clean.\n\n" +
+            "GROUNDING:\n" +
+            "  Base effort on typical managed-service / run-support engagements. Treat all figures as\n" +
+            "  reference estimates to be validated against an actual support agreement before any commitment.");
+
+    public static readonly StepInstruction Compare = new(
+        Key: "compare",
+        Title: "Compare",
+        Agent: "Build-vs-Buy Analyst agent",
+        Goal: "Compare the agentic Azure BUILD cost against the off-the-shelf BUY baseline section-by-section and give a reasoned recommendation.",
+        Instructions:
+            "ROLE:\n" +
+            "  You are the Build-vs-Buy Analyst. You compare the cost of BUILDING the solution on Azure\n" +
+            "  (the agentic estimate: one-time build + Azure infrastructure + run/support) against the cost\n" +
+            "  of BUYING a commercial off-the-shelf (COTS) / SaaS product (the 'buy' cost section in the\n" +
+            "  source documents), then recommend the more cost-effective option.\n\n" +
+            "OBJECTIVE:\n" +
+            "  Produce a clear, section-by-section cost comparison and a single recommendation (build, buy,\n" +
+            "  or neutral) with transparent reasoning a decision-maker can defend.\n\n" +
+            "INPUTS:\n" +
+            "  • A STRUCTURED comparison the application has already computed: the Build totals (one-time,\n" +
+            "    annual recurring, year-1, 3-year TCO), the Buy totals parsed from the document's cost\n" +
+            "    section, and the matched comparison sections with both numbers already in one currency.\n" +
+            "  • The source documents (for context on what the 'buy' price actually covers).\n\n" +
+            "METHOD:\n" +
+            "  1. For each section, compare the Build number against the Buy number and explain WHY they\n" +
+            "     differ (scope covered, recurring vs one-time, risk, lock-in, flexibility).\n" +
+            "  2. Weigh one-time build effort against ongoing subscription/licence cost over a 3-year TCO.\n" +
+            "  3. Consider non-cost factors briefly (control, customisation, vendor lock-in, time-to-value)\n" +
+            "     but keep the recommendation cost-led.\n" +
+            "  4. Choose 'neutral' only when the two options are within ~10% on 3-year TCO.\n\n" +
+            "OUTPUT CONTRACT (single JSON object, exactly these fields):\n" +
+            "  summary           — 2-3 sentence overall verdict comparing build vs buy\n" +
+            "  recommendation    — \"build\" | \"buy\" | \"neutral\"\n" +
+            "  sectionReasoning  — object keyed by the exact section name, value = one-line reasoning per section\n" +
+            "  reasoning[]        — 3-6 bullet points justifying the recommendation (cost-led, then qualitative)\n\n" +
+            "QUALITY BAR:\n" +
+            "  • Every claim is grounded in the supplied numbers or the source cost section — no invented figures.\n" +
+            "  • Reasoning references the actual dollar gaps and the 3-year TCO, not vague generalities.\n" +
+            "  • The recommendation is consistent with the numbers you were given.\n\n" +
+            "GROUNDING:\n" +
+            "  Use only the provided structured comparison and the source documents. Treat all figures as\n" +
+            "  reference estimates to be validated before any commitment.");
+
+    public static readonly IReadOnlyList<StepInstruction> All = new[] { Scope, Requirements, Cost, ProjectCost, Operations, Compare };
 }

@@ -20,6 +20,12 @@ public sealed class EstimationResult
     public List<TechnicalRequirement> Requirements { get; set; } = new();
     public CostEstimate Cost { get; set; } = new();
 
+    /// <summary>One-time cost to design and build the solution (delivery team effort).</summary>
+    public ProjectBuildCost ProjectCost { get; set; } = new();
+
+    /// <summary>Ongoing cost to run, support, and maintain the solution after go-live.</summary>
+    public OperationCost Operations { get; set; } = new();
+
     /// <summary>Raw transcript of the agent reasoning steps (for transparency / audit).</summary>
     public List<AgentStepLog> AgentSteps { get; set; } = new();
 }
@@ -133,6 +139,87 @@ public sealed class CostLineItem
 
     /// <summary>Short human label for <see cref="PricingReferenceUrl"/> (e.g. "App Service pricing").</summary>
     public string? PricingReferenceLabel { get; set; }
+}
+
+/// <summary>
+/// One-time delivery cost to design and build the solution: the effort of the delivery team, expressed
+/// as roles with a day rate and an estimated number of days. Cost per role = DayRate * EstimatedDays.
+/// The role rates and day estimates are editable in the UI and Excel so reviewers can re-plan the team.
+/// </summary>
+public sealed class ProjectBuildCost
+{
+    public string Currency { get; set; } = "USD";
+
+    /// <summary>The delivery roles engaged to build the solution (architect, dev, QA, PM, …).</summary>
+    public List<ProjectRoleLineItem> Roles { get; set; } = new();
+
+    /// <summary>Delivery risk buffer applied on top of the raw labour total.</summary>
+    public decimal ContingencyPercent { get; set; } = 15m;
+
+    public List<string> Notes { get; set; } = new();
+
+    /// <summary>Raw labour cost across all roles (sum of DayRate * EstimatedDays).</summary>
+    public decimal LaborTotal => Math.Round(Roles.Sum(r => r.Cost), 2);
+
+    /// <summary>Labour cost including the delivery contingency buffer.</summary>
+    public decimal TotalWithContingency => Math.Round(LaborTotal * (1 + ContingencyPercent / 100m), 2);
+
+    /// <summary>Total estimated effort in person-days across the whole team.</summary>
+    public decimal TotalDays => Math.Round(Roles.Sum(r => r.EstimatedDays), 1);
+}
+
+/// <summary>A single delivery role with its day rate and estimated effort.</summary>
+public sealed class ProjectRoleLineItem
+{
+    public string Role { get; set; } = "";                 // "Solution Architect"
+    public string Description { get; set; } = "";          // what this role delivers
+    public decimal DayRate { get; set; }                   // reference day rate (editable input)
+    public decimal EstimatedDays { get; set; }             // estimated effort in days (editable input)
+
+    /// <summary>Role cost = DayRate * EstimatedDays (rounded).</summary>
+    public decimal Cost => Math.Round(DayRate * EstimatedDays, 2);
+}
+
+/// <summary>
+/// Ongoing run/maintain cost after go-live: application support, monitoring, patching, enhancements,
+/// etc. Each line is a monthly cost expressed as Quantity * UnitPrice (e.g. hours/mo * hourly rate),
+/// editable in the UI and Excel so reviewers can adjust the operating model.
+/// </summary>
+public sealed class OperationCost
+{
+    public string Currency { get; set; } = "USD";
+
+    /// <summary>The ongoing operating line items (support, maintenance, monitoring, …).</summary>
+    public List<OperationCostLineItem> Items { get; set; } = new();
+
+    /// <summary>Risk buffer applied on top of the raw monthly operating total.</summary>
+    public decimal ContingencyPercent { get; set; } = 15m;
+
+    public List<string> Notes { get; set; } = new();
+
+    /// <summary>Raw monthly operating cost across all line items.</summary>
+    public decimal MonthlyTotal => Math.Round(Items.Sum(i => i.MonthlyCost), 2);
+
+    /// <summary>Monthly operating cost including the contingency buffer.</summary>
+    public decimal MonthlyTotalWithContingency => Math.Round(MonthlyTotal * (1 + ContingencyPercent / 100m), 2);
+
+    /// <summary>Annualised operating cost including the contingency buffer.</summary>
+    public decimal AnnualTotalWithContingency => Math.Round(MonthlyTotalWithContingency * 12m, 2);
+}
+
+/// <summary>A single ongoing operating cost line item.</summary>
+public sealed class OperationCostLineItem
+{
+    public string Item { get; set; } = "";                 // "Application support (L2/L3)"
+    public string Description { get; set; } = "";          // what the activity covers
+    public string Cadence { get; set; } = "Monthly";       // informational cadence label
+    public decimal Quantity { get; set; }                  // editable input (e.g. hours/mo)
+    public decimal UnitPrice { get; set; }                 // editable input (e.g. per hour)
+    public string Unit { get; set; } = "";                 // "per hour" / "per month"
+    public string Category { get; set; } = "";             // Support | Maintenance | Operations | Licensing
+
+    /// <summary>Monthly cost = Quantity * UnitPrice (rounded).</summary>
+    public decimal MonthlyCost => Math.Round(Quantity * UnitPrice, 2);
 }
 
 public sealed class AgentStepLog

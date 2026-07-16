@@ -84,6 +84,8 @@ public sealed class ExcelReportGenerator
         BuildEnvCostSheet(wb, r, EnvKind.NonProd);
         BuildEnvCostSheet(wb, r, EnvKind.Prod);
         BuildTotalCostSheet(wb, r);
+        BuildProjectCostSheet(wb, r);
+        BuildOperationCostSheet(wb, r);
         BuildRequirementsSheet(wb, r);
         BuildScopeSheet(wb, r);
         BuildDocumentsSheet(wb, r);
@@ -673,6 +675,228 @@ public sealed class ExcelReportGenerator
         wb.DefinedNames.Add(NameTotalMonthly, totalSubtotalCell.AsRange());
 
         double[] widths = { 16, 22, 14, 14, 14, 12, 12, 14, 14, 14, 22 };
+        for (int i = 0; i < widths.Length; i++) ws.Column(i + 1).Width = widths[i];
+        ws.SheetView.FreezeRows(headerRow);
+    }
+
+    /// <summary>
+    /// Builds the one-time delivery cost sheet: delivery roles with an editable Day Rate and Estimated
+    /// Days, a per-row Cost = Day Rate * Estimated Days A1 formula, a SUBTOTAL totals row that auto-includes
+    /// inserted role rows, and contingency / total-with-contingency below the table. Same editable-table
+    /// pattern (and ClosedXML cached-value handling) as the Cost Model sheet.
+    /// </summary>
+    private void BuildProjectCostSheet(XLWorkbook wb, EstimationResult r)
+    {
+        const string tableName = "ProjectCost";
+        var ws = wb.Worksheets.Add("Project Cost");
+        Title(ws, "A1:E1", "Project build cost — delivery team (one-time)");
+        ws.Cell("A2").Value =
+            "One-time cost to design and build the solution. Edit the highlighted Day Rate / Estimated Days " +
+            "cells and Cost recalculates automatically. To add a role, type in the empty row directly below " +
+            "the last one — the table grows and the Labour subtotal includes it. Do not delete the totals row.";
+        ws.Range("A2:E2").Merge();
+        ws.Cell("A2").Style.Alignment.WrapText = true;
+        ws.Cell("A2").Style.Font.Italic = true;
+        ws.Cell("A2").Style.Font.FontColor = XLColor.FromHtml("#444444");
+        ws.Range("A2:E2").Style.Fill.BackgroundColor = AccentFill;
+        ws.Row(2).Height = 42;
+
+        string[] headers = { "Role", "Description", "Day Rate", "Estimated Days", "Cost" };
+        const int colDayRate = 3, colDays = 4, colCost = 5;
+        int headerRow = 4;
+        for (int c = 0; c < headers.Length; c++) { var cell = ws.Cell(headerRow, c + 1); cell.Value = headers[c]; HeaderStyle(cell); }
+
+        int row = headerRow + 1;
+        int firstDataRow = row;
+        var roles = r.ProjectCost.Roles;
+        if (roles.Count == 0) roles = new List<ProjectRoleLineItem> { new() { Role = "" } };
+        foreach (var role in roles)
+        {
+            ws.Cell(row, 1).Value = role.Role;
+            ws.Cell(row, 2).Value = role.Description;
+            ws.Cell(row, colDayRate).Value = role.DayRate;       // editable input
+            ws.Cell(row, colDays).Value = role.EstimatedDays;    // editable input
+            row++;
+        }
+        int lastDataRow = row - 1;
+
+        var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(tableName);
+        table.Theme = XLTableTheme.TableStyleLight12;
+        double subtotal = 0;
+        foreach (var dataRow in table.DataRange.Rows())
+        {
+            var costCell = dataRow.Cell(colCost);
+            int rowNum = costCell.Address.RowNumber;
+            costCell.FormulaA1 = $"={XLHelper.GetColumnLetterFromNumber(colDayRate)}{rowNum}*{XLHelper.GetColumnLetterFromNumber(colDays)}{rowNum}";
+            double cost = dataRow.Cell(colDayRate).GetDouble() * dataRow.Cell(colDays).GetDouble();
+            Cache(costCell, cost);
+            subtotal += cost;
+        }
+
+        table.ShowTotalsRow = true;
+        table.Field("Role").TotalsRowLabel = "Labour subtotal";
+        table.Field("Estimated Days").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        table.Field("Cost").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        int totalsRow = table.TotalsRow().RowNumber();
+        var subtotalCell = ws.Cell(totalsRow, colCost);
+        MoneyCell(subtotalCell, r.ProjectCost.Currency);
+        Cache(subtotalCell, subtotal);
+        Cache(ws.Cell(totalsRow, colDays), (double)r.ProjectCost.TotalDays);
+        ws.Cell(totalsRow, 1).Style.Font.Bold = true;
+
+        var rateData = ws.Range(firstDataRow, colDayRate, lastDataRow, colDayRate);
+        var daysData = ws.Range(firstDataRow, colDays, lastDataRow, colDays);
+        foreach (var c in rateData.Cells()) MoneyCell(c, r.ProjectCost.Currency);
+        daysData.Style.NumberFormat.Format = "#,##0.#";
+        foreach (var rng in new[] { rateData, daysData })
+        {
+            rng.Style.Fill.BackgroundColor = InputFill;
+            rng.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            rng.Style.Border.OutsideBorderColor = InputBorder;
+        }
+        var costData = ws.Range(firstDataRow, colCost, lastDataRow, colCost);
+        costData.Style.Font.Italic = true;
+        foreach (var c in costData.Cells()) MoneyCell(c, r.ProjectCost.Currency);
+
+        int contingencyRow = totalsRow + 2;
+        int totalRowNo = contingencyRow + 1;
+
+        ws.Cell(contingencyRow, 1).Value = $"Contingency ({r.ProjectCost.ContingencyPercent}%)";
+        ws.Cell(contingencyRow, 1).Style.Font.Bold = true;
+        var contingencyCell = ws.Cell(contingencyRow, 2);
+        contingencyCell.FormulaA1 = $"={tableName}[[#Totals],[Cost]]*{r.ProjectCost.ContingencyPercent / 100m}";
+        MoneyCell(contingencyCell, r.ProjectCost.Currency);
+        double contingency = subtotal * (double)(r.ProjectCost.ContingencyPercent / 100m);
+        Cache(contingencyCell, contingency);
+
+        ws.Cell(totalRowNo, 1).Value = "Total build cost (incl. contingency)";
+        ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
+        var totalCell = ws.Cell(totalRowNo, 2);
+        totalCell.FormulaA1 = $"={tableName}[[#Totals],[Cost]]+B{contingencyRow}";
+        MoneyCell(totalCell, r.ProjectCost.Currency);
+        Cache(totalCell, subtotal + contingency);
+        ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        int noteRow = totalRowNo + 2;
+        ws.Cell(noteRow, 1).Value = "Notes"; ws.Cell(noteRow, 1).Style.Font.Bold = true;
+        foreach (var note in r.ProjectCost.Notes) { noteRow++; ws.Cell(noteRow, 1).Value = "• " + note; }
+
+        double[] widths = { 24, 50, 14, 16, 16 };
+        for (int i = 0; i < widths.Length; i++) ws.Column(i + 1).Width = widths[i];
+        ws.SheetView.FreezeRows(headerRow);
+    }
+
+    /// <summary>
+    /// Builds the ongoing run/maintain cost sheet: operating line items with an editable Quantity and
+    /// Unit Price, a per-row Monthly Cost = Quantity * Unit Price A1 formula, a SUBTOTAL totals row, and
+    /// contingency / monthly / annual totals below the table. Same editable-table pattern as Cost Model.
+    /// </summary>
+    private void BuildOperationCostSheet(XLWorkbook wb, EstimationResult r)
+    {
+        const string tableName = "OperationCost";
+        var ws = wb.Worksheets.Add("Operation Cost");
+        Title(ws, "A1:G1", "Operation cost — run & maintain (ongoing, monthly)");
+        ws.Cell("A2").Value =
+            "Ongoing monthly cost to run, support, and maintain the solution after go-live (excludes Azure infra). " +
+            "Edit the highlighted Quantity / Unit Price cells and Monthly Cost recalculates automatically. To add a " +
+            "line item, type in the empty row directly below the last one. Do not delete the totals row.";
+        ws.Range("A2:G2").Merge();
+        ws.Cell("A2").Style.Alignment.WrapText = true;
+        ws.Cell("A2").Style.Font.Italic = true;
+        ws.Cell("A2").Style.Font.FontColor = XLColor.FromHtml("#444444");
+        ws.Range("A2:G2").Style.Fill.BackgroundColor = AccentFill;
+        ws.Row(2).Height = 42;
+
+        string[] headers = { "Category", "Item", "Cadence", "Quantity", "Unit Price", "Unit", "Monthly Cost" };
+        const int colQty = 4, colUnitPrice = 5, colMonthly = 7;
+        int headerRow = 4;
+        for (int c = 0; c < headers.Length; c++) { var cell = ws.Cell(headerRow, c + 1); cell.Value = headers[c]; HeaderStyle(cell); }
+
+        int row = headerRow + 1;
+        int firstDataRow = row;
+        var items = r.Operations.Items;
+        if (items.Count == 0) items = new List<OperationCostLineItem> { new() { Item = "" } };
+        foreach (var it in items)
+        {
+            ws.Cell(row, 1).Value = it.Category;
+            ws.Cell(row, 2).Value = it.Item;
+            ws.Cell(row, 3).Value = it.Cadence;
+            ws.Cell(row, colQty).Value = it.Quantity;            // editable input
+            ws.Cell(row, colUnitPrice).Value = it.UnitPrice;     // editable input
+            ws.Cell(row, 6).Value = it.Unit;
+            row++;
+        }
+        int lastDataRow = row - 1;
+
+        var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(tableName);
+        table.Theme = XLTableTheme.TableStyleLight14;
+        double subtotal = 0;
+        foreach (var dataRow in table.DataRange.Rows())
+        {
+            var monthlyCell = dataRow.Cell(colMonthly);
+            int rowNum = monthlyCell.Address.RowNumber;
+            monthlyCell.FormulaA1 = $"={XLHelper.GetColumnLetterFromNumber(colQty)}{rowNum}*{XLHelper.GetColumnLetterFromNumber(colUnitPrice)}{rowNum}";
+            double monthly = dataRow.Cell(colQty).GetDouble() * dataRow.Cell(colUnitPrice).GetDouble();
+            Cache(monthlyCell, monthly);
+            subtotal += monthly;
+        }
+
+        table.ShowTotalsRow = true;
+        table.Field("Category").TotalsRowLabel = "Monthly subtotal";
+        table.Field("Monthly Cost").TotalsRowFunction = XLTotalsRowFunction.Sum;
+        int totalsRow = table.TotalsRow().RowNumber();
+        var subtotalCell = ws.Cell(totalsRow, colMonthly);
+        MoneyCell(subtotalCell, r.Operations.Currency);
+        Cache(subtotalCell, subtotal);
+        ws.Cell(totalsRow, 1).Style.Font.Bold = true;
+
+        var qtyData = ws.Range(firstDataRow, colQty, lastDataRow, colQty);
+        var priceData = ws.Range(firstDataRow, colUnitPrice, lastDataRow, colUnitPrice);
+        qtyData.Style.NumberFormat.Format = "#,##0.######";
+        foreach (var c in priceData.Cells()) MoneyCell(c, r.Operations.Currency);
+        foreach (var rng in new[] { qtyData, priceData })
+        {
+            rng.Style.Fill.BackgroundColor = InputFill;
+            rng.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            rng.Style.Border.OutsideBorderColor = InputBorder;
+        }
+        var monthlyData = ws.Range(firstDataRow, colMonthly, lastDataRow, colMonthly);
+        monthlyData.Style.Font.Italic = true;
+        foreach (var c in monthlyData.Cells()) MoneyCell(c, r.Operations.Currency);
+
+        int contingencyRow = totalsRow + 2;
+        int totalRowNo = contingencyRow + 1;
+        int annualRow = totalRowNo + 1;
+
+        ws.Cell(contingencyRow, 1).Value = $"Contingency ({r.Operations.ContingencyPercent}%)";
+        ws.Cell(contingencyRow, 1).Style.Font.Bold = true;
+        var contingencyCell = ws.Cell(contingencyRow, 2);
+        contingencyCell.FormulaA1 = $"={tableName}[[#Totals],[Monthly Cost]]*{r.Operations.ContingencyPercent / 100m}";
+        MoneyCell(contingencyCell, r.Operations.Currency);
+        double contingency = subtotal * (double)(r.Operations.ContingencyPercent / 100m);
+        Cache(contingencyCell, contingency);
+
+        ws.Cell(totalRowNo, 1).Value = "Monthly total (incl. contingency)";
+        ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
+        var totalCell = ws.Cell(totalRowNo, 2);
+        totalCell.FormulaA1 = $"={tableName}[[#Totals],[Monthly Cost]]+B{contingencyRow}";
+        MoneyCell(totalCell, r.Operations.Currency);
+        Cache(totalCell, subtotal + contingency);
+        ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        ws.Cell(annualRow, 1).Value = "Annual total (incl. contingency)";
+        ws.Cell(annualRow, 1).Style.Font.Bold = true;
+        var annualCell = ws.Cell(annualRow, 2);
+        annualCell.FormulaA1 = $"=B{totalRowNo}*12";
+        MoneyCell(annualCell, r.Operations.Currency);
+        Cache(annualCell, (subtotal + contingency) * 12);
+        ws.Range(annualRow, 1, annualRow, 2).Style.Fill.BackgroundColor = TotalFill;
+
+        int noteRow = annualRow + 2;
+        ws.Cell(noteRow, 1).Value = "Notes"; ws.Cell(noteRow, 1).Style.Font.Bold = true;
+        foreach (var note in r.Operations.Notes) { noteRow++; ws.Cell(noteRow, 1).Value = "• " + note; }
+
+        double[] widths = { 16, 34, 12, 12, 14, 12, 16 };
         for (int i = 0; i < widths.Length; i++) ws.Column(i + 1).Width = widths[i];
         ws.SheetView.FreezeRows(headerRow);
     }

@@ -32,6 +32,12 @@ public sealed partial class OfflineEstimationEngine : IEstimationEngine
         job.Cost = BuildCost(signals);
         job.AgentSteps.Add(new AgentStepLog { Step = "cost", Summary = $"Estimated {job.Cost.LineItems.Count} Azure line items. Monthly (incl. {job.Cost.ContingencyPercent}% contingency): {job.Cost.Currency} {job.Cost.MonthlyTotalWithContingency:N2}." });
 
+        job.ProjectCost = BuildProjectCost(signals);
+        job.AgentSteps.Add(new AgentStepLog { Step = "project", Summary = $"Planned a {job.ProjectCost.Roles.Count}-role delivery team (~{job.ProjectCost.TotalDays:N0} person-days). Build cost (incl. {job.ProjectCost.ContingencyPercent}% contingency): {job.ProjectCost.Currency} {job.ProjectCost.TotalWithContingency:N2}." });
+
+        job.Operations = BuildOperations(signals);
+        job.AgentSteps.Add(new AgentStepLog { Step = "operations", Summary = $"Estimated {job.Operations.Items.Count} ongoing operating line items. Monthly run cost (incl. {job.Operations.ContingencyPercent}% contingency): {job.Operations.Currency} {job.Operations.MonthlyTotalWithContingency:N2}." });
+
         job.Status = "completed";
         return Task.FromResult(job);
     }
@@ -292,6 +298,103 @@ public sealed partial class OfflineEstimationEngine : IEstimationEngine
         // Networking (always)
         Item("Bandwidth (egress)", "Standard", "GB", $"{s.EgressGb} GB outbound/mo",
             s.EgressGb, AzurePricingCatalog.EgressPerGb, "per GB", "Networking");
+
+        return est;
+    }
+
+    // ---------------------------------------------------------------- Project (build) cost
+
+    /// <summary>
+    /// Builds the one-time delivery cost: a team of roles with reference day rates and estimated effort.
+    /// Roles and effort scale with the workload complexity (scale band + detected capabilities), so a
+    /// small POC is a few weeks of effort while an enterprise build is materially larger.
+    /// </summary>
+    private static ProjectBuildCost BuildProjectCost(WorkloadSignals s)
+    {
+        // Effort multiplier by scale band (1 = POC, 2 = medium, 3 = enterprise).
+        decimal effort = s.ScaleBand switch { >= 3 => 3.0m, 2 => 1.8m, _ => 1.0m };
+        decimal Days(decimal baseDays) => Math.Round(baseDays * effort, 1);
+
+        var est = new ProjectBuildCost
+        {
+            Currency = AzurePricingCatalog.Currency,
+            ContingencyPercent = s.ScaleBand >= 3 ? 20m : 15m,
+            Notes =
+            {
+                "One-time cost to design and build the solution (delivery team effort), separate from Azure run cost.",
+                "Reference USD day rates and person-day estimates; edit rates/days to re-plan the team.",
+                $"Effort scaled to workload complexity: {s.DescribeScale()}.",
+                "Assumes a single delivery iteration; excludes ongoing run/support (see Operation Cost)."
+            }
+        };
+
+        void Role(string role, string desc, decimal dayRate, decimal days) =>
+            est.Roles.Add(new ProjectRoleLineItem { Role = role, Description = desc, DayRate = dayRate, EstimatedDays = days });
+
+        // Core roles — always present.
+        Role("Solution Architect", "Solution design, Azure architecture, and technical governance.", 1200m, Days(10));
+        Role("Project Manager", "Delivery planning, coordination, reporting, and stakeholder management.", 1000m, Days(14));
+        Role("Business Analyst", "Requirements elaboration, acceptance criteria, and backlog grooming.", 850m, Days(8));
+
+        // Build roles — conditional on detected capabilities.
+        Role("Backend Developer", "APIs, services, integration, and Azure resource wiring.", 900m, Days(s.HasApi ? 28 : 22));
+        if (s.HasWebApp)
+            Role("Frontend Developer", "Web UI, client experience, and accessibility.", 850m, Days(20));
+        if (s.HasAi)
+            Role("AI/ML Engineer", "Foundry agent design, prompts, grounding, and evaluation.", 1100m, Days(16));
+        if (s.HasRelationalDb || s.HasNoSql)
+            Role("Data Engineer", "Data model, storage, ingestion, and query performance.", 950m, Days(12));
+
+        // Quality + delivery enablement — always present.
+        Role("QA Engineer", "Test planning, automated tests, and release verification.", 750m, Days(16));
+        Role("DevOps Engineer", "CI/CD pipelines, IaC, environments, and observability wiring.", 950m, Days(10));
+
+        return est;
+    }
+
+    // ---------------------------------------------------------------- Operation (run) cost
+
+    /// <summary>
+    /// Builds the ongoing run/maintain cost after go-live: support, monitoring, patching, enhancements,
+    /// plus compliance and AI-ops effort where relevant. Each line is a monthly quantity (hours/mo)
+    /// priced at a reference hourly rate; effort scales with workload complexity.
+    /// </summary>
+    private static OperationCost BuildOperations(WorkloadSignals s)
+    {
+        decimal effort = s.ScaleBand switch { >= 3 => 2.5m, 2 => 1.6m, _ => 1.0m };
+        decimal Hrs(decimal baseHours) => Math.Round(baseHours * effort, 1);
+
+        var est = new OperationCost
+        {
+            Currency = AzurePricingCatalog.Currency,
+            ContingencyPercent = s.ScaleBand >= 3 ? 20m : 15m,
+            Notes =
+            {
+                "Ongoing monthly cost to run, support, and maintain the solution after go-live (excludes Azure infra).",
+                "Each line is hours/month × a reference hourly rate; edit quantities/rates to adjust the operating model.",
+                $"Effort scaled to workload complexity: {s.DescribeScale()}.",
+                "Assumes business-hours support; 24×7 or dedicated managed operations would increase these figures."
+            }
+        };
+
+        void Op(string item, string desc, string cat, decimal hours, decimal rate) =>
+            est.Items.Add(new OperationCostLineItem
+            {
+                Item = item, Description = desc, Category = cat, Cadence = "Monthly",
+                Quantity = hours, UnitPrice = rate, Unit = "per hour"
+            });
+
+        // Baseline operating activities — always present.
+        Op("Application support (L2/L3)", "Triage, bug fixes, and user support requests.", "Support", Hrs(16), 120m);
+        Op("Monitoring & incident response", "Health monitoring, alerts, and incident handling.", "Operations", Hrs(8), 130m);
+        Op("Software updates & patching", "Dependency updates, Azure/runtime patching, and security fixes.", "Maintenance", Hrs(6), 120m);
+        Op("Minor enhancements & change requests", "Small feature changes and continuous improvement.", "Maintenance", Hrs(10), 130m);
+
+        // Conditional operating activities.
+        if (s.MentionsPii || s.MentionsRegulated)
+            Op("Security & compliance reviews", "Access reviews, audit evidence, and compliance checks.", "Operations", Hrs(4), 150m);
+        if (s.HasAi)
+            Op("AI model monitoring & prompt tuning", "Prompt/eval maintenance, quality monitoring, and drift checks.", "Operations", Hrs(6), 140m);
 
         return est;
     }

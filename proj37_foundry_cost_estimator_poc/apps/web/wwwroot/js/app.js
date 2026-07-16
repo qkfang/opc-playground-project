@@ -27,7 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (page === 'scope') initScope();
   else if (page === 'requirements') initRequirements();
   else if (page === 'cost') initCost();
+  else if (page === 'project') initProjectCost();
+  else if (page === 'operations') initOperations();
   else if (page === 'steps') initSteps();
+  else if (page === 'compare') initCompare();
   else if (page === 'estimations') initEstimations();
 });
 
@@ -212,6 +215,153 @@ function initSteps() {
   renderStepCards();
   if (!showOrEmpty(job, '#stepsCard')) return;
   renderSteps(job.agentSteps || []);
+}
+
+// ================================================================ PROJECT (build) cost page
+// One-time delivery cost: roles with an editable Day rate and Estimated days; Cost = rate * days.
+let PROJECT_STATE = null;
+
+function initProjectCost() {
+  const job = Store.get();
+  platformContext(job);
+  if (!showOrEmpty(job, '#projectCard')) return;
+  const dl = $('#downloadBtn');
+  if (dl) { dl.hidden = false; dl.href = `/api/estimations/${job.jobId}/workbook`; dl.setAttribute('download', ''); }
+  renderProjectCost(job.projectCost || {});
+}
+
+function renderProjectCost(p) {
+  PROJECT_STATE = p;
+  const roles = p.roles || [];
+  roles.forEach(r => { r.cost = Math.round(Number(r.dayRate || 0) * Number(r.estimatedDays || 0) * 100) / 100; });
+  renderProjectTotals(p);
+  if (!roles.length) { $('#tab-project').innerHTML = '<p class="muted">No delivery roles.</p>'; return; }
+  const rows = roles.map((r, idx) => `<tr>
+      <td>${esc(r.role)}</td><td class="muted">${esc(r.description)}</td>
+      <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="dayRate" value="${Number(r.dayRate)}" aria-label="Day rate for ${esc(r.role)}" /></td>
+      <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="days" value="${Number(r.estimatedDays)}" aria-label="Estimated days for ${esc(r.role)}" /></td>
+      <td class="num-col" data-cost="${idx}"><strong>${fmtMoney(r.cost, p.currency)}</strong></td></tr>`).join('');
+  $('#tab-project').innerHTML = `
+    <table><thead><tr><th>Role</th><th>Description</th>
+      <th class="num-col">Day rate</th><th class="num-col">Est. days</th><th class="num-col">Cost</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><th colspan="4" class="num-col">Total build cost (incl. <span>${p.contingencyPercent}</span>% contingency)</th>
+      <th class="num-col" id="projectFootTotal">${fmtMoney(projectTotalWithContingency(p), p.currency)}</th></tr></tfoot></table>
+    <p class="muted" style="margin-top:.7rem">${(p.notes || []).map(esc).join(' · ')}</p>`;
+  $all('.qty-input', $('#tab-project')).forEach(inp => inp.addEventListener('input', onProjectEdit));
+}
+
+function projectLaborTotal(p) {
+  return (p.roles || []).reduce((s, r) => s + Number(r.cost || 0), 0);
+}
+
+function projectTotalWithContingency(p) {
+  const pct = Number(p.contingencyPercent || 0);
+  return Math.round(projectLaborTotal(p) * (1 + pct / 100) * 100) / 100;
+}
+
+function onProjectEdit(e) {
+  const idx = Number(e.target.dataset.row);
+  const field = e.target.dataset.field;
+  const p = PROJECT_STATE;
+  if (!p || !p.roles[idx]) return;
+  const val = Number(e.target.value);
+  const safe = isFinite(val) && val >= 0 ? val : 0;
+  const role = p.roles[idx];
+  if (field === 'dayRate') role.dayRate = safe; else role.estimatedDays = safe;
+  role.cost = Math.round(Number(role.dayRate || 0) * Number(role.estimatedDays || 0) * 100) / 100;
+  const cell = $(`[data-cost="${idx}"]`); if (cell) cell.innerHTML = `<strong>${fmtMoney(role.cost, p.currency)}</strong>`;
+  const foot = $('#projectFootTotal'); if (foot) foot.textContent = fmtMoney(projectTotalWithContingency(p), p.currency);
+  renderProjectTotals(p);
+}
+
+function renderProjectTotals(p) {
+  const el = $('#projectTotals');
+  if (!el) return;
+  const roles = p.roles || [];
+  const pct = Number(p.contingencyPercent || 0);
+  const labor = roles.reduce((s, r) => s + Number(r.cost || 0), 0);
+  const days = roles.reduce((s, r) => s + Number(r.estimatedDays || 0), 0);
+  const withCont = Math.round(labor * (1 + pct / 100) * 100) / 100;
+  el.innerHTML = `
+    <div class="total-box hi"><div class="num">${fmtMoney(withCont, p.currency)}</div><div class="lbl">Total build cost</div></div>
+    <div class="total-box"><div class="num">${fmtMoney(labor, p.currency)}</div><div class="lbl">Labour (excl. contingency)</div></div>
+    <div class="total-box"><div class="num">${Math.round(days * 10) / 10}</div><div class="lbl">Person-days</div></div>
+    <div class="total-box"><div class="num">${roles.length}</div><div class="lbl">Roles</div></div>
+    <div class="total-box"><div class="num">${pct}%</div><div class="lbl">Contingency</div></div>`;
+}
+
+// ================================================================ OPERATION (run) cost page
+// Ongoing monthly cost: line items with an editable Qty and Unit price; Monthly = qty * unit price.
+let OPERATIONS_STATE = null;
+
+function initOperations() {
+  const job = Store.get();
+  platformContext(job);
+  if (!showOrEmpty(job, '#operationsCard')) return;
+  const dl = $('#downloadBtn');
+  if (dl) { dl.hidden = false; dl.href = `/api/estimations/${job.jobId}/workbook`; dl.setAttribute('download', ''); }
+  renderOperations(job.operations || {});
+}
+
+function renderOperations(o) {
+  OPERATIONS_STATE = o;
+  const items = o.items || [];
+  items.forEach(i => { i.monthlyCost = Math.round(Number(i.quantity || 0) * Number(i.unitPrice || 0) * 100) / 100; });
+  renderOperationsTotals(o);
+  if (!items.length) { $('#tab-operations').innerHTML = '<p class="muted">No operating line items.</p>'; return; }
+  const rows = items.map((i, idx) => `<tr>
+      <td>${esc(i.category)}</td><td>${esc(i.item)}</td><td class="muted">${esc(i.description)}</td>
+      <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="qty" value="${Number(i.quantity)}" aria-label="Quantity for ${esc(i.item)}" /></td>
+      <td class="num-col"><input class="qty-input" type="number" min="0" step="any" data-row="${idx}" data-field="unitPrice" value="${Number(i.unitPrice)}" aria-label="Unit price for ${esc(i.item)}" /></td>
+      <td class="muted">${esc(i.unit)}</td>
+      <td class="num-col" data-op="${idx}"><strong>${fmtMoney(i.monthlyCost, o.currency)}</strong></td></tr>`).join('');
+  $('#tab-operations').innerHTML = `
+    <table><thead><tr><th>Category</th><th>Item</th><th>Description</th>
+      <th class="num-col">Qty</th><th class="num-col">Unit price</th><th>Unit</th><th class="num-col">Monthly</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><th colspan="6" class="num-col">Monthly total (incl. <span>${o.contingencyPercent}</span>% contingency)</th>
+      <th class="num-col" id="operationsFootTotal">${fmtMoney(operationsTotalWithContingency(o), o.currency)}</th></tr></tfoot></table>
+    <p class="muted" style="margin-top:.7rem">${(o.notes || []).map(esc).join(' · ')}</p>`;
+  $all('.qty-input', $('#tab-operations')).forEach(inp => inp.addEventListener('input', onOperationsEdit));
+}
+
+function operationsMonthlyRaw(o) {
+  return (o.items || []).reduce((s, i) => s + Number(i.monthlyCost || 0), 0);
+}
+
+function operationsTotalWithContingency(o) {
+  const pct = Number(o.contingencyPercent || 0);
+  return Math.round(operationsMonthlyRaw(o) * (1 + pct / 100) * 100) / 100;
+}
+
+function onOperationsEdit(e) {
+  const idx = Number(e.target.dataset.row);
+  const field = e.target.dataset.field;
+  const o = OPERATIONS_STATE;
+  if (!o || !o.items[idx]) return;
+  const val = Number(e.target.value);
+  const safe = isFinite(val) && val >= 0 ? val : 0;
+  const item = o.items[idx];
+  if (field === 'qty') item.quantity = safe; else item.unitPrice = safe;
+  item.monthlyCost = Math.round(Number(item.quantity || 0) * Number(item.unitPrice || 0) * 100) / 100;
+  const cell = $(`[data-op="${idx}"]`); if (cell) cell.innerHTML = `<strong>${fmtMoney(item.monthlyCost, o.currency)}</strong>`;
+  const foot = $('#operationsFootTotal'); if (foot) foot.textContent = fmtMoney(operationsTotalWithContingency(o), o.currency);
+  renderOperationsTotals(o);
+}
+
+function renderOperationsTotals(o) {
+  const el = $('#operationsTotals');
+  if (!el) return;
+  const pct = Number(o.contingencyPercent || 0);
+  const raw = operationsMonthlyRaw(o);
+  const monthly = Math.round(raw * (1 + pct / 100) * 100) / 100;
+  el.innerHTML = `
+    <div class="total-box hi"><div class="num">${fmtMoney(monthly, o.currency)}</div><div class="lbl">Run cost / mo</div></div>
+    <div class="total-box"><div class="num">${fmtMoney(monthly * 12, o.currency)}</div><div class="lbl">Run cost / yr</div></div>
+    <div class="total-box"><div class="num">${fmtMoney(raw, o.currency)}</div><div class="lbl">Monthly (excl. contingency)</div></div>
+    <div class="total-box"><div class="num">${(o.items || []).length}</div><div class="lbl">Line items</div></div>
+    <div class="total-box"><div class="num">${pct}%</div><div class="lbl">Contingency</div></div>`;
 }
 
 function renderScope(s) {
@@ -421,6 +571,97 @@ async function renderStepCards() {
       <button type="button" class="btn btn-secondary btn-sm" data-agent-step="${esc(s.key)}">View instructions</button>
     </div>`).join('');
   $all('[data-agent-step]', host).forEach(b => b.addEventListener('click', () => showAgentStep(b.dataset.agentStep)));
+}
+
+// ================================================================ COMPARE page (Build vs Buy)
+function initCompare() {
+  const job = Store.get();
+  platformContext(job);
+  const btn = $('#runCompareBtn');
+  if (!showOrEmpty(job, '#compareCard')) return;
+  if (btn) { btn.hidden = false; btn.addEventListener('click', () => runCompare(job.jobId)); }
+}
+
+async function runCompare(jobId) {
+  const body = $('#compareBody');
+  const btn = $('#runCompareBtn');
+  if (btn) btn.disabled = true;
+  if (body) body.innerHTML = '<p class="muted">Running the Build-vs-Buy analysis…</p>';
+  try {
+    const r = await fetch('/api/estimations/' + encodeURIComponent(jobId) + '/compare', { method: 'POST' });
+    const cmp = await r.json();
+    if (!r.ok) { if (body) body.innerHTML = `<p class="muted">Comparison failed: ${esc(cmp.error || r.statusText)}</p>`; return; }
+    renderCompare(cmp);
+  } catch (err) {
+    if (body) body.innerHTML = `<p class="muted">Comparison error: ${esc(err.message)}</p>`;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderCompare(cmp) {
+  const body = $('#compareBody');
+  if (!body) return;
+  const ccy = cmp.currency || 'AUD';
+  const t = cmp.totals || {};
+  const recLabel = { build: 'Build on Azure', buy: 'Buy off-the-shelf', neutral: 'Neutral / cost-neutral' }[cmp.recommendation] || cmp.recommendation;
+  const recClass = { build: 'rec-build', buy: 'rec-buy', neutral: 'rec-neutral' }[cmp.recommendation] || 'rec-neutral';
+
+  const cheaperTag = (c) => c === 'build' ? '<span class="pill Must">Build cheaper</span>'
+    : c === 'buy' ? '<span class="pill Could">Buy cheaper</span>' : '<span class="pill Should">—</span>';
+
+  const rows = (cmp.sections || []).map(s => `
+    <tr>
+      <td><strong>${esc(s.section)}</strong><div class="muted cmp-detail">Build: ${esc(s.buildDetail)}</div><div class="muted cmp-detail">Buy: ${esc(s.buyDetail)}</div></td>
+      <td>${esc(s.costType)}</td>
+      <td class="num-col">${fmtMoney(s.buildCost, ccy)}</td>
+      <td class="num-col">${fmtMoney(s.buyCost, ccy)}</td>
+      <td class="num-col">${s.difference >= 0 ? '+' : '−'}${fmtMoney(Math.abs(s.difference), ccy)}</td>
+      <td>${cheaperTag(s.cheaper)}</td>
+    </tr>
+    <tr class="cmp-reason-row"><td colspan="6" class="muted"><em>${esc(s.reasoning)}</em></td></tr>`).join('');
+
+  const totalsGrid = `
+    <div class="cmp-totals">
+      <div class="cmp-col">
+        <h4>🏗️ Build on Azure</h4>
+        <div class="total-box"><div class="num">${fmtMoney(t.buildOneTime, ccy)}</div><div class="lbl">One-time build</div></div>
+        <div class="total-box"><div class="num">${fmtMoney(t.buildAnnualRecurring, ccy)}</div><div class="lbl">Annual run cost</div></div>
+        <div class="total-box"><div class="num">${fmtMoney(t.buildYearOne, ccy)}</div><div class="lbl">Year 1 total</div></div>
+        <div class="total-box hi"><div class="num">${fmtMoney(t.buildThreeYearTco, ccy)}</div><div class="lbl">3-year TCO</div></div>
+      </div>
+      <div class="cmp-col">
+        <h4>🛒 Buy off-the-shelf</h4>
+        <div class="total-box"><div class="num">${fmtMoney(t.buyOneTime, ccy)}</div><div class="lbl">One-time buy</div></div>
+        <div class="total-box"><div class="num">${fmtMoney(t.buyAnnualRecurring, ccy)}</div><div class="lbl">Annual run cost</div></div>
+        <div class="total-box"><div class="num">${fmtMoney(t.buyYearOne, ccy)}</div><div class="lbl">Year 1 total</div></div>
+        <div class="total-box hi"><div class="num">${fmtMoney(t.buyThreeYearTco, ccy)}</div><div class="lbl">3-year TCO</div></div>
+      </div>
+    </div>`;
+
+  const reasoning = (cmp.reasoning && cmp.reasoning.length)
+    ? '<ul class="tight">' + cmp.reasoning.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>'
+    : '<p class="muted">No reasoning provided.</p>';
+
+  const buyWarn = cmp.buyCostAvailable ? '' :
+    '<p class="status error" style="display:block">No off-the-shelf “buy” cost section was found in the source documents, so only the build cost is shown. Add a COTS/SaaS price list to the brief for a full comparison.</p>';
+
+  body.innerHTML = `
+    ${buyWarn}
+    <div class="cmp-recommend ${recClass}">
+      <div class="cmp-rec-head"><span class="cmp-rec-badge">Recommendation</span><span class="cmp-rec-value">${esc(recLabel)}</span>
+        <span class="badge ${cmp.engine === 'foundry' ? 'foundry' : 'offline'}">engine: ${esc(cmp.engine)}</span></div>
+      <p class="cmp-rec-summary">${esc(cmp.summary)}</p>
+    </div>
+    ${totalsGrid}
+    <h3 class="cmp-h">Cost by section</h3>
+    <table class="cmp-table"><thead><tr>
+      <th>Section</th><th>Type</th><th class="num-col">Build (${esc(ccy)})</th>
+      <th class="num-col">Buy (${esc(ccy)})</th><th class="num-col">Buy − Build</th><th>Cheaper</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <h3 class="cmp-h">Reasoning</h3>
+    ${reasoning}
+    <p class="muted" style="margin-top:.7rem">${(cmp.notes || []).map(esc).join(' · ')}</p>`;
 }
 
 // ================================================================ ESTIMATIONS page

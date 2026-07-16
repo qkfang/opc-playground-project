@@ -1,4 +1,4 @@
-# proj37 — Foundry Azure Cost Estimator (POC)
+# proj37 — Foundry Build vs Buy Agent (POC)
 
 A serious proof-of-concept **.NET 10 Azure web app** that uses **Microsoft Foundry** prompt-agent
 capabilities to:

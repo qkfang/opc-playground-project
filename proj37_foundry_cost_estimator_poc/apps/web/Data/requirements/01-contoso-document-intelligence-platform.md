@@ -38,3 +38,23 @@ time and improve consistency across the shared-services team.
 - Training a custom model from scratch (use pre-built / Foundry models).
 - Mobile native apps.
 - Migration of historical documents older than 7 years.
+
+### Off-the-shelf software product cost comparison
+The following is an indicative price list for buying a commercial off-the-shelf (COTS) /
+SaaS enterprise document-intelligence product instead of building the solution ourselves.
+Use it as the "buy" baseline to compare against the estimated "build" cost. All figures are
+indicative AUD for an enterprise deployment at ~120,000 monthly active users, mission-critical tier.
+
+| Cost category | Type | Indicative cost (AUD) | Notes |
+|---|---|---|---|
+| Product licensing / subscription | Recurring (annual) | $520,000 / yr | Enterprise tier, per-seat + document-volume pricing at ~120k MAU |
+| Onboarding & implementation (SI partner) | One-time | $280,000 | Discovery, solution design, environment provisioning, go-live |
+| Setup & configuration | One-time | $95,000 | Workflow, taxonomy, RBAC, tenancy and security hardening |
+| Data migration & ingestion | One-time | $110,000 | Historical document load (7-year corpus), OCR reprocessing |
+| Integration (LOB API, SSO, webhooks) | One-time | $130,000 | REST integration to line-of-business system + Entra ID SSO |
+| Compliance & security accreditation | One-time | $75,000 | SOC 2 / PII controls validation, penetration test |
+| Annual support & maintenance | Recurring (annual) | $104,000 | Vendor premium support (20% of licence), SLA-backed |
+| Training & change management | One-time | $45,000 | Operations staff enablement, admin training |
+| Premium/priority SLA uplift | Recurring (annual) | $60,000 | 99.9% availability, mission-critical response times |
+| **Year 1 total (one-time + first-year recurring)** | — | **≈ $1,419,000** | One-time $735,000 + first-year recurring $684,000 |
+| **Ongoing annual run cost (year 2+)** | Recurring | **≈ $684,000 / yr** | Subscription + support + SLA uplift |

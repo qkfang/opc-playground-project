@@ -29,3 +29,21 @@ with a citation to the source policy document. This is an internal productivity 
 - Public/customer access.
 - Integration with the HR system of record.
 - Multi-language support.
+
+### Off-the-shelf software product cost comparison
+The following is an indicative price list for buying a commercial off-the-shelf (COTS) /
+SaaS internal "ask the handbook" knowledge-assistant product instead of building the solution
+ourselves. Use it as the "buy" baseline to compare against the estimated "build" cost. All
+figures are indicative AUD for a low-budget internal pilot of ~400 staff and a few thousand
+questions per month.
+
+| Cost category | Type | Indicative cost (AUD) | Notes |
+|---|---|---|---|
+| Product licensing / subscription | Recurring (annual) | $19,200 / yr | Per-user subscription (~400 seats), entry tier |
+| Onboarding & implementation | One-time | $8,000 | Self-serve / lightly-assisted onboarding |
+| Setup & configuration | One-time | $4,000 | SSO connection, branding, roles |
+| Content ingestion (policy PDFs, wiki) | One-time | $3,500 | Small corpus load and indexing |
+| Annual support & maintenance | Recurring (annual) | $3,840 | Vendor standard support (20% of licence) |
+| Training & enablement | One-time | $2,500 | Brief admin + staff enablement |
+| **Year 1 total (one-time + first-year recurring)** | — | **≈ $41,040** | One-time $18,000 + first-year recurring $23,040 |
+| **Ongoing annual run cost (year 2+)** | Recurring | **≈ $23,040 / yr** | Subscription + support |
