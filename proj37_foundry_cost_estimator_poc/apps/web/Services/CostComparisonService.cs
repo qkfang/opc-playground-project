@@ -15,7 +15,7 @@ namespace Proj37.CostEstimator.Web.Services;
 ///
 /// The numeric analysis is deterministic and auditable:
 ///   • BUILD side is rolled up from the agentic estimate (one-time delivery cost + Azure infrastructure
-///     + ongoing run/support), converted from USD into the comparison currency.
+///     + ongoing run/support).
 ///   • BUY side is parsed from the "off-the-shelf / COTS" cost table in the source documents.
 /// A Compare (Build-vs-Buy Analyst) agent then enriches the numbers with a narrative summary, a
 /// recommendation, and per-section reasoning. When Foundry is not configured (or the call fails), a
@@ -25,9 +25,6 @@ public sealed partial class CostComparisonService
 {
     private readonly FoundryOptions _options;
     private readonly ILogger<CostComparisonService> _logger;
-
-    /// <summary>Reference USD→AUD rate used to bring build costs (USD) into the buy baseline currency (AUD).</summary>
-    public const decimal UsdToAudReferenceRate = 1.55m;
 
     public CostComparisonService(FoundryOptions options, ILogger<CostComparisonService> logger)
     {
@@ -70,28 +67,20 @@ public sealed partial class CostComparisonService
 
     private static CostComparison BuildDeterministicComparison(EstimationResult job)
     {
-        var fx = UsdToAudReferenceRate;
         var cmp = new CostComparison
         {
             JobId = job.JobId,
-            Currency = "AUD",
-            FxRateUsdToLocal = fx,
             Notes =
             {
-                $"Build costs are estimated in USD and converted to AUD at a reference rate of 1 USD = {fx:N2} AUD.",
-                "Buy costs are read from the off-the-shelf cost section of the source documents (indicative AUD).",
+                "Buy costs are read from the off-the-shelf cost section of the source documents.",
                 "All figures are reference estimates for comparison only — not a binding quote."
             }
         };
 
-        // ----- BUILD side (USD -> AUD) -----
-        var buildOneTimeUsd = job.ProjectCost.TotalWithContingency;                    // one-time delivery/build
-        var azureAnnualUsd = job.Cost.MonthlyTotalWithContingency * 12m;              // production Azure infra / yr
-        var opsAnnualUsd = job.Operations.AnnualTotalWithContingency;                 // run & support / yr
-
-        var buildOneTime = Aud(buildOneTimeUsd, fx);
-        var buildAzureAnnual = Aud(azureAnnualUsd, fx);
-        var buildOpsAnnual = Aud(opsAnnualUsd, fx);
+        // ----- BUILD side -----
+        var buildOneTime = Money2(job.ProjectCost.TotalWithContingency);              // one-time delivery/build
+        var buildAzureAnnual = Money2(job.Cost.MonthlyTotalWithContingency * 12m);    // production Azure infra / yr
+        var buildOpsAnnual = Money2(job.Operations.AnnualTotalWithContingency);       // run & support / yr
 
         // ----- BUY side (parsed from documents) -----
         var buy = ParseBuyBaseline(job);
@@ -119,7 +108,7 @@ public sealed partial class CostComparisonService
             Section = "Cloud infrastructure & licensing (annual)",
             CostType = "Annual (recurring)",
             BuildCost = buildAzureAnnual,
-            BuildDetail = $"Azure infrastructure for production: {Money(job.Cost.MonthlyTotalWithContingency, "USD")}/mo × 12 (incl. {job.Cost.ContingencyPercent:N0}% contingency).",
+            BuildDetail = $"Azure infrastructure for production: {Money(job.Cost.MonthlyTotalWithContingency)}/mo × 12 (incl. {job.Cost.ContingencyPercent:N0}% contingency).",
             BuyCost = buyLicensingAnnual,
             BuyDetail = buy.Found
                 ? "Vendor product licensing / subscription (recurring)."
@@ -150,7 +139,7 @@ public sealed partial class CostComparisonService
         return cmp;
     }
 
-    private static decimal Aud(decimal usd, decimal fx) => Math.Round(usd * fx, 2);
+    private static decimal Money2(decimal amount) => Math.Round(amount, 2);
 
     // ---------------------------------------------------------------- buy-baseline parser
 
@@ -247,8 +236,8 @@ public sealed partial class CostComparisonService
             var diff = Math.Abs(s.Difference);
             s.Reasoning = s.Cheaper switch
             {
-                "build" => $"Building is cheaper here by {Money(diff, c.Currency)} — the agentic estimate avoids vendor {(s.CostType == "One-time" ? "onboarding/implementation fees" : "licensing/subscription mark-up")}.",
-                "buy" => $"Buying is cheaper here by {Money(diff, c.Currency)} — the vendor absorbs this into a packaged price, undercutting the {(s.CostType == "One-time" ? "bespoke build effort" : "run/support you would carry yourself")}.",
+                "build" => $"Building is cheaper here by {Money(diff)} — the agentic estimate avoids vendor {(s.CostType == "One-time" ? "onboarding/implementation fees" : "licensing/subscription mark-up")}.",
+                "buy" => $"Buying is cheaper here by {Money(diff)} — the vendor absorbs this into a packaged price, undercutting the {(s.CostType == "One-time" ? "bespoke build effort" : "run/support you would carry yourself")}.",
                 _ => "The two options are effectively level for this section."
             };
         }
@@ -258,7 +247,7 @@ public sealed partial class CostComparisonService
         {
             c.Recommendation = "neutral";
             c.Summary = "The agentic Azure build cost is available, but the source documents do not contain an off-the-shelf 'buy' cost section to compare against. Add a COTS/SaaS price list to the brief to enable a full Build-vs-Buy recommendation.";
-            c.Reasoning.Add($"Build one-time: {Money(t.BuildOneTime, c.Currency)}; build annual run: {Money(t.BuildAnnualRecurring, c.Currency)}.");
+            c.Reasoning.Add($"Build one-time: {Money(t.BuildOneTime)}; build annual run: {Money(t.BuildAnnualRecurring)}.");
             c.Reasoning.Add("No buy baseline detected in the documents, so no comparison could be made.");
             return;
         }
@@ -273,15 +262,15 @@ public sealed partial class CostComparisonService
 
         c.Summary = c.Recommendation switch
         {
-            "build" => $"Building on Azure is the more cost-effective option over 3 years: {Money(buildTco, c.Currency)} vs {Money(buyTco, c.Currency)} to buy — a saving of about {Money(gap, c.Currency)}. The larger up-front build effort is outweighed by materially lower recurring cost.",
-            "buy"   => $"Buying the off-the-shelf product is the more cost-effective option over 3 years: {Money(buyTco, c.Currency)} vs {Money(buildTco, c.Currency)} to build — about {Money(gap, c.Currency)} cheaper. The recurring cost advantage of building does not repay the build investment within the horizon.",
-            _        => $"Build and Buy are within ~10% on a 3-year TCO ({Money(buildTco, c.Currency)} vs {Money(buyTco, c.Currency)}); the decision should be driven by qualitative factors (control, customisation, lock-in, time-to-value) rather than cost alone."
+            "build" => $"Building on Azure is the more cost-effective option over 3 years: {Money(buildTco)} vs {Money(buyTco)} to buy — a saving of about {Money(gap)}. The larger up-front build effort is outweighed by materially lower recurring cost.",
+            "buy"   => $"Buying the off-the-shelf product is the more cost-effective option over 3 years: {Money(buyTco)} vs {Money(buildTco)} to build — about {Money(gap)} cheaper. The recurring cost advantage of building does not repay the build investment within the horizon.",
+            _        => $"Build and Buy are within ~10% on a 3-year TCO ({Money(buildTco)} vs {Money(buyTco)}); the decision should be driven by qualitative factors (control, customisation, lock-in, time-to-value) rather than cost alone."
         };
 
-        c.Reasoning.Add($"Year-1 cost — Build {Money(t.BuildYearOne, c.Currency)} vs Buy {Money(t.BuyYearOne, c.Currency)}.");
-        c.Reasoning.Add($"Ongoing annual run cost — Build {Money(t.BuildAnnualRecurring, c.Currency)} vs Buy {Money(t.BuyAnnualRecurring, c.Currency)}.");
-        c.Reasoning.Add($"One-time cost — Build {Money(t.BuildOneTime, c.Currency)} vs Buy {Money(t.BuyOneTime, c.Currency)}.");
-        c.Reasoning.Add($"3-year total cost of ownership — Build {Money(buildTco, c.Currency)} vs Buy {Money(buyTco, c.Currency)}.");
+        c.Reasoning.Add($"Year-1 cost — Build {Money(t.BuildYearOne)} vs Buy {Money(t.BuyYearOne)}.");
+        c.Reasoning.Add($"Ongoing annual run cost — Build {Money(t.BuildAnnualRecurring)} vs Buy {Money(t.BuyAnnualRecurring)}.");
+        c.Reasoning.Add($"One-time cost — Build {Money(t.BuildOneTime)} vs Buy {Money(t.BuyOneTime)}.");
+        c.Reasoning.Add($"3-year total cost of ownership — Build {Money(buildTco)} vs Buy {Money(buyTco)}.");
         c.Reasoning.Add("Non-cost factors to weigh: building maximises control and customisation; buying accelerates time-to-value but adds vendor lock-in and per-seat/volume price growth.");
     }
 
@@ -329,7 +318,7 @@ public sealed partial class CostComparisonService
             var diff = Math.Abs(s.Difference);
             s.Reasoning = s.Cheaper == "n/a"
                 ? "No comparable figure available for this section."
-                : $"{(s.Cheaper == "build" ? "Build" : "Buy")} is cheaper here by {Money(diff, c.Currency)}.";
+                : $"{(s.Cheaper == "build" ? "Build" : "Buy")} is cheaper here by {Money(diff)}.";
         }
     }
 
@@ -349,8 +338,6 @@ public sealed partial class CostComparisonService
     {
         var structured = new
         {
-            currency = c.Currency,
-            fxRateUsdToLocal = c.FxRateUsdToLocal,
             buyCostAvailable = c.BuyCostAvailable,
             totals = c.Totals,
             sections = c.Sections.Select(s => new
@@ -365,7 +352,7 @@ public sealed partial class CostComparisonService
 
         return $$"""
         Compare BUILDING this solution on Azure against BUYING an off-the-shelf product.
-        The application has already computed the numbers below (all in {{c.Currency}}); do NOT recompute them.
+        The application has already computed the numbers below; do NOT recompute them.
         Explain and recommend based strictly on these figures and the source cost section.
 
         STRUCTURED COMPARISON:
@@ -395,11 +382,8 @@ public sealed partial class CostComparisonService
         return text.Substring(start, end - start + 1);
     }
 
-    private static string Money(decimal amount, string currency)
-    {
-        var sym = currency switch { "USD" => "$", "AUD" => "A$", "EUR" => "€", "GBP" => "£", _ => currency + " " };
-        return sym + amount.ToString("N2", CultureInfo.InvariantCulture);
-    }
+    private static string Money(decimal amount) =>
+        "$" + amount.ToString("N2", CultureInfo.InvariantCulture);
 
     private sealed class AgentNarrative
     {

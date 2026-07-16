@@ -612,7 +612,7 @@ async function runCompare(jobId) {
 function renderCompare(cmp) {
   const body = $('#compareBody');
   if (!body) return;
-  const ccy = cmp.currency || 'AUD';
+  const ccy = cmp.currency || 'USD';
   const t = cmp.totals || {};
   const recLabel = { build: 'Build on Azure', buy: 'Buy off-the-shelf', neutral: 'Neutral / cost-neutral' }[cmp.recommendation] || cmp.recommendation;
   const recClass = { build: 'rec-build', buy: 'rec-buy', neutral: 'rec-neutral' }[cmp.recommendation] || 'rec-neutral';

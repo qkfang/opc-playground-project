@@ -14,11 +14,8 @@ public sealed class CostComparison
     /// <summary>Whether the reasoning was written by the live Foundry agent or the deterministic offline fallback.</summary>
     public string Engine { get; set; } = "offline";        // foundry | offline
 
-    /// <summary>Comparison currency (the "buy" baseline currency; build costs are converted into it).</summary>
-    public string Currency { get; set; } = "AUD";
-
-    /// <summary>Reference FX rate used to convert build costs (USD) into the comparison currency.</summary>
-    public decimal FxRateUsdToLocal { get; set; } = 1m;
+    /// <summary>Reporting currency for all figures (USD).</summary>
+    public string Currency { get; set; } = "USD";
 
     /// <summary>True when a "buy" / off-the-shelf cost section was found in the source documents.</summary>
     public bool BuyCostAvailable { get; set; }
@@ -61,7 +58,7 @@ public sealed class CostComparisonSection
         BuildCost == 0 && BuyCost == 0 ? "n/a" : (BuildCost <= BuyCost ? "build" : "buy");
 }
 
-/// <summary>Roll-up totals for the Build and Buy options, in the comparison currency.</summary>
+/// <summary>Roll-up totals for the Build and Buy options, in USD.</summary>
 public sealed class ComparisonTotals
 {
     // ---- Build (agentic Azure estimate) ----
