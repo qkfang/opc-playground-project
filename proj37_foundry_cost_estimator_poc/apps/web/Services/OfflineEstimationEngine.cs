@@ -332,22 +332,22 @@ public sealed partial class OfflineEstimationEngine : IEstimationEngine
             est.Roles.Add(new ProjectRoleLineItem { Role = role, Description = desc, DayRate = dayRate, EstimatedDays = days });
 
         // Core roles — always present.
-        Role("Solution Architect", "Solution design, Azure architecture, and technical governance.", 1200m, Days(10));
-        Role("Project Manager", "Delivery planning, coordination, reporting, and stakeholder management.", 1000m, Days(14));
-        Role("Business Analyst", "Requirements elaboration, acceptance criteria, and backlog grooming.", 850m, Days(8));
+        Role("Solution Architect", "Solution design, Azure architecture, and technical governance.", 600m, Days(10));
+        Role("Project Manager", "Delivery planning, coordination, reporting, and stakeholder management.", 500m, Days(14));
+        Role("Business Analyst", "Requirements elaboration, acceptance criteria, and backlog grooming.", 420m, Days(8));
 
         // Build roles — conditional on detected capabilities.
-        Role("Backend Developer", "APIs, services, integration, and Azure resource wiring.", 900m, Days(s.HasApi ? 28 : 22));
+        Role("Backend Developer", "APIs, services, integration, and Azure resource wiring.", 450m, Days(s.HasApi ? 28 : 22));
         if (s.HasWebApp)
-            Role("Frontend Developer", "Web UI, client experience, and accessibility.", 850m, Days(20));
+            Role("Frontend Developer", "Web UI, client experience, and accessibility.", 420m, Days(20));
         if (s.HasAi)
-            Role("AI/ML Engineer", "Foundry agent design, prompts, grounding, and evaluation.", 1100m, Days(16));
+            Role("AI/ML Engineer", "Foundry agent design, prompts, grounding, and evaluation.", 550m, Days(16));
         if (s.HasRelationalDb || s.HasNoSql)
-            Role("Data Engineer", "Data model, storage, ingestion, and query performance.", 950m, Days(12));
+            Role("Data Engineer", "Data model, storage, ingestion, and query performance.", 480m, Days(12));
 
         // Quality + delivery enablement — always present.
-        Role("QA Engineer", "Test planning, automated tests, and release verification.", 750m, Days(16));
-        Role("DevOps Engineer", "CI/CD pipelines, IaC, environments, and observability wiring.", 950m, Days(10));
+        Role("QA Engineer", "Test planning, automated tests, and release verification.", 380m, Days(16));
+        Role("DevOps Engineer", "CI/CD pipelines, IaC, environments, and observability wiring.", 480m, Days(10));
 
         return est;
     }
