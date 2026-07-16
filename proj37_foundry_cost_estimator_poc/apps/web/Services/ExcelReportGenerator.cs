@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Proj37.CostEstimator.Web.Models;
+using System.Globalization;
 
 namespace Proj37.CostEstimator.Web.Services;
 
@@ -52,13 +53,26 @@ public sealed class ExcelReportGenerator
     private const string NameProdMonthly = "Proj37_ProdMonthly";
     private const string NameTotalMonthly = "Proj37_TotalMonthly";
 
+    // Cached formula results, keyed by "SheetName!A1". ClosedXML 0.104 writes every formula cell WITHOUT
+    // a cached value (and its calc engine stack-overflows evaluating the table SUBTOTAL / structured
+    // references, so we can't ask it to compute them). Excel treats formula cells that have no cached
+    // value — together with the table calculated column that depends on them — as damaged and strips them
+    // on open ("Removed Records: Formula …" / "Removed Records: Table …"). We compute the results here in
+    // C# and inject them as cached <v> values during the post-save OOXML fixup so the workbook opens clean.
+    private readonly Dictionary<string, double> _cachedValues = new();
+
+    private void Cache(IXLCell cell, double value)
+        => _cachedValues[$"{cell.Worksheet.Name}!{cell.Address.ToStringRelative()}"] = value;
+
     public byte[] Generate(EstimationResult r)
     {
         using var wb = new XLWorkbook();
         // Excel must recalculate every formula when the workbook is opened. ClosedXML writes formula
         // cells WITHOUT cached values, so without a forced recalc Excel shows blank/0 in formula cells
-        // ("missing formulas") and can raise a repair prompt on the uncached table totals / structured
-        // references. Auto calc mode + fullCalcOnLoad (stamped below) fixes both.
+        // ("missing formulas") and — more seriously — strips the uncached formulas and the table that
+        // depends on them ("Removed Records: Formula/Table"). We inject C#-computed cached values in the
+        // post-save fixup and stamp Auto calc mode + fullCalcOnLoad (below) so Excel opens clean and still
+        // recomputes on load.
         wb.CalculateMode = XLCalculateMode.Auto;
 
         BuildSummarySheet(wb, r);
@@ -80,14 +94,19 @@ public sealed class ExcelReportGenerator
     }
 
     /// <summary>
-    /// Post-save OOXML fixup: ClosedXML 0.104 emits formula cells with no cached value and stamps a
-    /// known <c>calcId</c>, so Excel trusts the (absent) cached results — formula cells render blank/0
-    /// and the uncached table totals-row SUBTOTAL + structured-reference cells can trigger Excel's
-    /// "we found a problem with some content" repair prompt. Setting <c>fullCalcOnLoad="1"</c> and
-    /// <c>calcId="0"</c> tells Excel the values came from a different calc engine and to recompute the
-    /// whole workbook on open, which populates every formula and removes the repair prompt.
+    /// Post-save OOXML fixup. Two problems are corrected here:
+    /// <list type="number">
+    /// <item>ClosedXML 0.104 emits every formula cell with <b>no cached value</b> (its calc engine
+    /// stack-overflows on the table SUBTOTAL / structured references, so it can't compute them). Excel
+    /// treats such formula cells — and the table calculated column that depends on them — as damaged and
+    /// strips them on open ("Removed Records: Formula …" / "Removed Records: Table …"). We inject the
+    /// results we computed in C# (<see cref="_cachedValues"/>) as cached <c>&lt;v&gt;</c> values.</item>
+    /// <item>We set <c>fullCalcOnLoad="1"</c> / <c>calcId="0"</c> so Excel still recomputes everything
+    /// on open (keeping the cached values honest if a reviewer edits inputs), and drop the stale
+    /// <c>calcChain.xml</c> that ClosedXML leaves inconsistent with the uncached cells.</item>
+    /// </list>
     /// </summary>
-    private static byte[] ForceFullRecalcOnLoad(byte[] xlsx)
+    private byte[] ForceFullRecalcOnLoad(byte[] xlsx)
     {
         using var ms = new MemoryStream();
         ms.Write(xlsx, 0, xlsx.Length);
@@ -110,6 +129,8 @@ public sealed class ExcelReportGenerator
             calcPr.CalculationMode = CalculateModeValues.Auto;
             workbook.Save();
 
+            InjectCachedValues(wbPart);
+
             // Remove the calculation chain. ClosedXML writes formula cells with no cached value, which
             // makes the emitted calcChain.xml inconsistent with the cells — a classic Excel repair
             // trigger ("Removed Records: Formula referenced from /xl/calcChain.xml part"). Excel safely
@@ -121,9 +142,37 @@ public sealed class ExcelReportGenerator
         return ms.ToArray();
     }
 
+    /// <summary>
+    /// Writes the C#-computed formula results (<see cref="_cachedValues"/>) into the matching formula
+    /// cells as cached numeric <c>&lt;v&gt;</c> values, so Excel has a valid result for every formula and
+    /// does not strip the formulas / dependent table on open.
+    /// </summary>
+    private void InjectCachedValues(WorkbookPart wbPart)
+    {
+        if (_cachedValues.Count == 0) return;
+        foreach (var sheet in wbPart.Workbook.Sheets?.Elements<Sheet>() ?? Enumerable.Empty<Sheet>())
+        {
+            if (sheet.Id?.Value is not { } relId || sheet.Name?.Value is not { } sheetName) continue;
+            if (wbPart.GetPartById(relId) is not WorksheetPart wsPart) continue;
+
+            var changed = false;
+            foreach (var cell in wsPart.Worksheet.Descendants<Cell>())
+            {
+                if (cell.CellFormula is null || cell.CellReference?.Value is not { } addr) continue;
+                if (cell.CellValue is not null) continue; // already has a cached value
+                if (!_cachedValues.TryGetValue($"{sheetName}!{addr}", out var value)) continue;
+
+                cell.DataType = null; // numeric (default) — clear any text type
+                cell.CellValue = new CellValue(value.ToString(CultureInfo.InvariantCulture));
+                changed = true;
+            }
+            if (changed) wsPart.Worksheet.Save();
+        }
+    }
+
     private enum EnvKind { NonProd, Prod }
 
-    private static void BuildSummarySheet(XLWorkbook wb, EstimationResult r)
+    private void BuildSummarySheet(XLWorkbook wb, EstimationResult r)
     {
         var ws = wb.Worksheets.Add("Summary");
         ws.Column(1).Width = 28;
@@ -161,27 +210,33 @@ public sealed class ExcelReportGenerator
         row++;
         SectionHeader(ws, $"A{row}:B{row}", "Headline cost (reference, not a quote)");
         row++;
+        // Compute the same figures the formulas produce, so we can inject cached values (ClosedXML can't).
+        decimal cFactor = 1 + r.Cost.ContingencyPercent / 100m;
+        decimal prodSubtotal = r.Cost.LineItems.Sum(l => l.Quantity * l.UnitPrice);
+        decimal nonProdSubtotal = r.Cost.LineItems.Sum(l => l.NonProdQuantity * l.UnitPrice);
+        decimal totalSubtotal = prodSubtotal + nonProdSubtotal;
+        decimal prodContingency = prodSubtotal * (r.Cost.ContingencyPercent / 100m);
         // Pull totals from the Cost Model sheet (via workbook defined names) so Summary tracks edits
         // and survives users adding / inserting line item rows in the table.
         ws.Cell(row, 1).Value = "Monthly subtotal"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = $"={NameSubtotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 2).FormulaA1 = $"={NameSubtotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); Cache(ws.Cell(row, 2), (double)prodSubtotal); row++;
         ws.Cell(row, 1).Value = $"Contingency ({r.Cost.ContingencyPercent}%)"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = $"={NameContingency}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 2).FormulaA1 = $"={NameContingency}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); Cache(ws.Cell(row, 2), (double)prodContingency); row++;
         ws.Cell(row, 1).Value = "Monthly total (incl. contingency)"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = $"={NameMonthlyTotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
+        ws.Cell(row, 2).FormulaA1 = $"={NameMonthlyTotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); Cache(ws.Cell(row, 2), (double)(prodSubtotal + prodContingency));
         ws.Range($"A{row}:B{row}").Style.Fill.BackgroundColor = TotalFill; row++;
         ws.Cell(row, 1).Value = "Annual total (incl. contingency)"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = $"={NameAnnualTotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
+        ws.Cell(row, 2).FormulaA1 = $"={NameAnnualTotal}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); Cache(ws.Cell(row, 2), (double)((prodSubtotal + prodContingency) * 12));
         ws.Range($"A{row}:B{row}").Style.Fill.BackgroundColor = TotalFill; row += 2;
 
         SectionHeader(ws, $"A{row}:B{row}", "Cost by environment (monthly, incl. contingency)");
         row++;
         ws.Cell(row, 1).Value = "Non-Prod monthly"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = $"={NameNonProdMonthly}*{1 + r.Cost.ContingencyPercent / 100m}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 2).FormulaA1 = $"={NameNonProdMonthly}*{cFactor}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); Cache(ws.Cell(row, 2), (double)(nonProdSubtotal * cFactor)); row++;
         ws.Cell(row, 1).Value = "Prod monthly"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = $"={NameProdMonthly}*{1 + r.Cost.ContingencyPercent / 100m}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); row++;
+        ws.Cell(row, 2).FormulaA1 = $"={NameProdMonthly}*{cFactor}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); Cache(ws.Cell(row, 2), (double)(prodSubtotal * cFactor)); row++;
         ws.Cell(row, 1).Value = "Total monthly (Non-Prod + Prod)"; ws.Cell(row, 1).Style.Font.Bold = true;
-        ws.Cell(row, 2).FormulaA1 = $"={NameTotalMonthly}*{1 + r.Cost.ContingencyPercent / 100m}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency);
+        ws.Cell(row, 2).FormulaA1 = $"={NameTotalMonthly}*{cFactor}"; MoneyCell(ws.Cell(row, 2), r.Cost.Currency); Cache(ws.Cell(row, 2), (double)(totalSubtotal * cFactor));
         ws.Range($"A{row}:B{row}").Style.Fill.BackgroundColor = TotalFill; row += 2;
 
         SectionHeader(ws, $"A{row}:B{row}", "Disclaimer");
@@ -193,7 +248,7 @@ public sealed class ExcelReportGenerator
         ws.Row(row).Height = 60;
     }
 
-    private static IXLWorksheet BuildCostSheet(XLWorkbook wb, EstimationResult r)
+    private IXLWorksheet BuildCostSheet(XLWorkbook wb, EstimationResult r)
     {
         var ws = wb.Worksheets.Add("Cost Model");
 
@@ -248,8 +303,15 @@ public sealed class ExcelReportGenerator
         // Monthly Cost = Quantity * Unit Price as a TABLE CALCULATED COLUMN.
         // Setting the formula on the data rows makes ClosedXML emit <calculatedColumnFormula>, which is
         // what tells Excel to auto-fill the formula for any newly added/inserted table row.
+        double subtotal = 0;
         foreach (var dataRow in table.DataRange.Rows())
-            dataRow.Cell(colMonthly).FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+        {
+            var monthlyCell = dataRow.Cell(colMonthly);
+            monthlyCell.FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+            double monthly = dataRow.Cell(colQty).GetDouble() * dataRow.Cell(colUnitPrice).GetDouble();
+            Cache(monthlyCell, monthly);
+            subtotal += monthly;
+        }
 
         // Totals row: SUBTOTAL(109, CostModel[Monthly Cost]) auto-includes new rows.
         table.ShowTotalsRow = true;
@@ -258,6 +320,7 @@ public sealed class ExcelReportGenerator
         int totalsRow = table.TotalsRow().RowNumber();
         var subtotalCell = ws.Cell(totalsRow, colMonthly);
         MoneyCell(subtotalCell, r.Cost.Currency);
+        Cache(subtotalCell, subtotal);
         ws.Cell(totalsRow, 1).Style.Font.Bold = true;
 
         // Format + highlight the editable input columns so reviewers know what to change.
@@ -286,12 +349,15 @@ public sealed class ExcelReportGenerator
         var contingencyCell = ws.Cell(contingencyRow, 2);
         contingencyCell.FormulaA1 = $"={CostTableName}[[#Totals],[Monthly Cost]]*{r.Cost.ContingencyPercent / 100m}";
         MoneyCell(contingencyCell, r.Cost.Currency);
+        double contingency = subtotal * (double)(r.Cost.ContingencyPercent / 100m);
+        Cache(contingencyCell, contingency);
 
         ws.Cell(totalRowNo, 1).Value = "Monthly total (incl. contingency)";
         ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
         var totalCell = ws.Cell(totalRowNo, 2);
         totalCell.FormulaA1 = $"={CostTableName}[[#Totals],[Monthly Cost]]+B{contingencyRow}";
         MoneyCell(totalCell, r.Cost.Currency);
+        Cache(totalCell, subtotal + contingency);
         ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
 
         ws.Cell(annualRow, 1).Value = "Annual total (incl. contingency)";
@@ -299,6 +365,7 @@ public sealed class ExcelReportGenerator
         var annualCell = ws.Cell(annualRow, 2);
         annualCell.FormulaA1 = $"=B{totalRowNo}*12";
         MoneyCell(annualCell, r.Cost.Currency);
+        Cache(annualCell, (subtotal + contingency) * 12);
         ws.Range(annualRow, 1, annualRow, 2).Style.Fill.BackgroundColor = TotalFill;
 
         // Defined names (workbook scope) so the Summary sheet references survive table growth.
@@ -380,8 +447,15 @@ public sealed class ExcelReportGenerator
 
         var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(tableName);
         table.Theme = nonProd ? XLTableTheme.TableStyleLight11 : XLTableTheme.TableStyleLight9;
+        double subtotal = 0;
         foreach (var dataRow in table.DataRange.Rows())
-            dataRow.Cell(colMonthly).FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+        {
+            var monthlyCell = dataRow.Cell(colMonthly);
+            monthlyCell.FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+            double monthly = dataRow.Cell(colQty).GetDouble() * dataRow.Cell(colUnitPrice).GetDouble();
+            Cache(monthlyCell, monthly);
+            subtotal += monthly;
+        }
 
         table.ShowTotalsRow = true;
         table.Field("Category").TotalsRowLabel = "Monthly subtotal";
@@ -389,6 +463,7 @@ public sealed class ExcelReportGenerator
         int totalsRow = table.TotalsRow().RowNumber();
         var subtotalCell = ws.Cell(totalsRow, colMonthly);
         MoneyCell(subtotalCell, r.Cost.Currency);
+        Cache(subtotalCell, subtotal);
         ws.Cell(totalsRow, 1).Style.Font.Bold = true;
 
         var qtyData = ws.Range(firstDataRow, colQty, lastDataRow, colQty);
@@ -414,12 +489,15 @@ public sealed class ExcelReportGenerator
         var contingencyCell = ws.Cell(contingencyRow, 2);
         contingencyCell.FormulaA1 = $"={tableName}[[#Totals],[Monthly Cost]]*{r.Cost.ContingencyPercent / 100m}";
         MoneyCell(contingencyCell, r.Cost.Currency);
+        double contingency = subtotal * (double)(r.Cost.ContingencyPercent / 100m);
+        Cache(contingencyCell, contingency);
 
         ws.Cell(totalRowNo, 1).Value = "Monthly total (incl. contingency)";
         ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
         var totalCell = ws.Cell(totalRowNo, 2);
         totalCell.FormulaA1 = $"={tableName}[[#Totals],[Monthly Cost]]+B{contingencyRow}";
         MoneyCell(totalCell, r.Cost.Currency);
+        Cache(totalCell, subtotal + contingency);
         ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
 
         ws.Cell(annualRow, 1).Value = "Annual total (incl. contingency)";
@@ -427,6 +505,7 @@ public sealed class ExcelReportGenerator
         var annualCell = ws.Cell(annualRow, 2);
         annualCell.FormulaA1 = $"=B{totalRowNo}*12";
         MoneyCell(annualCell, r.Cost.Currency);
+        Cache(annualCell, (subtotal + contingency) * 12);
         ws.Range(annualRow, 1, annualRow, 2).Style.Fill.BackgroundColor = TotalFill;
 
         // Defined name for the env monthly subtotal (used by Summary + Total sheet cross-references).
@@ -478,11 +557,24 @@ public sealed class ExcelReportGenerator
         var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(tableName);
         table.Theme = XLTableTheme.TableStyleLight10;
         // Calculated columns: costs derive from the editable qty + unit price columns.
+        double npSubtotal = 0, prSubtotal = 0, totalColSubtotal = 0;
         foreach (var dataRow in table.DataRange.Rows())
         {
-            dataRow.Cell(colNpCost).FormulaA1 = "=[@[NonProd Qty]]*[@[Unit Price]]";
-            dataRow.Cell(colPrCost).FormulaA1 = "=[@[Prod Qty]]*[@[Unit Price]]";
-            dataRow.Cell(colTotal).FormulaA1 = "=[@[NonProd Cost]]+[@[Prod Cost]]";
+            var npCostCell = dataRow.Cell(colNpCost);
+            var prCostCell = dataRow.Cell(colPrCost);
+            var totalCostCell = dataRow.Cell(colTotal);
+            npCostCell.FormulaA1 = "=[@[NonProd Qty]]*[@[Unit Price]]";
+            prCostCell.FormulaA1 = "=[@[Prod Qty]]*[@[Unit Price]]";
+            totalCostCell.FormulaA1 = "=[@[NonProd Cost]]+[@[Prod Cost]]";
+            double price = dataRow.Cell(colUnitPrice).GetDouble();
+            double npCost = dataRow.Cell(colNpQty).GetDouble() * price;
+            double prCost = dataRow.Cell(colPrQty).GetDouble() * price;
+            Cache(npCostCell, npCost);
+            Cache(prCostCell, prCost);
+            Cache(totalCostCell, npCost + prCost);
+            npSubtotal += npCost;
+            prSubtotal += prCost;
+            totalColSubtotal += npCost + prCost;
         }
 
         table.ShowTotalsRow = true;
@@ -493,6 +585,9 @@ public sealed class ExcelReportGenerator
         int totalsRow = table.TotalsRow().RowNumber();
         ws.Cell(totalsRow, 1).Style.Font.Bold = true;
         foreach (var cc in new[] { colNpCost, colPrCost, colTotal }) MoneyCell(ws.Cell(totalsRow, cc), r.Cost.Currency);
+        Cache(ws.Cell(totalsRow, colNpCost), npSubtotal);
+        Cache(ws.Cell(totalsRow, colPrCost), prSubtotal);
+        Cache(ws.Cell(totalsRow, colTotal), totalColSubtotal);
         var totalSubtotalCell = ws.Cell(totalsRow, colTotal);
 
         // Format + highlight editable inputs.
@@ -524,12 +619,15 @@ public sealed class ExcelReportGenerator
         var contingencyCell = ws.Cell(contingencyRow, 2);
         contingencyCell.FormulaA1 = $"={tableName}[[#Totals],[Total Cost]]*{r.Cost.ContingencyPercent / 100m}";
         MoneyCell(contingencyCell, r.Cost.Currency);
+        double contingency = totalColSubtotal * (double)(r.Cost.ContingencyPercent / 100m);
+        Cache(contingencyCell, contingency);
 
         ws.Cell(totalRowNo, 1).Value = "Total monthly (incl. contingency)";
         ws.Cell(totalRowNo, 1).Style.Font.Bold = true;
         var totalCell = ws.Cell(totalRowNo, 2);
         totalCell.FormulaA1 = $"={tableName}[[#Totals],[Total Cost]]+B{contingencyRow}";
         MoneyCell(totalCell, r.Cost.Currency);
+        Cache(totalCell, totalColSubtotal + contingency);
         ws.Range(totalRowNo, 1, totalRowNo, 2).Style.Fill.BackgroundColor = TotalFill;
 
         ws.Cell(annualRow, 1).Value = "Total annual (incl. contingency)";
@@ -537,6 +635,7 @@ public sealed class ExcelReportGenerator
         var annualCell = ws.Cell(annualRow, 2);
         annualCell.FormulaA1 = $"=B{totalRowNo}*12";
         MoneyCell(annualCell, r.Cost.Currency);
+        Cache(annualCell, (totalColSubtotal + contingency) * 12);
         ws.Range(annualRow, 1, annualRow, 2).Style.Fill.BackgroundColor = TotalFill;
 
         wb.DefinedNames.Add(NameTotalMonthly, totalSubtotalCell.AsRange());

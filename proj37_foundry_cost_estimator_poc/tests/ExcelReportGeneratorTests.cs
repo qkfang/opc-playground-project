@@ -143,6 +143,36 @@ public class ExcelReportGeneratorTests
     }
 
     [Fact]
+    public async Task Every_formula_cell_has_a_cached_value_so_excel_does_not_strip_formulas_or_tables()
+    {
+        // ClosedXML 0.104 writes formula cells WITHOUT a cached value (and its calc engine overflows
+        // evaluating the table SUBTOTAL / structured references). Excel treats uncached formula cells and
+        // the dependent table as damaged and removes them on open ("Removed Records: Formula ..." /
+        // "Removed Records: Table ..."). The generator injects C#-computed results as cached <v> values,
+        // so there must be zero formula cells left without a value in ANY worksheet.
+        var job = await SampleJobAsync();
+        var bytes = new ExcelReportGenerator().Generate(job);
+
+        using var ms = new MemoryStream(bytes);
+        using var doc = DocumentFormat.OpenXml.Packaging.SpreadsheetDocument.Open(ms, false);
+        var wbPart = doc.WorkbookPart!;
+
+        var offenders = new List<string>();
+        foreach (var sheet in wbPart.Workbook.Sheets!.Elements<DocumentFormat.OpenXml.Spreadsheet.Sheet>())
+        {
+            var wsPart = (DocumentFormat.OpenXml.Packaging.WorksheetPart)wbPart.GetPartById(sheet.Id!.Value!);
+            foreach (var cell in wsPart.Worksheet.Descendants<DocumentFormat.OpenXml.Spreadsheet.Cell>())
+            {
+                if (cell.CellFormula is null) continue;
+                if (cell.CellValue is null || string.IsNullOrEmpty(cell.CellValue.Text))
+                    offenders.Add($"{sheet.Name}!{cell.CellReference?.Value} = {cell.CellFormula.Text}");
+            }
+        }
+
+        Assert.True(offenders.Count == 0, "formula cells missing a cached value:\n" + string.Join("\n", offenders));
+    }
+
+    [Fact]
     public async Task Workbook_opens_without_excel_repair_strict_ooxml_validation_passes()
     {
         var job = await SampleJobAsync();
