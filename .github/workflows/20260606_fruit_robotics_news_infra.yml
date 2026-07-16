@@ -1,0 +1,78 @@
+name: 20260606_fruit_robotics_news_infra
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '20260606_fruit_robotics_news/bicep/**'
+      - '.github/workflows/20260606_fruit_robotics_news_infra.yml'
+
+permissions:
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'eastus2' }}
+  BICEP_FILE: 20260606_fruit_robotics_news/bicep/main.bicep
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        id: deploy
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+
+            deployment_name="20260606_fruit_robotics_news_infra_${GITHUB_RUN_ID}"
+
+            az deployment group create \
+              --name "$deployment_name" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --template-file "$BICEP_FILE" \
+              --parameters location="$AZURE_LOCATION" \
+              --output none
+
+            web_app_name=$(az deployment group show \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "$deployment_name" \
+              --query "properties.outputs.webAppName.value" \
+              --output tsv)
+            static_web_app_name=$(az deployment group show \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "$deployment_name" \
+              --query "properties.outputs.staticWebAppName.value" \
+              --output tsv)
+
+            echo "web_app_name=$web_app_name" >> "$GITHUB_OUTPUT"
+            echo "static_web_app_name=$static_web_app_name" >> "$GITHUB_OUTPUT"
+            echo "web_app_name=$web_app_name"
+            echo "static_web_app_name=$static_web_app_name"
+
+      - name: Get Static Web App deployment token hint
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+
+            token=$(az staticwebapp secrets list \
+              --name "${{ steps.deploy.outputs.static_web_app_name }}" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --query "properties.apiKey" \
+              --output tsv)
+
+            echo "::add-mask::$token"
+            echo "Retrieved Static Web App deployment token."
+            echo "Store this token as repository secret AZURE_STATIC_WEB_APPS_API_TOKEN_20260606_FRUIT_ROBOTICS_NEWS."
