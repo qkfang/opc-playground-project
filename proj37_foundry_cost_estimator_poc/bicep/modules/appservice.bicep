@@ -16,6 +16,9 @@ param appInsightsConnectionString string
 @description('Foundry project endpoint (AI Foundry API)')
 param foundryProjectEndpoint string
 
+@description('Entra tenant ID used to authenticate to the Foundry project')
+param foundryTenantId string = tenant().tenantId
+
 @description('Model deployment name used by the prompt agent')
 param foundryModelDeploymentName string
 
@@ -83,6 +86,10 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'Foundry__ProjectEndpoint'
           value: foundryProjectEndpoint
+        }
+        {
+          name: 'Foundry__TenantId'
+          value: foundryTenantId
         }
         {
           name: 'Foundry__ModelDeploymentName'

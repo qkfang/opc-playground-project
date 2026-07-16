@@ -15,6 +15,9 @@ public sealed class FoundryOptions
     /// <summary>Foundry project endpoint, e.g. https://&lt;name&gt;.services.ai.azure.com/api/projects/&lt;project&gt;.</summary>
     public string? ProjectEndpoint { get; set; }
 
+    /// <summary>Optional Entra tenant ID to authenticate against (the tenant that owns the Foundry project).</summary>
+    public string? TenantId { get; set; }
+
     /// <summary>Model deployment name, e.g. gpt-5.4.</summary>
     public string ModelDeploymentName { get; set; } = "gpt-5.4";
 

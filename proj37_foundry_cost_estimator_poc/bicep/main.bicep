@@ -98,6 +98,7 @@ module appService './modules/appservice.bicep' = {
     appServiceSku: appServiceSku
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     foundryProjectEndpoint: foundry.outputs.aiProjectEndpoint
+    foundryTenantId: subscription().tenantId
     foundryModelDeploymentName: foundry.outputs.modelDeploymentName
     foundryEnabled: foundryEnabled
     storageAccountName: storage.outputs.storageAccountName

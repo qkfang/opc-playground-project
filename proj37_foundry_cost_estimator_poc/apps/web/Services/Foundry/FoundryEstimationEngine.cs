@@ -93,7 +93,10 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
 
     private AIAgent CreateAgent()
     {
-        var client = new AIProjectClient(new Uri(_options.ProjectEndpoint!), new DefaultAzureCredential());
+        var credential = string.IsNullOrWhiteSpace(_options.TenantId)
+            ? new DefaultAzureCredential()
+            : new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = _options.TenantId });
+        var client = new AIProjectClient(new Uri(_options.ProjectEndpoint!), credential);
         return client.AsAIAgent(
             model: _options.ModelDeploymentName,
             instructions: AgentInstructions.SystemPersona,
