@@ -23,8 +23,10 @@ namespace Proj37.CostEstimator.Web.Services;
 ///   * The line items live in a native Excel <b>Table</b> ("CostModel"). <b>Quantity</b> and
 ///     <b>Unit Price</b> are plain, editable input cells (highlighted) — users type new numbers and
 ///     the workbook recalculates.
-///   * <b>Monthly Cost</b> is a table calculated column (=[@Quantity]*[@[Unit Price]]). Because it is
-///     a table column formula, Excel auto-fills it for any row added to the table.
+///   * <b>Monthly Cost</b> is a per-row A1 formula (=F5*G5, i.e. Quantity * Unit Price). Plain A1
+///     formulas are used deliberately: Excel strips table structured-reference calculated columns
+///     (=[@Quantity]*[@[Unit Price]]) on open ("Removed Records: Formula/Table"), whereas A1 formulas
+///     always survive and keep recalculating when Quantity / Unit Price change.
 ///   * The totals row uses <c>SUBTOTAL(109, CostModel[Monthly Cost])</c>, so it automatically includes
 ///     <b>new / inserted line item rows</b> without the SUM range having to be edited. Reviewers can add
 ///     a manual line item by typing in the row directly beneath the last one (the table auto-extends) or
@@ -130,6 +132,7 @@ public sealed class ExcelReportGenerator
             workbook.Save();
 
             InjectCachedValues(wbPart);
+            StripCalculatedColumnFormulas(wbPart);
 
             // Remove the calculation chain. ClosedXML writes formula cells with no cached value, which
             // makes the emitted calcChain.xml inconsistent with the cells — a classic Excel repair
@@ -167,6 +170,28 @@ public sealed class ExcelReportGenerator
                 changed = true;
             }
             if (changed) wsPart.Worksheet.Save();
+        }
+    }
+
+    /// <summary>
+    /// Removes the <c>&lt;calculatedColumnFormula&gt;</c> from every table column. ClosedXML derives a
+    /// calculated-column formula from the first data row's formula (e.g. <c>F5*G5</c>). A calculated
+    /// column stored as a raw A1 formula is an unusual, repair-prone shape (Excel normally uses structured
+    /// references for calc columns). We already write an explicit A1 formula into every data cell, so the
+    /// calculated-column declaration is redundant — dropping it turns the range into a plain table whose
+    /// formula cells stand on their own and open without any repair prompt.
+    /// </summary>
+    private static void StripCalculatedColumnFormulas(WorkbookPart wbPart)
+    {
+        foreach (var wsPart in wbPart.WorksheetParts)
+        {
+            foreach (var tablePart in wsPart.TableDefinitionParts)
+            {
+                var formulas = tablePart.Table.Descendants<CalculatedColumnFormula>().ToList();
+                if (formulas.Count == 0) continue;
+                foreach (var f in formulas) f.Remove();
+                tablePart.Table.Save();
+            }
         }
     }
 
@@ -300,14 +325,16 @@ public sealed class ExcelReportGenerator
         // ---- Build the editable Excel Table (ListObject) over header + data rows ----
         var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(CostTableName);
         table.Theme = XLTableTheme.TableStyleLight9;
-        // Monthly Cost = Quantity * Unit Price as a TABLE CALCULATED COLUMN.
-        // Setting the formula on the data rows makes ClosedXML emit <calculatedColumnFormula>, which is
-        // what tells Excel to auto-fill the formula for any newly added/inserted table row.
+        // Monthly Cost = Quantity * Unit Price, written as a plain A1 formula (e.g. =F5*G5) on every data
+        // row. A1 formulas are the most robust form Excel accepts: unlike a table structured-reference
+        // calculated column (=[@Quantity]*[@[Unit Price]]), Excel never strips them on open, so the
+        // formula bar always shows a live formula that recalculates when Quantity / Unit Price change.
         double subtotal = 0;
         foreach (var dataRow in table.DataRange.Rows())
         {
             var monthlyCell = dataRow.Cell(colMonthly);
-            monthlyCell.FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+            int rowNum = monthlyCell.Address.RowNumber;
+            monthlyCell.FormulaA1 = $"={XLHelper.GetColumnLetterFromNumber(colQty)}{rowNum}*{XLHelper.GetColumnLetterFromNumber(colUnitPrice)}{rowNum}";
             double monthly = dataRow.Cell(colQty).GetDouble() * dataRow.Cell(colUnitPrice).GetDouble();
             Cache(monthlyCell, monthly);
             subtotal += monthly;
@@ -451,7 +478,8 @@ public sealed class ExcelReportGenerator
         foreach (var dataRow in table.DataRange.Rows())
         {
             var monthlyCell = dataRow.Cell(colMonthly);
-            monthlyCell.FormulaA1 = "=[@Quantity]*[@[Unit Price]]";
+            int rowNum = monthlyCell.Address.RowNumber;
+            monthlyCell.FormulaA1 = $"={XLHelper.GetColumnLetterFromNumber(colQty)}{rowNum}*{XLHelper.GetColumnLetterFromNumber(colUnitPrice)}{rowNum}";
             double monthly = dataRow.Cell(colQty).GetDouble() * dataRow.Cell(colUnitPrice).GetDouble();
             Cache(monthlyCell, monthly);
             subtotal += monthly;
@@ -556,16 +584,20 @@ public sealed class ExcelReportGenerator
 
         var table = ws.Range(headerRow, 1, lastDataRow, headers.Length).CreateTable(tableName);
         table.Theme = XLTableTheme.TableStyleLight10;
-        // Calculated columns: costs derive from the editable qty + unit price columns.
+        // Per-row costs derive from the editable qty + unit price columns via plain A1 formulas
+        // (e.g. NonProd Cost =F5*D5, Prod Cost =G5*D5, Total Cost =H5+I5). A1 formulas survive Excel's
+        // open-time checks where table structured-reference calculated columns get stripped.
         double npSubtotal = 0, prSubtotal = 0, totalColSubtotal = 0;
         foreach (var dataRow in table.DataRange.Rows())
         {
             var npCostCell = dataRow.Cell(colNpCost);
             var prCostCell = dataRow.Cell(colPrCost);
             var totalCostCell = dataRow.Cell(colTotal);
-            npCostCell.FormulaA1 = "=[@[NonProd Qty]]*[@[Unit Price]]";
-            prCostCell.FormulaA1 = "=[@[Prod Qty]]*[@[Unit Price]]";
-            totalCostCell.FormulaA1 = "=[@[NonProd Cost]]+[@[Prod Cost]]";
+            int rowNum = npCostCell.Address.RowNumber;
+            string priceRef = $"{XLHelper.GetColumnLetterFromNumber(colUnitPrice)}{rowNum}";
+            npCostCell.FormulaA1 = $"={XLHelper.GetColumnLetterFromNumber(colNpQty)}{rowNum}*{priceRef}";
+            prCostCell.FormulaA1 = $"={XLHelper.GetColumnLetterFromNumber(colPrQty)}{rowNum}*{priceRef}";
+            totalCostCell.FormulaA1 = $"={XLHelper.GetColumnLetterFromNumber(colNpCost)}{rowNum}+{XLHelper.GetColumnLetterFromNumber(colPrCost)}{rowNum}";
             double price = dataRow.Cell(colUnitPrice).GetDouble();
             double npCost = dataRow.Cell(colNpQty).GetDouble() * price;
             double prCost = dataRow.Cell(colPrQty).GetDouble() * price;

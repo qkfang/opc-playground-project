@@ -114,15 +114,20 @@ public class EnhancementsTests
         Assert.False(total.Cell(firstData, table.Field("NonProd Qty").Column.ColumnNumber()).HasFormula);
         Assert.False(total.Cell(firstData, table.Field("Prod Qty").Column.ColumnNumber()).HasFormula);
 
-        // NonProd / Prod / Total costs are structured-reference formulas.
+        // NonProd / Prod / Total costs are per-row A1 formulas (e.g. =F5*D5, =G5*D5, =H5+I5).
+        var npQtyRef = ClosedXML.Excel.XLHelper.GetColumnLetterFromNumber(table.Field("NonProd Qty").Column.ColumnNumber()) + firstData;
+        var prQtyRef = ClosedXML.Excel.XLHelper.GetColumnLetterFromNumber(table.Field("Prod Qty").Column.ColumnNumber()) + firstData;
+        var priceRef = ClosedXML.Excel.XLHelper.GetColumnLetterFromNumber(table.Field("Unit Price").Column.ColumnNumber()) + firstData;
+        var npCostRef = ClosedXML.Excel.XLHelper.GetColumnLetterFromNumber(table.Field("NonProd Cost").Column.ColumnNumber()) + firstData;
+        var prCostRef = ClosedXML.Excel.XLHelper.GetColumnLetterFromNumber(table.Field("Prod Cost").Column.ColumnNumber()) + firstData;
         var np = total.Cell(firstData, table.Field("NonProd Cost").Column.ColumnNumber());
         var pr = total.Cell(firstData, table.Field("Prod Cost").Column.ColumnNumber());
         var tot = total.Cell(firstData, table.Field("Total Cost").Column.ColumnNumber());
-        Assert.Contains("[@[NonProd Qty]]", np.FormulaA1);
-        Assert.Contains("[@[Unit Price]]", np.FormulaA1);
-        Assert.Contains("[@[Prod Qty]]", pr.FormulaA1);
-        Assert.Contains("[@[NonProd Cost]]", tot.FormulaA1);
-        Assert.Contains("[@[Prod Cost]]", tot.FormulaA1);
+        Assert.Contains(npQtyRef, np.FormulaA1);
+        Assert.Contains(priceRef, np.FormulaA1);
+        Assert.Contains(prQtyRef, pr.FormulaA1);
+        Assert.Contains(npCostRef, tot.FormulaA1);
+        Assert.Contains(prCostRef, tot.FormulaA1);
 
         // Three SUBTOTAL totals (NonProd / Prod / Total) auto-include inserted rows.
         Assert.True(table.ShowTotalsRow);

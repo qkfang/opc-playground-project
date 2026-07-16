@@ -62,11 +62,16 @@ public class ExcelReportGeneratorTests
         Assert.False(cost.Cell(firstData, qtyHeader).HasFormula, "Quantity must be a directly editable value, not a formula");
         Assert.False(cost.Cell(firstData, priceHeader).HasFormula, "Unit Price must be a directly editable value, not a formula");
 
-        // Monthly Cost is a per-row structured-reference formula = Quantity * Unit Price.
+        // Monthly Cost is a per-row A1 formula = Quantity * Unit Price (e.g. =F5*G5). Plain A1 formulas
+        // are used instead of table structured references because Excel strips structured-reference
+        // calculated columns on open; A1 formulas survive and keep recalculating.
         var monthlyCell = cost.Cell(firstData, monthlyHeader);
         Assert.True(monthlyCell.HasFormula, "Monthly Cost must be a formula");
-        Assert.Contains("[@Quantity]", monthlyCell.FormulaA1);
-        Assert.Contains("[@[Unit Price]]", monthlyCell.FormulaA1);
+        var qtyRef = ClosedXML.Excel.XLHelper.GetColumnLetterFromNumber(qtyHeader) + firstData;
+        var priceRef = ClosedXML.Excel.XLHelper.GetColumnLetterFromNumber(priceHeader) + firstData;
+        Assert.Contains(qtyRef, monthlyCell.FormulaA1);
+        Assert.Contains(priceRef, monthlyCell.FormulaA1);
+        Assert.Contains("*", monthlyCell.FormulaA1);
 
         // The table has a totals row that SUMs Monthly Cost (SUBTOTAL auto-includes new/inserted rows).
         Assert.True(table.ShowTotalsRow, "Cost Model table must show a totals row");
@@ -138,7 +143,7 @@ public class ExcelReportGeneratorTests
             sheetXml.Append(await sr.ReadToEndAsync());
         }
         var allSheets = sheetXml.ToString();
-        Assert.Contains("[@Quantity]*[@[Unit Price]]", allSheets);
+        Assert.Matches(@"<x:f>[A-Z]+\d+\*[A-Z]+\d+</x:f>", allSheets);
         Assert.Contains("SUBTOTAL(109", allSheets);
     }
 
