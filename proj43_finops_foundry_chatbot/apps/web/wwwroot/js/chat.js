@@ -25,7 +25,7 @@
     if (h.fabricConfigured) extra.push("Fabric");
     if (h.mcpConfigured) extra.push("MCP");
     if (extra.length) dataBadge.title = "Tools: " + extra.join(", ");
-  }).catch(() => { engineBadge.textContent = "engine: offline"; });
+  }).catch(() => { engineBadge.textContent = ""; });
 
   fetch("/api/suggestions").then(r => r.json()).then(list => {
     (list || []).forEach(s => {
