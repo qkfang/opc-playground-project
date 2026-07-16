@@ -19,7 +19,6 @@ let AGENT_INSTRUCTIONS = null;
 
 // ---------------------------------------------------------------- bootstrap
 document.addEventListener('DOMContentLoaded', () => {
-  loadHealth();
   wireModal();
   wireAgentStepButtons();
   const page = document.body.dataset.page || '';
@@ -33,17 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (page === 'compare') initCompare();
   else if (page === 'estimations') initEstimations();
 });
-
-async function loadHealth() {
-  try {
-    const r = await fetch('/api/health');
-    const h = await r.json();
-    const badge = $('#engineBadge');
-    if (!badge) return;
-    badge.textContent = 'engine: ' + h.engine;
-    badge.className = 'badge ' + (h.engine === 'foundry' ? 'foundry' : 'offline');
-  } catch { /* ignore */ }
-}
 
 // ================================================================ UPLOAD page
 let selectedFiles = [];
@@ -156,7 +144,7 @@ function showDone(job) {
   card.hidden = false;
   const c = job.cost || {};
   $('#doneSummary').textContent =
-    `${job.scope?.projectName || 'Estimation'} · engine: ${job.engine} · ${job.requirements?.length || 0} requirements · `
+    `${job.scope?.projectName || 'Estimation'} · ${job.requirements?.length || 0} requirements · `
     + `${fmtMoney(c.monthlyTotalWithContingency, c.currency)}/mo (incl. ${c.contingencyPercent || 0}% contingency).`;
   const dl = $('#doneDownload');
   dl.href = `/api/estimations/${job.jobId}/workbook`;
@@ -173,7 +161,7 @@ function platformContext(job) {
   if (!line) return;
   if (!job || !job.scope) { line.textContent = 'No estimation loaded yet.'; return; }
   const c = job.cost || {};
-  line.innerHTML = `<strong>${esc(job.scope.projectName || 'Estimation')}</strong> · engine: ${esc(job.engine)} · `
+  line.innerHTML = `<strong>${esc(job.scope.projectName || 'Estimation')}</strong> · `
     + `${fmtMoney(c.monthlyTotalWithContingency, c.currency)}/mo · <span class="muted">job ${esc(job.jobId)}</span>`;
 }
 
@@ -671,8 +659,7 @@ function renderCompare(cmp) {
   body.innerHTML = `
     ${buyWarn}
     <div class="cmp-recommend ${recClass}">
-      <div class="cmp-rec-head"><span class="cmp-rec-badge">Recommendation</span><span class="cmp-rec-value">${esc(recLabel)}</span>
-        <span class="badge ${cmp.engine === 'foundry' ? 'foundry' : 'offline'}">engine: ${esc(cmp.engine)}</span></div>
+      <div class="cmp-rec-head"><span class="cmp-rec-badge">Recommendation</span><span class="cmp-rec-value">${esc(recLabel)}</span></div>
       <p class="cmp-rec-summary">${esc(cmp.summary)}</p>
     </div>
     ${totalsGrid}
@@ -696,9 +683,9 @@ async function loadHistory() {
     const r = await fetch('/api/estimations');
     const items = await r.json();
     if (!items.length) { el.innerHTML = '<p class="muted">No estimations yet. <a href="/">Run one →</a></p>'; return; }
-    el.innerHTML = `<table><thead><tr><th>Project</th><th>Engine</th><th>Docs</th><th>Reqs</th>
+    el.innerHTML = `<table><thead><tr><th>Project</th><th>Docs</th><th>Reqs</th>
       <th class="num-col">Monthly</th><th>Created</th><th></th><th></th></tr></thead><tbody>${items.map(i => `<tr>
-      <td>${esc(i.project)}</td><td><span class="pill Could">${esc(i.engine)}</span></td>
+      <td>${esc(i.project)}</td>
       <td>${i.documents}</td><td>${i.requirements}</td>
       <td class="num-col">${fmtMoney(i.monthlyTotal, i.currency)}</td>
       <td class="muted">${new Date(i.createdUtc).toLocaleString()}</td>
