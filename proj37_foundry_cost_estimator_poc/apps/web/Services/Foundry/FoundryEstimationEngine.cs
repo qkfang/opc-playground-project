@@ -105,9 +105,23 @@ public sealed class FoundryEstimationEngine : IEstimationEngine
 
     private AIAgent CreateAgent()
     {
-        var credential = string.IsNullOrWhiteSpace(_options.TenantId)
-            ? new DefaultAzureCredential()
-            : new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = _options.TenantId });
+        // Exclude the dev-machine credential sources (Visual Studio, VS Code, Azure PowerShell, azd)
+        // that can silently resolve to a different signed-in account than `az login`, causing 403s.
+        // Managed Identity (App Service) and Azure CLI remain enabled so the same code works locally
+        // and when deployed.
+        var credOptions = new DefaultAzureCredentialOptions
+        {
+            ExcludeVisualStudioCredential = true,
+            ExcludeVisualStudioCodeCredential = true,
+            ExcludeAzurePowerShellCredential = true,
+            ExcludeAzureDeveloperCliCredential = true,
+            ExcludeInteractiveBrowserCredential = true,
+        };
+        if (!string.IsNullOrWhiteSpace(_options.TenantId))
+        {
+            credOptions.TenantId = _options.TenantId;
+        }
+        var credential = new DefaultAzureCredential(credOptions);
         var client = new AIProjectClient(new Uri(_options.ProjectEndpoint!), credential);
         return client.AsAIAgent(
             model: _options.ModelDeploymentName,
